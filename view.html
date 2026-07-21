@@ -14,7 +14,10 @@
   <div id="preview-channel" class="preview-channel" aria-hidden="true"></div>
   <template id="message-template"><article class="chat-message"><i class="chat-message__node" aria-hidden="true"></i><header><span class="role-badge"></span><span class="chat-message__name"></span></header><div class="chat-message__bubble"></div></article></template>
   <template id="alert-template"><article class="chat-alert"><i class="chat-message__node" aria-hidden="true"></i><div class="chat-alert__border"><div class="chat-alert__surface"><p class="chat-alert__kind"></p><p class="chat-alert__line"></p><p class="chat-alert__note"></p><span class="chat-alert__spark">✦</span></div></div></article></template>
-  <script src="https://unpkg.com/tmi.js@1.8.5/dist/tmi.min.js"></script>
-  <script src="script.js"></script>
+  <script type="module">
+    try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
+    catch(e){console.error('[prism] tmi.js bundle failed to load',e);}
+    await import('./script.js');
+  </script>
 </body>
 </html>
