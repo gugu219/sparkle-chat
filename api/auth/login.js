@@ -1,0 +1,2 @@
+import { base,id } from '../_lib.js';
+export default {async fetch(){try{const state=id();const p=new URLSearchParams({client_id:process.env.TWITCH_CLIENT_ID,response_type:'code',redirect_uri:`${base()}/api/auth/callback`,scope:'chat:read',state});return new Response(null,{status:302,headers:{Location:`https://id.twitch.tv/oauth2/authorize?${p}`,'Set-Cookie':`prism_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`}});}catch(e){return Response.json({error:e.message},{status:500});}}};

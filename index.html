@@ -25,6 +25,7 @@
           <label class="field-label" for="channel">Twitch チャンネル名</label>
           <div class="input-with-prefix"><span>twitch.tv/</span><input id="channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
           <p class="field-hint">@ は不要です。英数字とアンダースコアのみ。</p>
+          <div class="auth-card" id="auth-card"><div><strong id="auth-title">Twitch未接続</strong><p id="auth-copy">認証しなくてもデザインとテストイベントは利用できます。</p></div><button type="button" id="twitch-login">Twitchで接続</button><button type="button" id="twitch-disconnect" hidden>解除</button></div>
         </fieldset>
 
         <fieldset>
@@ -53,7 +54,7 @@
     </section>
 
     <section class="preview-panel" aria-label="リアルタイムプレビュー">
-      <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">Preview mode</span></div>
+      <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">未認証 · テスト表示</span></div>
       <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" title="ウィジェットプレビュー"></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
       <div class="test-controls"><span>TEST EVENT</span><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="tip">Tip</button></div>
     </section>

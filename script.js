@@ -1,51 +1,31 @@
 (() => {
   'use strict';
-  const page = document.documentElement.dataset.page;
-  const defaults = { channel:'', theme:'selene', font:'zen', bg:'glass', opacity:'78', textSize:'15', limit:'12', blur:'1' };
-  const params = new URLSearchParams(location.search);
-  const getSettings = () => Object.fromEntries(Object.keys(defaults).map(key => [key, params.get(key) ?? defaults[key]]));
-  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
-  const nameColor = name => { let n=0; for(const char of String(name || 'viewer')) n=(n*31+char.charCodeAt(0))%360; return `hsl(${n} 82% 77%)`; };
+  const page=document.documentElement.dataset.page;
+  const defaults={channel:'',theme:'selene',font:'zen',bg:'glass',opacity:'78',textSize:'15',limit:'12',blur:'1'};
+  const qs=new URLSearchParams(location.search);
+  const settings=()=>Object.fromEntries(Object.keys(defaults).map(k=>[k,qs.get(k)??defaults[k]]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const color=n=>{let h=0;for(const c of String(n||'viewer'))h=(h*31+c.charCodeAt(0))%360;return `hsl(${h} 82% 77%)`;};
+  const apply=s=>{const b=document.body;b.className=`${page==='view'?'widget':'app-shell'} theme-${s.theme} bg-${s.bg} font-${s.font}${s.blur==='1'?' use-blur':''}`;document.documentElement.style.setProperty('--bubble-opacity',Math.max(.25,Math.min(1,+s.opacity/100)));document.documentElement.style.setProperty('--text-size',`${+s.textSize||15}px`);};
+  const session=async id=>{if(!id||location.protocol==='file:')return null;try{const r=await fetch(`/api/auth/session?widget=${encodeURIComponent(id)}`);return r.ok?r.json():null;}catch{return null;}};
 
-  function applyTheme(settings) {
-    const body = document.body; body.classList.remove('theme-selene','theme-rose','theme-aurora','bg-glass','bg-clear','bg-black','font-zen','font-rounded','font-system','use-blur');
-    body.classList.add(`theme-${settings.theme}`, `bg-${settings.bg}`, `font-${settings.font}`);
-    if (settings.blur === '1') body.classList.add('use-blur');
-    document.documentElement.style.setProperty('--bubble-opacity', Math.min(1, Math.max(.25, Number(settings.opacity) / 100)));
-    document.documentElement.style.setProperty('--text-size', `${Math.min(22,Math.max(12,Number(settings.textSize)))}px`);
-    document.documentElement.style.setProperty('--body-font', settings.font === 'rounded' ? '"M PLUS Rounded 1c", sans-serif' : settings.font === 'system' ? 'system-ui, sans-serif' : '"Zen Kaku Gothic New", sans-serif');
+  async function view(){
+    const s=settings();apply(s);const chat=document.querySelector('#chat'),mt=document.querySelector('#message-template'),at=document.querySelector('#alert-template'),limit=Math.max(1,+s.limit||12);
+    const trim=()=>{while(chat.children.length>limit){const x=chat.lastElementChild;x.classList.add('is-leaving');setTimeout(()=>x.remove(),320);if(chat.children.length<=limit+1)break;x.remove();}};
+    const role=t=>{const b=t.badges||'';if(b.includes('broadcaster'))return['broadcaster','LIVE'];if(b.includes('moderator')||t.mod==='1')return['mod','MOD'];if(b.includes('vip'))return['vip','VIP'];if(b.includes('subscriber')||t.subscriber==='1')return['sub','SUB'];return['',''];};
+    const msg=(name,text,tags={})=>{const f=mt.content.cloneNode(true),[kind,label]=role(tags),badge=f.querySelector('.role-badge'),user=f.querySelector('.chat-message__name');if(kind){badge.classList.add(`badge-${kind}`);badge.textContent=label;}user.textContent=name||'Viewer';user.style.setProperty('--user-color',tags.color||color(name));f.querySelector('.chat-message__bubble').textContent=text||'';chat.prepend(f);trim();};
+    const alert=(type,label,name,amount='',note='')=>{const f=at.content.cloneNode(true);f.querySelector('.chat-alert__border').classList.add(`alert-${type}`);f.querySelector('.chat-alert__kind').textContent=label;f.querySelector('.chat-alert__line').innerHTML=`<span class="a-name">${esc(name||'Anonymous')}</span>${amount?` <span class="a-amount">${esc(amount)}</span>`:''}`;const n=f.querySelector('.chat-alert__note');n.textContent=note||'';if(!n.textContent)n.remove();chat.prepend(f);trim();};
+    window.addEventListener('message',e=>{if(e.data?.source!=='prism-editor')return;({message:()=>msg('Mika','Great stream! Thanks for today.',{subscriber:'1',badges:'subscriber/1'}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','Welcome!'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','Nice play!'),tip:()=>alert('tip','TIP','Rin','JPY 500','Good luck!')}[e.data.type]||(()=>{}))();});
+    if(qs.has('preview')){document.body.classList.add('is-preview');document.querySelector('#preview-channel').textContent=`TWITCH #${s.channel||'your_channel'}`;msg('Mika','Great stream! Thanks for today.',{subscriber:'1',badges:'subscriber/1'});}
+    const auth=await session(qs.get('widget'));if(!auth||!s.channel||!window.tmi)return;
+    const c=new window.tmi.Client({connection:{secure:true,reconnect:true},identity:{username:auth.login,password:`oauth:${auth.accessToken}`},options:{skipMembership:true},channels:[s.channel]});
+    c.on('message',(_,t,text,self)=>{if(!self)msg(t['display-name']||t.username,text,t);});c.on('cheer',(_,t,text)=>alert('cheer','CHEER',t['display-name']||t.username,`${t.bits||''} Bits`,text));c.on('subscription',(_,u,_m,n)=>alert('sub','NEW SUBSCRIBER',u,'',n));c.on('resub',(_,u,m,n)=>alert('sub','RESUBSCRIBED',u,m?`${m} months`:'',n));c.on('subgift',(_,u,_m,r)=>alert('gift','GIFT SUB',u,`for ${r}`));c.connect().catch(console.warn);
   }
-
-  function startView() {
-    const settings = getSettings(); applyTheme(settings);
-    const chat = document.querySelector('#chat'); const messageTpl = document.querySelector('#message-template'); const alertTpl = document.querySelector('#alert-template');
-    const limit = Math.max(1, Number(settings.limit) || 12);
-    const trim = () => { while(chat.childElementCount > limit) { const el=chat.lastElementChild; el.classList.add('is-leaving'); setTimeout(()=>el.remove(),310); if(chat.childElementCount<=limit+1) break; el.remove(); } };
-    const role = tags => { const b=tags.badges||''; if(b.includes('broadcaster'))return['broadcaster','配信者'];if(b.includes('moderator')||tags.mod==='1')return['mod','MOD'];if(b.includes('vip'))return['vip','VIP'];if(b.includes('subscriber')||tags.subscriber==='1')return['sub','SUB'];return['','']; };
-    const message = (name, text, tags={}) => { const f=messageTpl.content.cloneNode(true); const [kind,label]=role(tags); const badge=f.querySelector('.role-badge'); if(kind){badge.classList.add(`badge-${kind}`);badge.textContent=label;} const user=f.querySelector('.chat-message__name');user.textContent=name||'Viewer';user.style.setProperty('--user-color',tags.color||nameColor(name));f.querySelector('.chat-message__bubble').textContent=text||'';chat.prepend(f);trim(); };
-    const alert = (type, label, name, amount='', note='') => { const f=alertTpl.content.cloneNode(true); const box=f.querySelector('.chat-alert__border');box.classList.add(`alert-${type}`);f.querySelector('.chat-alert__kind').textContent=label;f.querySelector('.chat-alert__line').innerHTML=`<span class="a-name">${escapeHtml(name||'Anonymous')}</span> さん${amount?` <span class="a-amount">${escapeHtml(amount)}</span>`:''}`;const noteEl=f.querySelector('.chat-alert__note');noteEl.textContent=note||'';if(!noteEl.textContent)noteEl.remove();chat.prepend(f);trim(); };
-    window.addEventListener('message', event => { if(event.data?.source !== 'prism-editor')return; const demos={message:()=>message('星見ミカ','最高のシーン！ 今日も配信ありがとう ✨',{badges:'subscriber/6',subscriber:'1',color:'#d6a3ff'}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','メンバーになりました！'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','ナイスプレイ！'),tip:()=>alert('tip','TIP','Rin','¥500','応援しています！')};demos[event.data.type]?.(); });
-    if (params.has('preview')) { document.body.classList.add('is-preview'); document.querySelector('#preview-channel').textContent=`TWITCH · #${settings.channel || 'your_channel'}`; message('星見ミカ','最高のシーン！ 今日も配信ありがとう ✨',{badges:'subscriber/6',subscriber:'1',color:'#d6a3ff'});setTimeout(()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','メンバーになりました！'),180); }
-    if (!settings.channel || !window.tmi) return;
-    const client = new window.tmi.Client({ connection:{secure:true,reconnect:true}, options:{skipMembership:true}, channels:[settings.channel] });
-    client.on('message', (_channel,tags,text,self) => { if(!self)message(tags['display-name']||tags.username,text,tags); });
-    client.on('cheer', (_channel,tags,text) => alert('cheer','CHEER',tags['display-name']||tags.username,`${tags.bits||''} Bits`,text));
-    client.on('subscription', (_channel,user,_methods,note,tags) => alert('sub','NEW SUBSCRIBER',user,'',note));
-    client.on('resub', (_channel,user,months,note) => alert('sub','RESUBSCRIBED',user,months?`${months} months`:'',note));
-    client.on('subgift', (_channel,user,_months,recipient) => alert('gift','GIFT SUB',user,`for ${recipient}`));
-    client.on('submysterygift', (_channel,user,count) => alert('gift','GIFT SUB',user,`${count} gifted`));
-    client.connect().catch(error => console.warn('Twitch chat connection failed:', error));
+  async function editor(){
+    const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast'),key='prism-widget-id';let widget=qs.get('widget')||localStorage.getItem(key)||'',auth=await session(widget);if(qs.get('widget')){localStorage.setItem(key,widget);history.replaceState({},'',location.pathname);}
+    const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(widget)p.set('widget',widget);if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer;const update=()=>{const s=values();apply(s);out.value=url();clearTimeout(timer);timer=setTimeout(()=>frame.src=url(true),80);document.querySelector('#opacity-value').textContent=`${s.opacity}%`;};
+    const authUi=()=>{const ok=!!auth;document.querySelector('#auth-title').textContent=ok?`Connected: ${auth.login}`:'Twitch not connected';document.querySelector('#auth-copy').textContent=ok?'Live chat, subscriptions, and Bits are enabled.':'Design and test events work without Twitch sign-in.';document.querySelector('#twitch-login').hidden=ok;document.querySelector('#twitch-disconnect').hidden=!ok;document.querySelector('#connection-status').textContent=ok?`Connected: #${auth.login}`:'Test mode';};
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{await navigator.clipboard.writeText(out.value);toast.textContent='OBS URL copied';toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};document.querySelector('#twitch-login').onclick=()=>{if(location.protocol==='file:'){toast.textContent='Deploy to Vercel before Twitch sign-in';toast.classList.add('is-visible');return;}location.assign('/api/auth/login');};document.querySelector('#twitch-disconnect').onclick=async()=>{await fetch(`/api/auth/session?widget=${encodeURIComponent(widget)}`,{method:'DELETE'});localStorage.removeItem(key);widget='';auth=null;authUi();update();};authUi();update();
   }
-
-  function startEditor() {
-    const form=document.querySelector('#widget-form'); const iframe=document.querySelector('#widget-preview'); const urlField=document.querySelector('#obs-url'); const toast=document.querySelector('#toast');
-    const values = () => { const raw=new FormData(form); return {...defaults,...Object.fromEntries(raw),blur:form.elements.blur.checked?'1':'0'}; };
-    const makeUrl = (preview=false) => { const q=new URLSearchParams(values());if(preview)q.set('preview','1');return `${new URL('view.html',location.href).href}?${q}`; };
-    let refreshTimer; const update = () => { const s=values();applyTheme(s);urlField.value=makeUrl();clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>iframe.src=makeUrl(true),90);document.querySelector('#opacity-value').textContent=`${s.opacity}%`; };
-    [...form.elements].forEach(el=>el.addEventListener('input',update)); [...form.elements].forEach(el=>el.addEventListener('change',update));
-    document.querySelector('#copy-url').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(urlField.value);toast.textContent='OBS用URLをコピーしました';}catch{urlField.select();document.execCommand('copy');toast.textContent='OBS用URLをコピーしました';}toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),2200);});
-    document.querySelector('.test-controls').addEventListener('click',event=>{const type=event.target.dataset.test;if(type){const targetOrigin=location.protocol==='file:'?'*':location.origin;iframe.contentWindow?.postMessage({source:'prism-editor',type},targetOrigin);}});
-    update();
-  }
-  if(page==='editor')startEditor(); else if(page==='view')startView();
+  if(page==='view')view();if(page==='editor')editor();
 })();
