@@ -1,136 +1,51 @@
-const chat = document.getElementById('chat');
-const tplMsg = document.getElementById('tpl-message');
-const tplAlert = document.getElementById('tpl-alert');
-let LIMIT = 15;
+(() => {
+  'use strict';
+  const page = document.documentElement.dataset.page;
+  const defaults = { channel:'', theme:'selene', font:'zen', bg:'glass', opacity:'78', textSize:'15', limit:'12', blur:'1' };
+  const params = new URLSearchParams(location.search);
+  const getSettings = () => Object.fromEntries(Object.keys(defaults).map(key => [key, params.get(key) ?? defaults[key]]));
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+  const nameColor = name => { let n=0; for(const char of String(name || 'viewer')) n=(n*31+char.charCodeAt(0))%360; return `hsl(${n} 82% 77%)`; };
 
-// URLパラメータを取得する関数
-function getParams() {
-  const p = new URLSearchParams(window.location.search);
-  return {
-    channel: p.get('channel') || '',
-    theme: p.get('theme') || 'selene',
-    nameFont: p.get('nameFont') || 'mplus-rounded',
-    bodyFont: p.get('bodyFont') || 'zen-kaku-gothic',
-    bgMode: p.get('bgMode') || 'gradient',
-    bgOpacity: p.get('bgOpacity') || '72'
-  };
-}
-
-function applySettings(cfg) {
-  document.body.className = `theme-${cfg.theme} nf-${cfg.nameFont} bf-${cfg.bodyFont} bg-${cfg.bgMode}`;
-  document.documentElement.style.setProperty('--bg-opacity', (Number(cfg.bgOpacity) / 100).toString());
-}
-
-function getRole(tags) {
-  const b = (tags && tags.badges) || {};
-  if (b.broadcaster) return { cls: 'sub', badge: 'broadcaster', label: '配信者' };
-  if (b.moderator || tags.mod) return { cls: 'mod', badge: 'mod', label: 'Mod' };
-  if (b.vip) return { cls: 'sub', badge: 'vip', label: 'VIP' };
-  if (b.artist) return { cls: 'sub', badge: 'artist', label: 'Artist' };
-  if (b.subscriber || tags.subscriber) return { cls: 'sub', badge: 'sub', label: 'Sub' };
-  return { cls: 'reg', badge: '', label: '' };
-}
-
-function nameColor(tags) {
-  if (tags && tags.color) return tags.color;
-  let h = 0, n = (tags && tags['display-name']) || 'u';
-  for (const c of n) h = (h * 31 + c.charCodeAt(0)) % 360;
-  return `hsl(${h} 70% 76%)`;
-}
-
-function renderMessage(displayName, tags, text) {
-  const role = getRole(tags);
-  const node = tplMsg.content.cloneNode(true);
-  const msg = node.querySelector('.msg');
-  if (role.cls === 'sub') msg.classList.add('msg--sub');
-  
-  const badge = node.querySelector('.badge');
-  if (role.badge) { badge.textContent = role.label; badge.classList.add('badge--' + role.badge); }
-  
-  const nameEl = node.querySelector('.msg__name');
-  nameEl.textContent = displayName;
-  nameEl.style.setProperty('--uc-1', nameColor(tags));
-  
-  const bubble = node.querySelector('.msg__bubble');
-  bubble.textContent = text;
-  
-  chat.prepend(node);
-  trim();
-}
-
-function renderAlert(type, kindLabel, name, amount, message) {
-  if (!tplAlert) return;
-  const node = tplAlert.content.cloneNode(true);
-  const alertEl = node.querySelector('.alert');
-  alertEl.classList.add('alert--' + type);
-  node.querySelector('.alert__kind').textContent = kindLabel;
-  
-  let html = `<span class="a-name">${name}</span> さん`;
-  if (amount) html += ` — <span class="a-amt">${amount}</span>`;
-  node.querySelector('.alert__line').innerHTML = html;
-  node.querySelector('.alert__note').textContent = message || '';
-  
-  chat.prepend(node);
-  trim();
-}
-
-function trim() {
-  while (chat.childElementCount > LIMIT) {
-    chat.lastElementChild.remove();
+  function applyTheme(settings) {
+    const body = document.body; body.classList.remove('theme-selene','theme-rose','theme-aurora','bg-glass','bg-clear','bg-black','font-zen','font-rounded','font-system','use-blur');
+    body.classList.add(`theme-${settings.theme}`, `bg-${settings.bg}`, `font-${settings.font}`);
+    if (settings.blur === '1') body.classList.add('use-blur');
+    document.documentElement.style.setProperty('--bubble-opacity', Math.min(1, Math.max(.25, Number(settings.opacity) / 100)));
+    document.documentElement.style.setProperty('--text-size', `${Math.min(22,Math.max(12,Number(settings.textSize)))}px`);
+    document.documentElement.style.setProperty('--body-font', settings.font === 'rounded' ? '"M PLUS Rounded 1c", sans-serif' : settings.font === 'system' ? 'system-ui, sans-serif' : '"Zen Kaku Gothic New", sans-serif');
   }
-}
 
-// -----------------------------------------------------------
-// ページごとの動作切り替え
-// -----------------------------------------------------------
-const cfg = getParams();
-applySettings(cfg);
-
-// view.html (OBS側) で開かれている場合：Twitchに接続
-if (window.location.pathname.includes('view.html')) {
-  if (cfg.channel) {
-    const client = new tmi.Client({
-      channels: [cfg.channel]
-    });
-
-    client.connect();
-
-    // 通常チャット受信
-    client.on('chat', (channel, userstate, message, self) => {
-      renderMessage(userstate['display-name'] || userstate.username, userstate, message);
-    });
-
-    // サブスク通知受信
-    client.on('subscription', (channel, username, method, message, userstate) => {
-      renderAlert('sub', 'New Subscriber', userstate['display-name'] || username, '', message);
-    });
-
-    // ビッツ(Cheer)受信
-    client.on('cheer', (channel, userstate, message) => {
-      renderAlert('cheer', 'Cheer', userstate['display-name'] || userstate.username, `${userstate.bits} Bits`, message);
-    });
+  function startView() {
+    const settings = getSettings(); applyTheme(settings);
+    const chat = document.querySelector('#chat'); const messageTpl = document.querySelector('#message-template'); const alertTpl = document.querySelector('#alert-template');
+    const limit = Math.max(1, Number(settings.limit) || 12);
+    const trim = () => { while(chat.childElementCount > limit) { const el=chat.lastElementChild; el.classList.add('is-leaving'); setTimeout(()=>el.remove(),310); if(chat.childElementCount<=limit+1) break; el.remove(); } };
+    const role = tags => { const b=tags.badges||''; if(b.includes('broadcaster'))return['broadcaster','配信者'];if(b.includes('moderator')||tags.mod==='1')return['mod','MOD'];if(b.includes('vip'))return['vip','VIP'];if(b.includes('subscriber')||tags.subscriber==='1')return['sub','SUB'];return['','']; };
+    const message = (name, text, tags={}) => { const f=messageTpl.content.cloneNode(true); const [kind,label]=role(tags); const badge=f.querySelector('.role-badge'); if(kind){badge.classList.add(`badge-${kind}`);badge.textContent=label;} const user=f.querySelector('.chat-message__name');user.textContent=name||'Viewer';user.style.setProperty('--user-color',tags.color||nameColor(name));f.querySelector('.chat-message__bubble').textContent=text||'';chat.prepend(f);trim(); };
+    const alert = (type, label, name, amount='', note='') => { const f=alertTpl.content.cloneNode(true); const box=f.querySelector('.chat-alert__border');box.classList.add(`alert-${type}`);f.querySelector('.chat-alert__kind').textContent=label;f.querySelector('.chat-alert__line').innerHTML=`<span class="a-name">${escapeHtml(name||'Anonymous')}</span> さん${amount?` <span class="a-amount">${escapeHtml(amount)}</span>`:''}`;const noteEl=f.querySelector('.chat-alert__note');noteEl.textContent=note||'';if(!noteEl.textContent)noteEl.remove();chat.prepend(f);trim(); };
+    window.addEventListener('message', event => { if(event.data?.source !== 'prism-editor')return; const demos={message:()=>message('星見ミカ','最高のシーン！ 今日も配信ありがとう ✨',{badges:'subscriber/6',subscriber:'1',color:'#d6a3ff'}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','メンバーになりました！'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','ナイスプレイ！'),tip:()=>alert('tip','TIP','Rin','¥500','応援しています！')};demos[event.data.type]?.(); });
+    if (params.has('preview')) { message('星見ミカ','最高のシーン！ 今日も配信ありがとう ✨',{badges:'subscriber/6',subscriber:'1',color:'#d6a3ff'});setTimeout(()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','メンバーになりました！'),180); return; }
+    if (!settings.channel || !window.tmi) return;
+    const client = new window.tmi.Client({ connection:{secure:true,reconnect:true}, options:{skipMembership:true}, channels:[settings.channel] });
+    client.on('message', (_channel,tags,text,self) => { if(!self)message(tags['display-name']||tags.username,text,tags); });
+    client.on('cheer', (_channel,tags,text) => alert('cheer','CHEER',tags['display-name']||tags.username,`${tags.bits||''} Bits`,text));
+    client.on('subscription', (_channel,user,_methods,note,tags) => alert('sub','NEW SUBSCRIBER',user,'',note));
+    client.on('resub', (_channel,user,months,note) => alert('sub','RESUBSCRIBED',user,months?`${months} months`:'',note));
+    client.on('subgift', (_channel,user,_months,recipient) => alert('gift','GIFT SUB',user,`for ${recipient}`));
+    client.on('submysterygift', (_channel,user,count) => alert('gift','GIFT SUB',user,`${count} gifted`));
+    client.connect().catch(error => console.warn('Twitch chat connection failed:', error));
   }
-} 
-// index.html (設定画面) で開かれている場合：URL生成ボタンの処理
-else {
-  const btnGen = document.getElementById('btnGenerate');
-  if (btnGen) {
-    btnGen.onclick = () => {
-      const ch = document.getElementById('inpChannel').value.trim();
-      if (!ch) {
-        alert('Twitchユーザー名を入力してください！');
-        return;
-      }
-      const theme = document.getElementById('selTheme').value;
-      const nameFont = document.getElementById('selNameFont').value;
-      const bodyFont = document.getElementById('selBodyFont').value;
-      
-      const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
-      const generatedUrl = `${baseUrl}/view.html?channel=${ch}&theme=${theme}&nameFont=${nameFont}&bodyFont=${bodyFont}&bgMode=${cfg.bgMode}`;
-      
-      navigator.clipboard.writeText(generatedUrl).then(() => {
-        alert('OBS用URLをコピーしました！OBSのブラウザソースに貼り付けてください。');
-      });
-    };
+
+  function startEditor() {
+    const form=document.querySelector('#widget-form'); const iframe=document.querySelector('#widget-preview'); const urlField=document.querySelector('#obs-url'); const toast=document.querySelector('#toast');
+    const values = () => { const raw=new FormData(form); return {...defaults,...Object.fromEntries(raw),blur:form.elements.blur.checked?'1':'0'}; };
+    const makeUrl = (preview=false) => { const q=new URLSearchParams(values());if(preview)q.set('preview','1');return `${new URL('view.html',location.href).href}?${q}`; };
+    let refreshTimer; const update = () => { const s=values();applyTheme(s);urlField.value=makeUrl();clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>iframe.src=makeUrl(true),90);document.querySelector('#opacity-value').textContent=`${s.opacity}%`; };
+    [...form.elements].forEach(el=>el.addEventListener('input',update)); [...form.elements].forEach(el=>el.addEventListener('change',update));
+    document.querySelector('#copy-url').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(urlField.value);toast.textContent='OBS用URLをコピーしました';}catch{urlField.select();document.execCommand('copy');toast.textContent='OBS用URLをコピーしました';}toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),2200);});
+    document.querySelector('.test-controls').addEventListener('click',event=>{const type=event.target.dataset.test;if(type)iframe.contentWindow?.postMessage({source:'prism-editor',type},location.origin);});
+    update();
   }
-}
+  if(page==='editor')startEditor(); else if(page==='view')startView();
+})();
