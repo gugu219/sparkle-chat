@@ -1,34 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sparkle Chat Widget</title>
+  <title>Sparkle Chat - 設定ジェネレーター</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="theme-selene nf-mplus-rounded bf-zen-kaku-gothic bg-gradient">
 
+  <div class="stage" id="stage"></div>
   <div class="chat" id="chat"></div>
+
+  <!-- 設定パネル -->
+  <div class="panel" id="panel" style="width:280px">
+    <strong style="font-size:13px; display:block; margin-bottom:8px">✨ チャットウィジェット設定</strong>
+    
+    <label>Twitchユーザー名（ID）</label>
+    <input type="text" id="inpChannel" placeholder="例: gugu219" style="width:100%; padding:6px; border-radius:6px; border:1px solid #444; background:#222; color:#fff;">
+
+    <label>配色テーマ</label>
+    <select id="selTheme">
+      <option value="selene">Séléne（紫×金）</option>
+      <option value="rose">Rosé（ローズゴールド）</option>
+      <option value="aurora">Aurora（ティール×ミント）</option>
+    </select>
+
+    <label>名前フォント</label>
+    <select id="selNameFont">
+      <option value="mplus-rounded">M PLUS Rounded 1c</option>
+      <option value="zen-maru">Zen Maru Gothic</option>
+      <option value="kiwi-maru">Kiwi Maru</option>
+      <option value="kosugi-maru">Kosugi Maru</option>
+      <option value="hachi-maru-pop">Hachi Maru Pop</option>
+      <option value="mochiy-pop">Mochiy Pop One</option>
+      <option value="dela-gothic">Dela Gothic One</option>
+    </select>
+
+    <label>本文フォント</label>
+    <select id="selBodyFont">
+      <option value="zen-kaku-gothic">Zen Kaku Gothic New</option>
+      <option value="noto-sans-jp">Noto Sans JP</option>
+      <option value="mplus-rounded">M PLUS Rounded 1c</option>
+      <option value="zen-maru">Zen Maru Gothic</option>
+    </select>
+
+    <label>コメント背景モード</label>
+    <div class="seg">
+      <button data-bg="gradient" class="on">グラデ</button>
+      <button data-bg="off">透過</button>
+      <button data-bg="black">黒背景</button>
+    </div>
+
+    <hr style="border:0; border-top:1px solid #333; margin:12px 0">
+
+    <button id="btnGenerate" style="width:100%; padding:9px; background:linear-gradient(120deg,#8b7bb5,#f4d79e); color:#1a1120; font-weight:bold; border-radius:8px; cursor:pointer">
+      📋 OBS用URLをコピー
+    </button>
+  </div>
 
   <template id="tpl-message">
     <div class="msg">
       <div class="msg__spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.6c.6 6 1 6.6 8.8 9.4C13 13.8 12.6 14.4 12 20.4 11.4 14.4 11 13.8 3.2 11 11 8.2 11.4 7.6 12 1.6Z"/></svg></div>
-      <div class="msg__head">
-        <span class="badge"></span>
-        <span class="msg__name"></span>
-      </div>
+      <div class="msg__head"><span class="badge"></span><span class="msg__name"></span></div>
       <div class="msg__bubble"></div>
-    </div>
-  </template>
-
-  <template id="tpl-alert">
-    <div class="msg">
-      <div class="alert">
-        <div class="alert__spark" style="top:8px;right:14px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.6c.6 6 1 6.6 8.8 9.4C13 13.8 12.6 14.4 12 20.4 11.4 14.4 11 13.8 3.2 11 11 8.2 11.4 7.6 12 1.6Z"/></svg></div>
-        <div class="alert__kind"></div>
-        <div class="alert__line"></div>
-        <div class="alert__note"></div>
-      </div>
     </div>
   </template>
 
