@@ -17,9 +17,15 @@
     const alert=(type,label,name,amount='',note='')=>{const f=at.content.cloneNode(true);f.querySelector('.chat-alert__border').classList.add(`alert-${type}`);f.querySelector('.chat-alert__kind').textContent=label;f.querySelector('.chat-alert__line').innerHTML=`<span class="a-name">${esc(name||'Anonymous')}</span>${amount?` <span class="a-amount">${esc(amount)}</span>`:''}`;const n=f.querySelector('.chat-alert__note');n.textContent=note||'';if(!n.textContent)n.remove();chat.prepend(f);trim();};
     window.addEventListener('message',e=>{if(e.data?.source!=='prism-editor')return;({message:()=>msg('Mika','Great stream! Thanks for today.',{subscriber:'1',badges:'subscriber/1'}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','Welcome!'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','Nice play!'),tip:()=>alert('tip','TIP','Rin','JPY 500','Good luck!')}[e.data.type]||(()=>{}))();});
     if(qs.has('preview')){document.body.classList.add('is-preview');document.querySelector('#preview-channel').textContent=`TWITCH #${s.channel||'your_channel'}`;msg('Mika','Great stream! Thanks for today.',{subscriber:'1',badges:'subscriber/1'});}
-    const auth=await session(qs.get('widget'));if(!auth||!s.channel||!window.tmi)return;
-    const c=new window.tmi.Client({connection:{secure:true,reconnect:true},identity:{username:auth.login,password:`oauth:${auth.accessToken}`},options:{skipMembership:true},channels:[s.channel]});
-    c.on('message',(_,t,text,self)=>{if(!self)msg(t['display-name']||t.username,text,t);});c.on('cheer',(_,t,text)=>alert('cheer','CHEER',t['display-name']||t.username,`${t.bits||''} Bits`,text));c.on('subscription',(_,u,_m,n)=>alert('sub','NEW SUBSCRIBER',u,'',n));c.on('resub',(_,u,m,n)=>alert('sub','RESUBSCRIBED',u,m?`${m} months`:'',n));c.on('subgift',(_,u,_m,r)=>alert('gift','GIFT SUB',u,`for ${r}`));c.connect().catch(console.warn);
+    const auth=await session(qs.get('widget'));const channel=String(s.channel||'').trim().toLowerCase();if(!channel||!window.tmi)return;
+    // チャンネル名だけでも公開チャットを読める匿名モードで接続する。
+    // Twitch認証済みの場合のみ、サブスク・Bitsなどのイベントを追加で受信する。
+    const options={connection:{secure:true,reconnect:true},options:{skipMembership:!auth},channels:[channel]};
+    if(auth)options.identity={username:auth.login,password:`oauth:${auth.accessToken}`};
+    const c=new window.tmi.Client(options);
+    c.on('message',(_,t,text,self)=>{if(!self)msg(t['display-name']||t.username,text,t);});
+    if(auth){c.on('cheer',(_,t,text)=>alert('cheer','CHEER',t['display-name']||t.username,`${t.bits||''} Bits`,text));c.on('subscription',(_,u,_m,n)=>alert('sub','NEW SUBSCRIBER',u,'',n));c.on('resub',(_,u,m,n)=>alert('sub','RESUBSCRIBED',u,m?`${m} months`:'',n));c.on('subgift',(_,u,_m,r)=>alert('gift','GIFT SUB',u,`for ${r}`));}
+    c.connect().catch(console.warn);
   }
   async function editor(){
     const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast'),key='prism-widget-id';let widget=qs.get('widget')||localStorage.getItem(key)||'',auth=await session(widget);if(qs.get('widget')){localStorage.setItem(key,widget);history.replaceState({},'',location.pathname);}
