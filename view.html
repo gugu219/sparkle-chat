@@ -1,35 +1,19 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-page="view">
 <head>
   <meta charset="utf-8">
-  <title>Sparkle Chat - OBS View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism Chat — OBS View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Twitch IRC接続ライブラリ (tmi.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/tmi.js@1.8.5/dist/tmi.min.js"></script>
 </head>
-<body style="background:transparent; overflow:hidden;">
-
-  <div class="chat" id="chat"></div>
-
-  <template id="tpl-message">
-    <div class="msg">
-      <div class="msg__spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.6c.6 6 1 6.6 8.8 9.4C13 13.8 12.6 14.4 12 20.4 11.4 14.4 11 13.8 3.2 11 11 8.2 11.4 7.6 12 1.6Z"/></svg></div>
-      <div class="msg__head"><span class="badge"></span><span class="msg__name"></span></div>
-      <div class="msg__bubble"></div>
-    </div>
-  </template>
-
-  <template id="tpl-alert">
-    <div class="msg">
-      <div class="alert">
-        <div class="alert__spark" style="top:8px;right:14px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.6c.6 6 1 6.6 8.8 9.4C13 13.8 12.6 14.4 12 20.4 11.4 14.4 11 13.8 3.2 11 11 8.2 11.4 7.6 12 1.6Z"/></svg></div>
-        <div class="alert__kind"></div>
-        <div class="alert__line"></div>
-        <div class="alert__note"></div>
-      </div>
-    </div>
-  </template>
-
+<body class="widget theme-selene bg-glass">
+  <main id="chat" class="chat-stack" aria-live="polite"></main>
+  <template id="message-template"><article class="chat-message"><i class="chat-message__node" aria-hidden="true"></i><header><span class="role-badge"></span><span class="chat-message__name"></span></header><div class="chat-message__bubble"></div></article></template>
+  <template id="alert-template"><article class="chat-alert"><i class="chat-message__node" aria-hidden="true"></i><div class="chat-alert__border"><div class="chat-alert__surface"><p class="chat-alert__kind"></p><p class="chat-alert__line"></p><p class="chat-alert__note"></p><span class="chat-alert__spark">✦</span></div></div></article></template>
+  <script src="https://unpkg.com/tmi.js@1.8.5/dist/tmi.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
