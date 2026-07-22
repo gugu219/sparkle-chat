@@ -1,0 +1,59 @@
+/* SPARKLECHAT — Frame Overlay (OBS Browser Source / 1920x1080)
+   Frame only: the centre stays fully transparent. */
+:root{
+  --fw:14px;                /* frame thickness            */
+  --fr:28px;                /* corner radius              */
+  --c1:#ffd6ec; --c2:#cde7ff; --c3:#e6d9ff; --c4:#d9fff0;
+  --glow:.55;               /* glow strength 0-1          */
+  --flow:35s;               /* gradient flow duration     */
+  --shine:7.5s;             /* light sweep duration       */
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
+.stage{position:fixed;inset:0;pointer-events:none}
+
+/* ---- shared ring geometry: rounded frame, transparent centre ---- */
+.ring{position:absolute;inset:0;border:var(--fw) solid transparent;border-radius:var(--fr);
+  -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0) border-box;
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0) border-box;
+  mask-composite:exclude}
+
+/* ---- soft halo: static, so it never repaints while animating ---- */
+.halo{position:absolute;inset:0;opacity:var(--glow);filter:blur(calc(var(--fw) * .9));transition:opacity .35s ease}
+.ring--glow{background:linear-gradient(135deg,var(--c1),var(--c2),var(--c3),var(--c4))}
+
+/* ---- aurora: GPU transform only, no repaint ---- */
+.aurora{position:absolute;inset:-60%;
+  background:conic-gradient(from 0deg,var(--c1),var(--c2),var(--c3),var(--c4),var(--c1));
+  animation:aurora-spin var(--flow) linear infinite;will-change:transform}
+@keyframes aurora-spin{to{transform:rotate(1turn)}}
+
+/* ---- glass gloss + hologram sheen running along the frame ---- */
+.gloss{position:absolute;inset:-60%;background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 46%)}
+.sheen{position:absolute;inset:-60%;opacity:.8;
+  background:linear-gradient(115deg,transparent 43%,rgba(255,255,255,.92) 50%,transparent 57%);
+  animation:sheen-sweep var(--shine) linear infinite;will-change:transform}
+@keyframes sheen-sweep{from{transform:translate3d(-55%,0,0)}to{transform:translate3d(55%,0,0)}}
+
+/* ---- sparkles ---- */
+.sparkles{position:absolute;inset:0}
+.sparkle{position:absolute;width:var(--s);height:var(--s);margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  border-radius:50%;opacity:0;will-change:opacity,transform;
+  background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.75) 35%,rgba(255,255,255,0) 70%);
+  animation:twinkle var(--d) ease-in-out var(--dl) infinite}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.35)}50%{opacity:1;transform:scale(1)}}
+.sparkle--burst{animation:sparkle-burst 1.5s ease-out forwards}
+@keyframes sparkle-burst{0%{opacity:0;transform:scale(.2)}25%{opacity:1;transform:scale(1.35)}100%{opacity:0;transform:scale(.5)}}
+
+/* ---- event reactions ---- */
+.stage.is-event .halo{opacity:calc(var(--glow) + .45)}
+.stage.ev-burst .ring--frame{animation:ev-burst 1.9s cubic-bezier(.2,.85,.25,1)}
+@keyframes ev-burst{0%{filter:none;transform:scale(1)}14%{filter:brightness(1.75) saturate(1.25);transform:scale(1.012)}100%{filter:none;transform:scale(1)}}
+.stage.ev-pulse .ring--frame{animation:ev-pulse 1.9s ease-in-out}
+@keyframes ev-pulse{0%,100%{filter:none}30%{filter:brightness(1.55)}62%{filter:brightness(1.2)}}
+.stage.ev-shine .sheen{animation-duration:.85s;opacity:1}
+.stage.ev-rainbow .ring--frame{animation:ev-rainbow 2s linear}
+@keyframes ev-rainbow{to{filter:hue-rotate(360deg)}}
+
+@media(prefers-reduced-motion:reduce){.aurora,.sheen,.sparkle{animation:none!important}}

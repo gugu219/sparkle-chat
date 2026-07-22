@@ -60,7 +60,67 @@
     const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast');
     const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0',extras:form.elements.extras.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer,frameLoaded=false,lastChannel=null;const sendLive=s=>frame.contentWindow?.postMessage({source:'prism-editor',type:'settings',settings:s},location.protocol==='file:'?'*':location.origin);const update=()=>{const s=values();apply(s);out.value=url();document.querySelector('#opacity-value').textContent=`${s.opacity}%`;document.querySelector('#wrap-value').textContent=s.wrap;if(!frameLoaded||s.channel!==lastChannel){lastChannel=s.channel;frameLoaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url(true);},400);}else sendLive(s);};
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
-    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();
   }
+
+  /* ---------- editor: overlay type tabs (chat / frame) ---------- */
+  function tabs(){
+    const bar=document.querySelector('.tab-bar');if(!bar)return;
+    bar.addEventListener('click',e=>{
+      const btn=e.target.closest('[data-tab]');if(!btn)return;
+      const name=btn.dataset.tab;
+      bar.querySelectorAll('[data-tab]').forEach(b=>{const on=b===btn;b.classList.toggle('is-active',on);b.setAttribute('aria-selected',String(on));});
+      document.querySelectorAll('[data-panel]').forEach(el=>{el.hidden=el.dataset.panel!==name;});
+      window.dispatchEvent(new CustomEvent('panelchange',{detail:name}));
+    });
+  }
+
+  /* ---------- editor: frame overlay settings ---------- */
+  function frameEditor(){
+    const form=document.querySelector('#frame-form');if(!form)return;
+    const frame=document.querySelector('#frame-preview'),out=document.querySelector('#frame-url'),toast=document.querySelector('#toast');
+    const DEF={fw:'14',fr:'28',c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',glow:'55',flow:'40',shine:'50',spark:'14',sub:'1',follow:'1',bits:'1',points:'1',donate:'1',subA:'burst',followA:'pulse',bitsA:'shine',pointsA:'rainbow',donateA:'burst',channel:''};
+    const EVENTS=['sub','follow','bits','points','donate'],UNITS={fw:'px',fr:'px',glow:'%'};
+    const target=location.protocol==='file:'?'*':location.origin;
+    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};EVENTS.forEach(k=>{v[k]=form.elements[k].checked?'1':'0';});return v;};
+    const url=()=>`${new URL('frame.html',location.href).href}?${new URLSearchParams(values())}`;
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    let timer,loaded=false,lastCh=null;
+    const update=()=>{
+      const v=values();out.value=url();
+      ['fw','fr','glow','flow','shine','spark'].forEach(k=>{const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+(UNITS[k]||'');});
+      if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
+      else frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-settings',settings:v},target);
+    };
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+
+    /* render the preview at true 1920x1080 and scale it down, so it matches OBS exactly */
+    const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
+      const sc=Math.min(r.width/1920,r.height/1080);
+      Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
+    window.addEventListener('resize',fit);
+    window.addEventListener('panelchange',e=>{if(e.detail==='frame')fit();});
+
+    document.querySelector('[data-panel=frame].test-controls')?.addEventListener('click',e=>{
+      const ev=e.target.dataset.frameEvent;if(ev)frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-event',event:ev},target);});
+    document.querySelector('#frame-copy').onclick=async()=>{update();
+      try{await navigator.clipboard.writeText(out.value);flash('枠のURLをコピーしました');}
+      catch{out.select();document.execCommand('copy');flash('枠のURLをコピーしました');}};
+
+    /* presets (localStorage) */
+    const KEY='sparklechat-frame-presets';
+    const read=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{};}catch{return{};}};
+    const write=p=>{try{localStorage.setItem(KEY,JSON.stringify(p));}catch{}};
+    const list=document.querySelector('#preset-list');
+    const refresh=()=>{const p=read();list.textContent='';const o=document.createElement('option');o.value='';o.textContent='保存済みプリセット…';list.appendChild(o);
+      Object.keys(p).forEach(n=>{const x=document.createElement('option');x.value=n;x.textContent=n;list.appendChild(x);});};
+    document.querySelector('#preset-save').onclick=()=>{const el=document.querySelector('#preset-name'),n=el.value.trim();if(!n)return;const p=read();p[n]=values();write(p);refresh();list.value=n;el.value='';flash(`プリセット「${n}」を保存しました`);};
+    document.querySelector('#preset-load').onclick=()=>{const v=read()[list.value];if(!v)return;
+      for(const k in v){const el=form.elements[k];if(!el)continue;if(el.type==='checkbox')el.checked=v[k]==='1';else el.value=v[k];}
+      update();flash('プリセットを読み込みました');};
+    document.querySelector('#preset-del').onclick=()=>{const p=read();if(!list.value||!p[list.value])return;delete p[list.value];write(p);refresh();flash('プリセットを削除しました');};
+    refresh();update();fit();
+  }
+
   if(page==='view')view();if(page==='editor')editor();
 })();

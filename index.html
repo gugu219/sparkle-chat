@@ -17,7 +17,11 @@
 
   <main class="editor-layout">
     <section class="control-panel" aria-label="ウィジェット設定">
-      <form id="widget-form" class="settings-form">
+      <div class="tab-bar" role="tablist" aria-label="オーバーレイの種類">
+        <button type="button" class="tab is-active" data-tab="chat" role="tab" aria-selected="true">チャット</button>
+        <button type="button" class="tab" data-tab="frame" role="tab" aria-selected="false">枠</button>
+      </div>
+      <form id="widget-form" class="settings-form" data-panel="chat">
         <fieldset>
           <legend>CHANNEL</legend>
           <div class="field">
@@ -99,12 +103,88 @@
           <p class="field-hint">OBSのブラウザソースに貼り付け、幅440px前後でご利用ください。</p>
         </fieldset>
       </form>
+
+      <form id="frame-form" class="settings-form" data-panel="frame" hidden>
+        <fieldset>
+          <legend>CHANNEL</legend>
+          <div class="field">
+            <label class="field-label" for="frame-channel">Twitch チャンネル名（イベント連動）</label>
+            <div class="input-with-prefix"><span>twitch.tv/</span><input id="frame-channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
+          </div>
+          <p class="field-hint">サブスク・ギフト・Bits に自動で反応します。ログイン不要。</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>FRAME</legend>
+          <div class="range-row"><label class="field-label" for="fw">フレームの太さ <output id="fw-value">14px</output></label><input id="fw" name="fw" type="range" min="2" max="60" value="14"></div>
+          <div class="range-row"><label class="field-label" for="fr">四隅の丸み <output id="fr-value">28px</output></label><input id="fr" name="fr" type="range" min="0" max="120" value="28"></div>
+          <div class="field">
+            <span class="field-label">グラデーションカラー</span>
+            <div class="color-row">
+              <input type="color" name="c1" value="#ffd6ec" aria-label="カラー1">
+              <input type="color" name="c2" value="#cde7ff" aria-label="カラー2">
+              <input type="color" name="c3" value="#e6d9ff" aria-label="カラー3">
+              <input type="color" name="c4" value="#d9fff0" aria-label="カラー4">
+            </div>
+          </div>
+          <div class="range-row"><label class="field-label" for="glow">発光の強さ <output id="glow-value">55%</output></label><input id="glow" name="glow" type="range" min="0" max="100" value="55"></div>
+          <div class="range-row"><label class="field-label" for="flow">アニメーション速度 <output id="flow-value">40</output></label><input id="flow" name="flow" type="range" min="0" max="100" value="40"></div>
+          <div class="range-row"><label class="field-label" for="shine">光が流れる速度 <output id="shine-value">50</output></label><input id="shine" name="shine" type="range" min="0" max="100" value="50"></div>
+          <div class="range-row"><label class="field-label" for="spark">キラキラの量 <output id="spark-value">14</output></label><input id="spark" name="spark" type="range" min="0" max="40" value="14"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>EVENTS</legend>
+          <div class="event-row">
+            <label class="toggle"><input type="checkbox" name="sub" checked><span class="toggle__track"></span><span>サブスク</span></label>
+            <select name="subA" aria-label="サブスクのアニメーション"><option value="burst">バースト</option><option value="pulse">パルス</option><option value="shine">シャイン</option><option value="rainbow">レインボー</option></select>
+          </div>
+          <div class="event-row">
+            <label class="toggle"><input type="checkbox" name="follow" checked><span class="toggle__track"></span><span>フォロー</span></label>
+            <select name="followA" aria-label="フォローのアニメーション"><option value="burst">バースト</option><option value="pulse" selected>パルス</option><option value="shine">シャイン</option><option value="rainbow">レインボー</option></select>
+          </div>
+          <div class="event-row">
+            <label class="toggle"><input type="checkbox" name="bits" checked><span class="toggle__track"></span><span>Bits</span></label>
+            <select name="bitsA" aria-label="Bitsのアニメーション"><option value="burst">バースト</option><option value="pulse">パルス</option><option value="shine" selected>シャイン</option><option value="rainbow">レインボー</option></select>
+          </div>
+          <div class="event-row">
+            <label class="toggle"><input type="checkbox" name="points" checked><span class="toggle__track"></span><span>チャンネルポイント</span></label>
+            <select name="pointsA" aria-label="チャンネルポイントのアニメーション"><option value="burst">バースト</option><option value="pulse">パルス</option><option value="shine">シャイン</option><option value="rainbow" selected>レインボー</option></select>
+          </div>
+          <div class="event-row">
+            <label class="toggle"><input type="checkbox" name="donate" checked><span class="toggle__track"></span><span>ドネーション</span></label>
+            <select name="donateA" aria-label="ドネーションのアニメーション"><option value="burst">バースト</option><option value="pulse">パルス</option><option value="shine">シャイン</option><option value="rainbow">レインボー</option></select>
+          </div>
+          <p class="field-hint">フォロー・ドネーションは匿名では自動検知できないため、テスト再生のみ対応です。</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>PRESET</legend>
+          <div class="preset-row">
+            <select id="preset-list" aria-label="保存済みプリセット"></select>
+            <button type="button" id="preset-load">読込</button>
+            <button type="button" id="preset-del">削除</button>
+          </div>
+          <div class="preset-row">
+            <input id="preset-name" placeholder="プリセット名" aria-label="プリセット名">
+            <button type="button" id="preset-save">保存</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="publish-box"><legend>PUBLISH</legend>
+          <label class="field-label" for="frame-url">OBSブラウザソース（枠）</label>
+          <button type="button" id="frame-copy" class="apply-btn">これらの設定をURLに反映してコピー</button>
+          <div class="url-output"><input id="frame-url" readonly aria-label="枠オーバーレイ URL"></div>
+          <p class="field-hint">チャットとは別のブラウザソースとして、1920×1080 で追加してください。</p>
+        </fieldset>
+      </form>
     </section>
 
     <section class="preview-panel" aria-label="リアルタイムプレビュー">
       <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">匿名表示 · ログイン不要</span></div>
-      <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" title="ウィジェットプレビュー"></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
-      <div class="test-controls"><span>TEST EVENT</span><button type="button" class="demo-btn" data-test="demo">▶ デモ再生 / 停止</button><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
+      <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" data-panel="chat" title="チャットプレビュー"></iframe><iframe id="frame-preview" data-panel="frame" title="枠プレビュー" hidden></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
+      <div class="test-controls" data-panel="chat"><span>TEST EVENT</span><button type="button" class="demo-btn" data-test="demo">▶ デモ再生 / 停止</button><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
+      <div class="test-controls" data-panel="frame" hidden><span>TEST EVENT</span><button type="button" data-frame-event="sub">サブスク</button><button type="button" data-frame-event="follow">フォロー</button><button type="button" data-frame-event="bits">Bits</button><button type="button" data-frame-event="points">チャンネルポイント</button><button type="button" data-frame-event="donate">ドネーション</button></div>
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>

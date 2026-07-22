@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja" data-page="frame">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPARKLECHAT — Frame Overlay</title>
+  <link rel="stylesheet" href="frame.css">
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="halo"><div class="ring ring--glow"></div></div>
+    <div class="ring ring--frame">
+      <div class="aurora"></div>
+      <div class="gloss"></div>
+      <div class="sheen"></div>
+    </div>
+    <div class="sparkles" id="sparkles"></div>
+  </div>
+  <script type="module">
+    try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
+    catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
+    await import('./frame.js');
+  </script>
+</body>
+</html>
