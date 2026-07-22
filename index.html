@@ -17,14 +17,14 @@
 
   <main class="editor-layout">
     <section class="control-panel" aria-label="ウィジェット設定">
-      <div class="panel-heading"><p class="eyebrow">CONFIGURE</p><h1>SPARKLECHAT</h1><p>設定はURLに保存されます。サーバーやログインは不要です。</p></div>
-
       <form id="widget-form" class="settings-form">
         <fieldset>
           <legend>CHANNEL</legend>
-          <label class="field-label" for="channel">Twitch チャンネル名</label>
-          <div class="input-with-prefix"><span>twitch.tv/</span><input id="channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
-          <p class="field-hint">@ は不要です。英数字とアンダースコアのみ。ログイン不要でそのまま使えます。</p>
+          <div class="field">
+            <label class="field-label" for="channel">Twitch チャンネル名</label>
+            <div class="input-with-prefix"><span>twitch.tv/</span><input id="channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
+          </div>
+          <p class="field-hint">ログイン不要でそのまま利用できます。</p>
         </fieldset>
 
         <fieldset>
@@ -54,35 +54,41 @@
               <optgroup label="その他"><option value="system">System Sans</option></optgroup>
             </select></label>
           </div>
-          <span class="field-label">背景モード</span>
-          <div class="segmented" role="group" aria-label="背景モード">
-            <label><input type="radio" name="bg" value="glass" checked><span>Glass</span></label>
-            <label><input type="radio" name="bg" value="clear"><span>透過</span></label>
-            <label><input type="radio" name="bg" value="black"><span>黒</span></label>
+          <div class="field">
+            <span class="field-label">背景モード</span>
+            <div class="segmented" role="group" aria-label="背景モード">
+              <label><input type="radio" name="bg" value="glass" checked><span>Glass</span></label>
+              <label><input type="radio" name="bg" value="clear"><span>透過</span></label>
+              <label><input type="radio" name="bg" value="black"><span>黒</span></label>
+            </div>
           </div>
-          <span class="field-label">メッセージのマーカー</span>
-          <div class="segmented" role="group" aria-label="マーカー">
-            <label><input type="radio" name="node" value="dot" checked><span>●</span></label>
-            <label><input type="radio" name="node" value="heart"><span>♥&#xFE0E;</span></label>
-            <label><input type="radio" name="node" value="star"><span>★&#xFE0E;</span></label>
-            <label><input type="radio" name="node" value="spark"><span>✦</span></label>
+          <div class="range-row"><label class="field-label" for="opacity">背景の濃さ <output id="opacity-value">78%</output></label><input id="opacity" name="opacity" type="range" min="25" max="100" value="78"></div>
+          <div class="field">
+            <span class="field-label">メッセージのマーカー</span>
+            <div class="segmented" role="group" aria-label="マーカー">
+              <label><input type="radio" name="node" value="dot" checked><span>●</span></label>
+              <label><input type="radio" name="node" value="heart"><span>♥&#xFE0E;</span></label>
+              <label><input type="radio" name="node" value="star"><span>★&#xFE0E;</span></label>
+              <label><input type="radio" name="node" value="spark"><span>✦</span></label>
+            </div>
           </div>
-          <div class="range-row"><label class="field-label" for="opacity">ガラスの濃さ <output id="opacity-value">78%</output></label><input id="opacity" name="opacity" type="range" min="25" max="100" value="78"></div>
           <div class="field-grid compact"><label class="field-label">文字サイズ (px)<input class="field-num" type="number" name="textSize" min="8" max="80" step="1" value="15" inputmode="numeric"></label><label class="field-label">表示件数<input class="field-num" type="number" name="limit" min="1" max="200" step="1" value="12" inputmode="numeric"></label></div>
           <div class="range-row"><label class="field-label" for="wrap">1行の最大文字数 <output id="wrap-value">40</output></label><input id="wrap" name="wrap" type="range" min="12" max="60" value="40"></div>
           <label class="toggle"><input type="checkbox" name="blur" checked><span class="toggle__track"></span><span>ガラスぼかし（高負荷時はOFF）</span></label>
-          <span class="field-label">識別バッジ（サブ / モデ / VIP）</span>
-          <div class="segmented" role="group" aria-label="識別バッジ表示">
-            <label><input type="radio" name="badgeStyle" value="image" checked><span>画像</span></label>
-            <label><input type="radio" name="badgeStyle" value="pill"><span>ピル（丸み）</span></label>
+          <div class="field">
+            <span class="field-label">認識バッジ（サブ / モデ / VIP）</span>
+            <div class="segmented" role="group" aria-label="認識バッジ表示">
+              <label><input type="radio" name="badgeStyle" value="image" checked><span>画像</span></label>
+              <label><input type="radio" name="badgeStyle" value="pill"><span>文字のみ</span></label>
+            </div>
           </div>
           <label class="toggle"><input type="checkbox" name="extras" checked><span class="toggle__track"></span><span>その他のバッジも表示（Bits・ギフター等）</span></label>
         </fieldset>
 
         <fieldset class="publish-box"><legend>PUBLISH</legend>
-          <label class="field-label" for="obs-url">OBSブラウザソース URL</label>
-          <button type="button" id="apply-url" class="apply-btn">現在の設定をURLに反映</button>
-          <div class="url-output"><input id="obs-url" readonly aria-label="OBSブラウザソース URL"><button type="button" id="copy-url">コピー</button></div>
+          <label class="field-label" for="obs-url">OBSブラウザソース</label>
+          <button type="button" id="copy-url" class="apply-btn">これらの設定をURLに反映してコピー</button>
+          <div class="url-output"><input id="obs-url" readonly aria-label="OBSブラウザソース URL"></div>
           <p class="field-hint">OBSのブラウザソースに貼り付け、幅440px前後でご利用ください。</p>
         </fieldset>
       </form>
