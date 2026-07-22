@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const page=document.documentElement.dataset.page;
-  const defaults={channel:'',theme:'selene',font:'zen',bg:'glass',opacity:'78',textSize:'15',limit:'12',blur:'1',node:'dot',extras:'1',wrap:'40',badgeStyle:'image'};
+  const defaults={channel:'',theme:'selene',font:'zen',bg:'glass',opacity:'78',textSize:'15',limit:'12',blur:'1',node:'dot',extras:'1',wrap:'40',badgeStyle:'image',align:'left'};
   const qs=new URLSearchParams(location.search);
   const settings=()=>Object.fromEntries(Object.keys(defaults).map(k=>[k,qs.get(k)??defaults[k]]));
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -13,7 +13,7 @@
   const loadBadges=async channel=>{if(location.protocol==='file:')return null;try{const r=await fetch(`/api/badges?channel=${encodeURIComponent(channel||'')}`);if(!r.ok)return null;const m=await r.json();return m&&!m.error?m:null;}catch{return null;}};
   const badgeImgs=(badges,extras,skipCore)=>{if(!badgeMap||!badges||typeof badges!=='object')return null;let html='';for(const set in badges){const core=BADGE_CORE.has(set);if(skipCore&&core)continue;if(!extras&&!core)continue;const url=badgeMap[`${set}/${badges[set]}`];if(url)html+=`<img class="badge-img" src="${esc(url)}" alt="${esc(set)}" title="${esc(set)}" loading="lazy">`;}return html||null;};
   const hasBadge=(t,k)=>{const b=t.badges;if(b&&typeof b==='object')return k in b;if(typeof b==='string')return b.includes(k);return false;};
-  const apply=s=>{const b=document.body;const base=page==='view'?`widget font-${s.font} node-${s.node||'dot'}`:'app-shell';b.className=`${base} theme-${s.theme} bg-${s.bg}${s.blur==='1'?' use-blur':''}`;document.documentElement.style.setProperty('--bubble-opacity',Math.max(.25,Math.min(1,+s.opacity/100)));document.documentElement.style.setProperty('--text-size',`${Math.max(8,Math.min(80,+s.textSize||15))}px`);document.documentElement.style.setProperty('--wrap',Math.max(6,Math.min(90,+s.wrap||40)));};
+  const apply=s=>{const b=document.body;const base=page==='view'?`widget font-${s.font} node-${s.node||'dot'} align-${s.align||'left'}`:'app-shell';b.className=`${base} theme-${s.theme} bg-${s.bg}${s.blur==='1'?' use-blur':''}`;document.documentElement.style.setProperty('--bubble-opacity',Math.max(.25,Math.min(1,+s.opacity/100)));document.documentElement.style.setProperty('--text-size',`${Math.max(8,Math.min(80,+s.textSize||15))}px`);document.documentElement.style.setProperty('--wrap',Math.max(6,Math.min(90,+s.wrap||40)));};
   const session=async id=>{if(!id||location.protocol==='file:')return null;try{const r=await fetch(`/api/auth/session?widget=${encodeURIComponent(id)}`);return r.ok?r.json():null;}catch{return null;}};
 
   async function view(){
