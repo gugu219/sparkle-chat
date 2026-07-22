@@ -34,23 +34,23 @@
             <label class="field-label">テーマ<select name="theme"><option value="selene">Sélène — Violet</option><option value="rose">Rosé — Pink</option><option value="aurora">Aurora — Mint</option></select></label>
             <label class="field-label">フォント<select name="font">
               <optgroup label="日本語">
-                <option value="zen">Zen Kaku Gothic（標準・読みやすい）</option>
-                <option value="noto">Noto Sans JP（読みやすい）</option>
-                <option value="rounded">M PLUS Rounded（丸ゴシック）</option>
-                <option value="maru">Zen Maru Gothic（丸・上品）</option>
-                <option value="kosugi">Kosugi Maru（丸・カジュアル）</option>
-                <option value="shippori">Shippori Mincho（明朝・きれい）</option>
-                <option value="oldmincho">Zen Old Mincho（明朝・上品）</option>
-                <option value="dot">DotGothic16（ドット）</option>
-                <option value="yuji">Yuji Syuku（筆・和風）</option>
-                <option value="klee">Klee One（手書き風）</option>
+                <option value="zen">Zen Kaku Gothic</option>
+                <option value="noto">Noto Sans JP</option>
+                <option value="rounded">M PLUS Rounded</option>
+                <option value="maru">Zen Maru Gothic</option>
+                <option value="kosugi">Kosugi Maru</option>
+                <option value="shippori">Shippori Mincho</option>
+                <option value="oldmincho">Zen Old Mincho</option>
+                <option value="dot">DotGothic16</option>
+                <option value="yuji">Yuji Syuku</option>
+                <option value="klee">Klee One</option>
               </optgroup>
               <optgroup label="English">
-                <option value="inter">Inter（clean）</option>
-                <option value="poppins">Poppins（geometric）</option>
-                <option value="grotesk">Space Grotesk（modern）</option>
-                <option value="playfair">Playfair Display（elegant）</option>
-                <option value="pixel">VT323（pixel / dot）</option>
+                <option value="inter">Inter</option>
+                <option value="poppins">Poppins</option>
+                <option value="grotesk">Space Grotesk</option>
+                <option value="playfair">Playfair Display</option>
+                <option value="pixel">VT323</option>
               </optgroup>
               <optgroup label="その他"><option value="system">System Sans</option></optgroup>
             </select></label>
@@ -67,7 +67,6 @@
             <label><input type="radio" name="node" value="heart"><span>♥&#xFE0E;</span></label>
             <label><input type="radio" name="node" value="star"><span>★&#xFE0E;</span></label>
             <label><input type="radio" name="node" value="spark"><span>✦</span></label>
-            <label><input type="radio" name="node" value="diamond"><span>◆</span></label>
           </div>
           <div class="range-row"><label class="field-label" for="opacity">ガラスの濃さ <output id="opacity-value">78%</output></label><input id="opacity" name="opacity" type="range" min="25" max="100" value="78"></div>
           <div class="field-grid compact"><label class="field-label">文字サイズ (px)<input class="field-num" type="number" name="textSize" min="8" max="80" step="1" value="15" inputmode="numeric"></label><label class="field-label">表示件数<input class="field-num" type="number" name="limit" min="1" max="200" step="1" value="12" inputmode="numeric"></label></div>
@@ -87,7 +86,7 @@
     <section class="preview-panel" aria-label="リアルタイムプレビュー">
       <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">未認証 · テスト表示</span></div>
       <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" title="ウィジェットプレビュー"></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
-      <div class="test-controls"><span>TEST EVENT</span><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="tip">Tip</button></div>
+      <div class="test-controls"><span>TEST EVENT</span><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
