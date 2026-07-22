@@ -60,7 +60,14 @@
     const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast');
     const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0',extras:form.elements.extras.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer,frameLoaded=false,lastChannel=null;const sendLive=s=>frame.contentWindow?.postMessage({source:'prism-editor',type:'settings',settings:s},location.protocol==='file:'?'*':location.origin);const update=()=>{const s=values();apply(s);out.value=url();document.querySelector('#opacity-value').textContent=`${s.opacity}%`;document.querySelector('#wrap-value').textContent=s.wrap;if(!frameLoaded||s.channel!==lastChannel){lastChannel=s.channel;frameLoaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url(true);},400);}else sendLive(s);};
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
-    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();collapsibles();
+  }
+
+  /* ---------- editor: collapsible sections ---------- */
+  function collapsibles(){
+    document.querySelectorAll('.settings-form legend').forEach(lg=>{
+      lg.addEventListener('click',()=>lg.parentElement.classList.toggle('is-collapsed'));
+    });
   }
 
   /* ---------- editor: overlay type tabs (chat / frame) ---------- */
@@ -84,12 +91,21 @@
       glow:'55',flow:'40',shine:'50',spark:'14',
       sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',
       subA:'burst',giftA:'burst',followA:'pulse',bitsA:'shine',pointsA:'rainbow',donateA:'burst',
-      subP:'1',giftP:'1',followP:'0',bitsP:'0',pointsP:'0',donateP:'1',
-      pshape:'mix',pcount:'18',psize:'28',pspeed:'50',popa:'80',channel:''};
+      subP:'1',giftP:'1',followP:'0',bitsP:'1',pointsP:'0',donateP:'1',channel:''};
     const EVENTS=['sub','gift','follow','bits','points','donate'];
+    const EV_LABEL={sub:'サブスク',gift:'サブギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ'};
+    /* per-event particle defaults: shape, motion, count, size, speed, opacity */
+    const P_DEF={sub:['heart','pile','5','38','50','90'],gift:['heart','fall','14','30','55','85'],
+      follow:['shine','float','10','24','40','80'],bits:['coin','rise','14','26','60','85'],
+      points:['shine','rise','12','26','50','80'],donate:['mix','fall','16','32','50','85']};
+    const SHAPE_OPTS=[['heart','♥︎'],['coin','●'],['shine','✦'],['mix','ミックス']];
+    const MOTION_OPTS=[['rise','下から'],['fall','上から'],['float','ふわふわ'],['pile','積もる']];
+    EVENTS.forEach(e=>{const[sh,mo,ct,sz,sp,op]=P_DEF[e];
+      Object.assign(DEF,{[e+'pShape']:sh,[e+'pMotion']:mo,[e+'pCount']:ct,[e+'pSize']:sz,[e+'pSpeed']:sp,[e+'pOpa']:op,[e+'pCMode']:'mix',[e+'pC']:'#ffd6ec'});});
     const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P')];
-    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%',psize:'px',popa:'%'};
-    const OUTS=['fw','fr','fri','glow','flow','shine','spark','pcount','psize','pspeed','popa'];
+    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%'};
+    const OUTS=['fw','fr','fri','glow','flow','shine','spark'];
+    const P_OUTS=['pCount','pSize','pSpeed','pOpa'],P_UNITS={pSize:'px',pOpa:'%'};
     const target=location.protocol==='file:'?'*':location.origin;
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
     const url=()=>`${new URL('frame.html',location.href).href}?${new URLSearchParams(values())}`;
@@ -98,10 +114,40 @@
     const update=()=>{
       const v=values();out.value=url();
       OUTS.forEach(k=>{const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+(UNITS[k]||'');});
+      EVENTS.forEach(e=>P_OUTS.forEach(k=>{const el=document.querySelector(`#${e}${k}-value`);if(el)el.textContent=v[e+k]+(P_UNITS[k]||'');}));
       if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
       else frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-settings',settings:v},target);
     };
+    /* per-event particle panels (one block per event, switched by the tabs above) */
+    (()=>{
+      const tabs=document.querySelector('#pev-tabs'),host=document.querySelector('#particle-panels');
+      if(!tabs||!host)return;
+      tabs.textContent='';host.textContent='';
+      EVENTS.forEach((e,i)=>{
+        const b=document.createElement('button');b.type='button';b.className='pev'+(i?'':' is-active');b.dataset.pev=e;b.textContent=EV_LABEL[e];tabs.appendChild(b);
+        const[sh,mo,ct,sz,sp,op]=P_DEF[e];
+        const panel=document.createElement('div');panel.className='pblock';panel.dataset.pev=e;if(i)panel.hidden=true;
+        const range=(key,label,min,max,val,unit)=>`<div class="range-row"><label class="field-label" for="${e}${key}">${label} <output id="${e}${key}-value">${val}${unit}</output></label><input id="${e}${key}" name="${e}${key}" type="range" min="${min}" max="${max}" value="${val}"></div>`;
+        panel.innerHTML=
+          `<div class="field"><span class="field-label">形</span><div class="segmented">`
+          +SHAPE_OPTS.map(([v,l])=>`<label><input type="radio" name="${e}pShape" value="${v}"${v===sh?' checked':''}><span>${l}</span></label>`).join('')
+          +`</div></div><div class="field"><span class="field-label">動き</span><div class="segmented">`
+          +MOTION_OPTS.map(([v,l])=>`<label><input type="radio" name="${e}pMotion" value="${v}"${v===mo?' checked':''}><span>${l}</span></label>`).join('')
+          +`</div></div>`
+          +range('pCount','量',0,60,ct,'')+range('pSize','大きさ',8,90,sz,'px')
+          +range('pSpeed','速さ',0,100,sp,'')+range('pOpa','濃さ',10,100,op,'%')
+          +`<div class="field"><span class="field-label">カラー</span><div class="preset-row">`
+          +`<select name="${e}pCMode"><option value="mix">枠カラーをミックス</option><option value="solid">指定色</option></select>`
+          +`<input type="color" name="${e}pC" value="#ffd6ec"></div></div>`;
+        host.appendChild(panel);
+      });
+      tabs.addEventListener('click',ev=>{const b=ev.target.closest('[data-pev]');if(!b)return;
+        tabs.querySelectorAll('.pev').forEach(x=>x.classList.toggle('is-active',x===b));
+        host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.pev!==b.dataset.pev;});});
+    })();
+
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+    document.querySelector('#frame-clear')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-clear'},target));
 
     /* colour count: show only the swatches in use (2-8) */
     const syncColors=()=>{const n=Math.max(2,Math.min(8,Math.round(+form.elements.ccount.value)||4));

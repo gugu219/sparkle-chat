@@ -3,6 +3,21 @@
 (() => {
   'use strict';
 
+  const EVENTS = ['sub', 'gift', 'follow', 'bits', 'points', 'donate'];
+  const STYLES = ['burst', 'pulse', 'shine', 'rainbow'];
+  const MOTIONS = ['rise', 'fall', 'float', 'pile'];
+  const SHAPES = { heart: 'var(--m-heart)', coin: 'var(--m-coin)', shine: 'var(--m-shine)' };
+
+  /* per-event particle defaults: shape, motion, count, size, speed, opacity */
+  const P_DEF = {
+    sub:    ['heart', 'pile',  '5',  '38', '50', '90'],
+    gift:   ['heart', 'fall',  '14', '30', '55', '85'],
+    follow: ['shine', 'float', '10', '24', '40', '80'],
+    bits:   ['coin',  'rise',  '14', '26', '60', '85'],
+    points: ['shine', 'rise',  '12', '26', '50', '80'],
+    donate: ['mix',   'fall',  '16', '32', '50', '85']
+  };
+
   const DEFAULTS = {
     fw: '14', fr: '28', fri: '14',
     mode: 'gradient', ccount: '4',
@@ -11,13 +26,17 @@
     glow: '55', flow: '40', shine: '50', spark: '14',
     sub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
     subA: 'burst', giftA: 'burst', followA: 'pulse', bitsA: 'shine', pointsA: 'rainbow', donateA: 'burst',
-    subP: '1', giftP: '1', followP: '0', bitsP: '0', pointsP: '0', donateP: '1',
-    pshape: 'mix', pcount: '18', psize: '28', pspeed: '50', popa: '80',
+    subP: '1', giftP: '1', followP: '0', bitsP: '1', pointsP: '0', donateP: '1',
     channel: ''
   };
-  const EVENTS = ['sub', 'gift', 'follow', 'bits', 'points', 'donate'];
-  const STYLES = ['burst', 'pulse', 'shine', 'rainbow'];
-  const SHAPES = { heart: 'var(--m-heart)', coin: 'var(--m-coin)', shine: 'var(--m-shine)' };
+  EVENTS.forEach(e => {
+    const [sh, mo, ct, sz, sp, op] = P_DEF[e];
+    Object.assign(DEFAULTS, {
+      [e + 'pShape']: sh, [e + 'pMotion']: mo, [e + 'pCount']: ct,
+      [e + 'pSize']: sz, [e + 'pSpeed']: sp, [e + 'pOpa']: op,
+      [e + 'pCMode']: 'mix', [e + 'pC']: '#ffd6ec'
+    });
+  });
 
   const qs = new URLSearchParams(location.search);
   let s = Object.fromEntries(Object.keys(DEFAULTS).map(k => [k, qs.get(k) ?? DEFAULTS[k]]));
@@ -78,7 +97,6 @@
     root.style.setProperty('--glow', (clamp(s.glow, 0, 100) / 100).toFixed(3));
     root.style.setProperty('--flow', ((110 - clamp(s.flow, 0, 100)) / 2).toFixed(1) + 's');
     root.style.setProperty('--shine', ((110 - clamp(s.shine, 0, 100)) / 8).toFixed(2) + 's');
-    root.style.setProperty('--po', (clamp(s.popa, 0, 100) / 100).toFixed(2));
     buildMask();
     buildSparkles();
   }
@@ -103,35 +121,89 @@
     for (let i = 0; i < n; i++) sparkles.appendChild(makeSparkle(offset, false));
   }
 
-  /* ---- screen particles: hearts / coins / shine ---- */
-  function spawnParticles() {
-    const n = Math.round(clamp(s.pcount, 0, 120));
-    if (!n) return;
-    const size = clamp(s.psize, 6, 200);
-    const base = 2.6 - clamp(s.pspeed, 0, 100) / 100 * 1.6;   /* 2.6s .. 1.0s */
+  /* ---- pile: a simple height-map so items stack instead of overlapping ---- */
+  const PILE_MAX = 340;
+  let pileCols = null, pileItems = [];
+  function pileClear() { pileCols = null; pileItems.forEach(el => el.remove()); pileItems = []; }
+  function pileLanding(xPct, size) {
+    const W = stage.clientWidth || 1920, H = stage.clientHeight || 1080;
+    const colW = Math.max(18, size * .75), n = Math.max(1, Math.ceil(W / colW));
+    if (!pileCols || pileCols.length !== n) pileCols = new Array(n).fill(0);
+    const i = Math.min(n - 1, Math.max(0, Math.floor(xPct / 100 * n)));
+    let h = pileCols[i];
+    if (h > H - size * 1.2) h = 0;                 /* column full -> start a fresh layer */
+    pileCols[i] = h + size * .7;                   /* overlap slightly so it reads as a heap */
+    return H - size - h;
+  }
+
+  /* ---- screen particles ---- */
+  function spawnParticles(kind, mult) {
+    const cfg = {
+      shape: s[kind + 'pShape'] || 'mix',
+      motion: MOTIONS.includes(s[kind + 'pMotion']) ? s[kind + 'pMotion'] : 'rise',
+      count: Math.round(clamp(s[kind + 'pCount'], 0, 120) * Math.max(1, mult || 1)),
+      size: clamp(s[kind + 'pSize'], 6, 200),
+      speed: clamp(s[kind + 'pSpeed'], 0, 100),
+      opa: clamp(s[kind + 'pOpa'], 0, 100) / 100,
+      solid: s[kind + 'pCMode'] === 'solid',
+      col: hex(s[kind + 'pC'], '#ffd6ec')
+    };
+    if (!cfg.count) return;
     const cs = palette(), keys = Object.keys(SHAPES);
-    for (let i = 0; i < n; i++) {
+    const base = 2.8 - cfg.speed / 100 * 1.8;      /* 2.8s .. 1.0s */
+    const H = stage.clientHeight || 1080;
+    for (let i = 0; i < Math.min(cfg.count, 200); i++) {
       const el = document.createElement('i');
-      el.className = 'particle';
-      const shape = s.pshape === 'mix' ? pick(keys) : (SHAPES[s.pshape] ? s.pshape : 'shine');
+      const shape = cfg.shape === 'mix' ? pick(keys) : (SHAPES[cfg.shape] ? cfg.shape : 'shine');
+      const size = cfg.size * (.65 + Math.random() * .7);
+      const x = Math.random() * 100;
+      el.className = 'particle p-' + cfg.motion;
       el.style.setProperty('--pm', SHAPES[shape]);
-      el.style.setProperty('--ps', (size * (.6 + Math.random() * .8)).toFixed(1) + 'px');
-      el.style.left = (Math.random() * 100).toFixed(2) + '%';
-      el.style.top = (72 + Math.random() * 32).toFixed(2) + '%';
-      el.style.setProperty('--pdx', ((Math.random() - .5) * 240).toFixed(0) + 'px');
-      el.style.setProperty('--pdy', (-(240 + Math.random() * 460)).toFixed(0) + 'px');
-      el.style.setProperty('--pr', ((Math.random() - .5) * 240).toFixed(0) + 'deg');
-      el.style.setProperty('--pd', (base * (.75 + Math.random() * .6)).toFixed(2) + 's');
-      el.style.setProperty('--pc1', pick(cs));
-      el.style.setProperty('--pc2', pick(cs));
+      el.style.setProperty('--ps', size.toFixed(1) + 'px');
+      el.style.setProperty('--po', cfg.opa.toFixed(2));
+      el.style.setProperty('--pc1', cfg.solid ? cfg.col : pick(cs));
+      el.style.setProperty('--pc2', cfg.solid ? cfg.col : pick(cs));
+      el.style.left = x.toFixed(2) + '%';
+      let dur = base * (.75 + Math.random() * .6), spin = 240;
+
+      if (cfg.motion === 'rise') {
+        el.style.top = (72 + Math.random() * 32).toFixed(2) + '%';
+        el.style.setProperty('--pdx', ((Math.random() - .5) * 240).toFixed(0) + 'px');
+        el.style.setProperty('--pdy', (-(240 + Math.random() * 460)).toFixed(0) + 'px');
+      } else if (cfg.motion === 'fall') {
+        const off = size + Math.random() * 120;
+        el.style.top = (-off).toFixed(0) + 'px';
+        el.style.setProperty('--pdx', ((Math.random() - .5) * 220).toFixed(0) + 'px');
+        el.style.setProperty('--pdy', (H + off + size).toFixed(0) + 'px');
+      } else if (cfg.motion === 'float') {
+        el.style.top = (Math.random() * 88).toFixed(2) + '%';
+        el.style.setProperty('--pdx', ((Math.random() - .5) * 170).toFixed(0) + 'px');
+        el.style.setProperty('--pdy', (-(40 + Math.random() * 150)).toFixed(0) + 'px');
+        dur = base * (1.7 + Math.random() * 1.3);
+      } else {                                      /* pile */
+        const off = size + Math.random() * 90;
+        el.style.top = (-off).toFixed(0) + 'px';
+        el.style.setProperty('--pdx', ((Math.random() - .5) * 40).toFixed(0) + 'px');
+        el.style.setProperty('--pdy', (pileLanding(x, size) + off).toFixed(0) + 'px');
+        dur = base * (.9 + Math.random() * .5);
+        spin = 90;
+      }
+      el.style.setProperty('--pr', ((Math.random() - .5) * spin).toFixed(0) + 'deg');
+      el.style.setProperty('--pd', dur.toFixed(2) + 's');
       particles.appendChild(el);
-      setTimeout(() => el.remove(), 4600);
+
+      if (cfg.motion === 'pile') {
+        pileItems.push(el);
+        while (pileItems.length > PILE_MAX) pileItems.shift().remove();
+      } else {
+        setTimeout(() => el.remove(), (dur + 1.4) * 1000);
+      }
     }
   }
 
   /* ---- event reaction ---- */
   let evTimer = null;
-  function fire(kind) {
+  function fire(kind, mult) {
     if (!EVENTS.includes(kind) || s[kind] !== '1') return;      /* per-event ON/OFF */
     const style = STYLES.includes(s[kind + 'A']) ? s[kind + 'A'] : 'burst';
     stage.classList.remove('is-event', ...STYLES.map(x => 'ev-' + x));
@@ -143,7 +215,7 @@
       sparkles.appendChild(sp);
       setTimeout(() => sp.remove(), 1600);
     }
-    if (s[kind + 'P'] === '1') spawnParticles();
+    if (s[kind + 'P'] === '1') spawnParticles(kind, mult);
     clearTimeout(evTimer);
     evTimer = setTimeout(() => stage.classList.remove('is-event', ...STYLES.map(x => 'ev-' + x)), 2200);
   }
@@ -152,7 +224,8 @@
   window.addEventListener('message', e => {
     if (e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'frame-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
-    if (e.data.type === 'frame-event') fire(e.data.event);
+    if (e.data.type === 'frame-clear') { pileClear(); particles.textContent = ''; return; }
+    if (e.data.type === 'frame-event') fire(e.data.event, e.data.mult);
   });
 
   apply();
@@ -169,12 +242,12 @@
       options: { skipMembership: true },
       channels: [channel]
     });
-    c.on('subscription', () => fire('sub'));
-    c.on('resub', () => fire('sub'));
-    c.on('subgift', () => fire('gift'));
-    c.on('submysterygift', () => fire('gift'));
-    c.on('cheer', () => fire('bits'));
-    c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) fire('points'); });
+    c.on('subscription', () => fire('sub', 1));
+    c.on('resub', () => fire('sub', 1));
+    c.on('subgift', () => fire('gift', 1));
+    c.on('submysterygift', (_ch, _u, n) => fire('gift', Math.max(1, Math.min(20, +n || 1))));
+    c.on('cheer', (_ch, t) => fire('bits', Math.max(1, Math.min(10, Math.round((+(t && t.bits) || 100) / 100)))));
+    c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) fire('points', 1); });
     c.connect().catch(err => console.warn('[sparklechat] frame connect failed', err));
   }
 })();

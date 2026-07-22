@@ -150,7 +150,7 @@
           <div class="range-row"><label class="field-label" for="spark">キラキラの量 <output id="spark-value">14</output></label><input id="spark" name="spark" type="range" min="0" max="40" value="14"></div>
         </fieldset>
 
-        <fieldset>
+        <fieldset class="is-collapsed">
           <legend>EVENTS</legend>
           <p class="field-hint">左＝ON/OFF ／ 中＝枠のアニメーション ／ 右✨＝画面パーティクル</p>
           <div class="event-row">
@@ -171,7 +171,7 @@
           <div class="event-row">
             <label class="toggle"><input type="checkbox" name="bits" checked><span class="toggle__track"></span><span>Bits</span></label>
             <select name="bitsA" aria-label="Bitsのアニメーション"><option value="burst">バースト</option><option value="pulse">パルス</option><option value="shine" selected>シャイン</option><option value="rainbow">レインボー</option></select>
-            <label class="mini-check" title="画面パーティクルを出す"><input type="checkbox" name="bitsP"><span>✨</span></label>
+            <label class="mini-check" title="画面パーティクルを出す"><input type="checkbox" name="bitsP" checked><span>✨</span></label>
           </div>
           <div class="event-row">
             <label class="toggle"><input type="checkbox" name="points" checked><span class="toggle__track"></span><span>チャンネルポイント</span></label>
@@ -186,25 +186,17 @@
           <p class="field-hint">フォロー・ドネーションは匿名では自動検知できないため、テスト再生のみ対応です。</p>
         </fieldset>
 
-        <fieldset>
+        <fieldset class="is-collapsed">
           <legend>PARTICLE</legend>
           <div class="field">
-            <span class="field-label">形</span>
-            <div class="segmented" role="group" aria-label="パーティクルの形">
-              <label><input type="radio" name="pshape" value="heart"><span>♥&#xFE0E;</span></label>
-              <label><input type="radio" name="pshape" value="coin"><span>●</span></label>
-              <label><input type="radio" name="pshape" value="shine"><span>✦</span></label>
-              <label><input type="radio" name="pshape" value="mix" checked><span>ミックス</span></label>
-            </div>
+            <span class="field-label">編集するイベント</span>
+            <div class="pev-tabs" id="pev-tabs"></div>
           </div>
-          <div class="range-row"><label class="field-label" for="pcount">量 <output id="pcount-value">18</output></label><input id="pcount" name="pcount" type="range" min="0" max="80" value="18"></div>
-          <div class="range-row"><label class="field-label" for="psize">大きさ <output id="psize-value">28px</output></label><input id="psize" name="psize" type="range" min="8" max="90" value="28"></div>
-          <div class="range-row"><label class="field-label" for="pspeed">速さ <output id="pspeed-value">50</output></label><input id="pspeed" name="pspeed" type="range" min="0" max="100" value="50"></div>
-          <div class="range-row"><label class="field-label" for="popa">濃さ <output id="popa-value">80%</output></label><input id="popa" name="popa" type="range" min="10" max="100" value="80"></div>
-          <p class="field-hint">枠のカラーを使って描画するので、画面になじみます。</p>
+          <div id="particle-panels"></div>
+          <p class="field-hint">イベントごとに 形・動き・量・大きさ・速さ・濃さ・色 を個別設定できます。「積もる」は下に溜まっていきます。</p>
         </fieldset>
 
-        <fieldset>
+        <fieldset class="is-collapsed">
           <legend>PRESET</legend>
           <div class="preset-row">
             <select id="preset-list" aria-label="保存済みプリセット"></select>
@@ -230,7 +222,7 @@
       <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">匿名表示 · ログイン不要</span></div>
       <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" data-panel="chat" title="チャットプレビュー"></iframe><iframe id="frame-preview" data-panel="frame" title="枠プレビュー" hidden></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
       <div class="test-controls" data-panel="chat"><span>TEST EVENT</span><button type="button" class="demo-btn" data-test="demo">▶ デモ再生 / 停止</button><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
-      <div class="test-controls" data-panel="frame" hidden><span>TEST EVENT</span><button type="button" data-frame-event="sub">サブスク</button><button type="button" data-frame-event="gift">サブギフト</button><button type="button" data-frame-event="follow">フォロー</button><button type="button" data-frame-event="bits">Bits</button><button type="button" data-frame-event="points">チャンネルポイント</button><button type="button" data-frame-event="donate">ドネーション</button></div>
+      <div class="test-controls" data-panel="frame" hidden><span>TEST EVENT</span><button type="button" data-frame-event="sub">サブスク</button><button type="button" data-frame-event="gift">サブギフト</button><button type="button" data-frame-event="follow">フォロー</button><button type="button" data-frame-event="bits">Bits</button><button type="button" data-frame-event="points">チャンネルポイント</button><button type="button" data-frame-event="donate">ドネーション</button><button type="button" id="frame-clear">クリア</button></div>
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>

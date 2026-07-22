@@ -70,11 +70,26 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
   background:linear-gradient(140deg,var(--pc1),var(--pc2));
   -webkit-mask:var(--pm) center/contain no-repeat;mask:var(--pm) center/contain no-repeat;
   filter:drop-shadow(0 0 8px var(--pc1));will-change:transform,opacity;
-  animation:particle-float var(--pd) cubic-bezier(.22,.7,.3,1) forwards}
-@keyframes particle-float{
-  0%{opacity:0;transform:translate3d(0,0,0) scale(.4) rotate(0deg)}
-  12%{opacity:var(--po)}
-  68%{opacity:var(--po)}
-  100%{opacity:0;transform:translate3d(var(--pdx),var(--pdy),0) scale(1.1) rotate(var(--pr))}}
+  animation-duration:var(--pd);animation-fill-mode:forwards;animation-timing-function:cubic-bezier(.22,.7,.3,1)}
+.p-rise{animation-name:p-rise}
+.p-fall{animation-name:p-fall}
+.p-float{animation-name:p-float;animation-timing-function:ease-in-out}
+.p-pile{animation-name:p-pile;animation-timing-function:cubic-bezier(.45,0,.85,.55)}
+@keyframes p-rise{0%{opacity:0;transform:translate3d(0,0,0) scale(.4) rotate(0deg)}12%{opacity:var(--po)}
+  68%{opacity:var(--po)}100%{opacity:0;transform:translate3d(var(--pdx),var(--pdy),0) scale(1.1) rotate(var(--pr))}}
+@keyframes p-fall{0%{opacity:0;transform:translate3d(0,0,0) scale(.55) rotate(0deg)}10%{opacity:var(--po)}
+  74%{opacity:var(--po)}100%{opacity:0;transform:translate3d(var(--pdx),var(--pdy),0) scale(1) rotate(var(--pr))}}
+@keyframes p-float{0%{opacity:0;transform:translate3d(0,0,0) scale(.6) rotate(0deg)}18%{opacity:var(--po)}
+  50%{transform:translate3d(calc(var(--pdx) * .45),calc(var(--pdy) * .5),0) scale(1) rotate(calc(var(--pr) * .5))}
+  82%{opacity:var(--po)}100%{opacity:0;transform:translate3d(var(--pdx),var(--pdy),0) scale(.92) rotate(var(--pr))}}
+/* gravity fall, bounce, then rest on the pile */
+@keyframes p-pile{
+  0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg)}
+  8%{opacity:var(--po)}
+  64%{transform:translate3d(var(--pdx),var(--pdy),0) rotate(var(--pr));animation-timing-function:cubic-bezier(.2,.7,.4,1)}
+  76%{transform:translate3d(var(--pdx),calc(var(--pdy) - 24px),0) rotate(var(--pr))}
+  88%{transform:translate3d(var(--pdx),var(--pdy),0) rotate(var(--pr))}
+  95%{transform:translate3d(var(--pdx),calc(var(--pdy) - 8px),0) rotate(var(--pr))}
+  100%{opacity:var(--po);transform:translate3d(var(--pdx),var(--pdy),0) rotate(var(--pr))}}
 
 @media(prefers-reduced-motion:reduce){.aurora,.sheen,.sparkle,.particle{animation:none!important}}
