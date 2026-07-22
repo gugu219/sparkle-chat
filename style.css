@@ -11,8 +11,12 @@
 /* Frame settings controls */
 .color-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .color-row input[type=color]{width:100%;height:38px;padding:2px;border:1px solid rgba(255,255,255,.12);border-radius:9px;background:#121321;cursor:pointer}
-.event-row{display:grid;grid-template-columns:1fr 118px;gap:10px;align-items:center}
+.event-row{display:grid;grid-template-columns:1fr 112px 42px;gap:9px;align-items:center}
 .event-row select{height:34px}
+.mini-check{position:relative;display:grid;place-items:center;height:34px;border:1px solid rgba(255,255,255,.12);border-radius:9px;background:rgba(0,0,0,.2);color:#6f7288;font-size:14px;cursor:pointer;transition:.16s}
+.mini-check input{position:absolute;opacity:0}
+.mini-check:hover{color:#c9ccdd}
+.mini-check:has(input:checked){border-color:transparent;background:linear-gradient(115deg,var(--accent),var(--accent-2));color:#171426}
 .preset-row{display:flex;gap:7px}
 .preset-row select,.preset-row input{flex:1;min-width:0;height:36px;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:0 10px;background:#121321;color:#f2f2fb;outline:0;font-size:12px}
 .preset-row button{flex:none;border:0;border-radius:8px;padding:0 13px;background:#292b40;color:#d9daea;font-size:11px;font-weight:800;cursor:pointer}

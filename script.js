@@ -79,20 +79,38 @@
   function frameEditor(){
     const form=document.querySelector('#frame-form');if(!form)return;
     const frame=document.querySelector('#frame-preview'),out=document.querySelector('#frame-url'),toast=document.querySelector('#toast');
-    const DEF={fw:'14',fr:'28',c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',glow:'55',flow:'40',shine:'50',spark:'14',sub:'1',follow:'1',bits:'1',points:'1',donate:'1',subA:'burst',followA:'pulse',bitsA:'shine',pointsA:'rainbow',donateA:'burst',channel:''};
-    const EVENTS=['sub','follow','bits','points','donate'],UNITS={fw:'px',fr:'px',glow:'%'};
+    const DEF={fw:'14',fr:'28',fri:'14',mode:'gradient',ccount:'4',
+      c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',c5:'#fff3c4',c6:'#ffd9d9',c7:'#d9f2ff',c8:'#f0d9ff',
+      glow:'55',flow:'40',shine:'50',spark:'14',
+      sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',
+      subA:'burst',giftA:'burst',followA:'pulse',bitsA:'shine',pointsA:'rainbow',donateA:'burst',
+      subP:'1',giftP:'1',followP:'0',bitsP:'0',pointsP:'0',donateP:'1',
+      pshape:'mix',pcount:'18',psize:'28',pspeed:'50',popa:'80',channel:''};
+    const EVENTS=['sub','gift','follow','bits','points','donate'];
+    const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P')];
+    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%',psize:'px',popa:'%'};
+    const OUTS=['fw','fr','fri','glow','flow','shine','spark','pcount','psize','pspeed','popa'];
     const target=location.protocol==='file:'?'*':location.origin;
-    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};EVENTS.forEach(k=>{v[k]=form.elements[k].checked?'1':'0';});return v;};
+    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
     const url=()=>`${new URL('frame.html',location.href).href}?${new URLSearchParams(values())}`;
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     let timer,loaded=false,lastCh=null;
     const update=()=>{
       const v=values();out.value=url();
-      ['fw','fr','glow','flow','shine','spark'].forEach(k=>{const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+(UNITS[k]||'');});
+      OUTS.forEach(k=>{const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+(UNITS[k]||'');});
       if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
       else frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-settings',settings:v},target);
     };
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+
+    /* colour count: show only the swatches in use (2-8) */
+    const syncColors=()=>{const n=Math.max(2,Math.min(8,Math.round(+form.elements.ccount.value)||4));
+      form.elements.ccount.value=String(n);
+      form.querySelectorAll('#color-row input[type=color]').forEach((el,i)=>{el.hidden=i>=n;});
+      const cv=document.querySelector('#ccount-value');if(cv)cv.textContent=n+'色';};
+    const bumpColors=d=>{form.elements.ccount.value=String((+form.elements.ccount.value||4)+d);syncColors();update();};
+    document.querySelector('#color-add').onclick=()=>bumpColors(1);
+    document.querySelector('#color-del').onclick=()=>bumpColors(-1);
 
     /* render the preview at true 1920x1080 and scale it down, so it matches OBS exactly */
     const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
@@ -117,9 +135,9 @@
     document.querySelector('#preset-save').onclick=()=>{const el=document.querySelector('#preset-name'),n=el.value.trim();if(!n)return;const p=read();p[n]=values();write(p);refresh();list.value=n;el.value='';flash(`プリセット「${n}」を保存しました`);};
     document.querySelector('#preset-load').onclick=()=>{const v=read()[list.value];if(!v)return;
       for(const k in v){const el=form.elements[k];if(!el)continue;if(el.type==='checkbox')el.checked=v[k]==='1';else el.value=v[k];}
-      update();flash('プリセットを読み込みました');};
+      syncColors();update();flash('プリセットを読み込みました');};
     document.querySelector('#preset-del').onclick=()=>{const p=read();if(!list.value||!p[list.value])return;delete p[list.value];write(p);refresh();flash('プリセットを削除しました');};
-    refresh();update();fit();
+    refresh();syncColors();update();fit();
   }
 
   if(page==='view')view();if(page==='editor')editor();
