@@ -24,8 +24,7 @@
           <legend>CHANNEL</legend>
           <label class="field-label" for="channel">Twitch チャンネル名</label>
           <div class="input-with-prefix"><span>twitch.tv/</span><input id="channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
-          <p class="field-hint">@ は不要です。英数字とアンダースコアのみ。</p>
-          <div class="auth-card" id="auth-card"><div><strong id="auth-title">Twitch未接続</strong><p id="auth-copy">認証しなくてもデザインとテストイベントは利用できます。</p></div><button type="button" id="twitch-login">Twitchで接続</button><button type="button" id="twitch-disconnect" hidden>解除</button></div>
+          <p class="field-hint">@ は不要です。英数字とアンダースコアのみ。ログイン不要でそのまま使えます。</p>
         </fieldset>
 
         <fieldset>
@@ -70,8 +69,14 @@
           </div>
           <div class="range-row"><label class="field-label" for="opacity">ガラスの濃さ <output id="opacity-value">78%</output></label><input id="opacity" name="opacity" type="range" min="25" max="100" value="78"></div>
           <div class="field-grid compact"><label class="field-label">文字サイズ (px)<input class="field-num" type="number" name="textSize" min="8" max="80" step="1" value="15" inputmode="numeric"></label><label class="field-label">表示件数<input class="field-num" type="number" name="limit" min="1" max="200" step="1" value="12" inputmode="numeric"></label></div>
+          <div class="range-row"><label class="field-label" for="wrap">1行の最大文字数 <output id="wrap-value">40</output></label><input id="wrap" name="wrap" type="range" min="12" max="60" value="40"></div>
           <label class="toggle"><input type="checkbox" name="blur" checked><span class="toggle__track"></span><span>ガラスぼかし（高負荷時はOFF）</span></label>
-          <label class="toggle"><input type="checkbox" name="extras" checked><span class="toggle__track"></span><span>サブスク以外のバッジも表示（Bits・ギフター等）</span></label>
+          <span class="field-label">識別バッジ（サブ / モデ / VIP）</span>
+          <div class="segmented" role="group" aria-label="識別バッジ表示">
+            <label><input type="radio" name="badgeStyle" value="image" checked><span>画像</span></label>
+            <label><input type="radio" name="badgeStyle" value="pill"><span>ピル（丸み）</span></label>
+          </div>
+          <label class="toggle"><input type="checkbox" name="extras" checked><span class="toggle__track"></span><span>その他のバッジも表示（Bits・ギフター等）</span></label>
         </fieldset>
 
         <fieldset class="publish-box"><legend>PUBLISH</legend>
@@ -84,7 +89,7 @@
     </section>
 
     <section class="preview-panel" aria-label="リアルタイムプレビュー">
-      <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">未認証 · テスト表示</span></div>
+      <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">匿名表示 · ログイン不要</span></div>
       <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" title="ウィジェットプレビュー"></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
       <div class="test-controls"><span>TEST EVENT</span><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
     </section>
