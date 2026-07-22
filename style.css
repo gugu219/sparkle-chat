@@ -6,3 +6,35 @@
 
 #diag{position:fixed;left:12px;top:12px;z-index:9;max-width:calc(100% - 24px);padding:7px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(9,10,22,.86);color:#e9e9f6;font:600 11px/1.4 "DM Mono",monospace;box-shadow:0 6px 18px rgba(0,0,0,.35)}#diag.diag-ok{border-color:rgba(104,230,165,.5);color:#a6f2c8}#diag.diag-err{border-color:rgba(255,122,157,.5);color:#ffb3c4}
 .auth-card{display:flex;align-items:center;gap:10px;margin-top:14px;padding:11px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(6,7,17,.24)}.auth-card>div{min-width:0;flex:1}.auth-card strong{display:block;color:#e9e9f6;font-size:12px}.auth-card p{margin:3px 0 0;color:#9094ad;font-size:10px;line-height:1.45}.auth-card button{flex:none;border:0;border-radius:7px;padding:8px 9px;background:linear-gradient(115deg,var(--accent),var(--accent-2));color:#171426;font-size:10px;font-weight:900;cursor:pointer}.auth-card #twitch-disconnect{background:#34364a;color:#e4e5f2}
+/* Font choices */
+.font-zen{--body-font:"Zen Kaku Gothic New",sans-serif;--name-font:"Zen Kaku Gothic New",sans-serif}
+.font-noto{--body-font:"Noto Sans JP",sans-serif;--name-font:"Noto Sans JP",sans-serif}
+.font-rounded{--body-font:"M PLUS Rounded 1c",sans-serif;--name-font:"M PLUS Rounded 1c",sans-serif}
+.font-maru{--body-font:"Zen Maru Gothic",sans-serif;--name-font:"Zen Maru Gothic",sans-serif}
+.font-kosugi{--body-font:"Kosugi Maru",sans-serif;--name-font:"Kosugi Maru",sans-serif}
+.font-shippori{--body-font:"Shippori Mincho",serif;--name-font:"Shippori Mincho",serif}
+.font-oldmincho{--body-font:"Zen Old Mincho",serif;--name-font:"Zen Old Mincho",serif}
+.font-dot{--body-font:"DotGothic16",sans-serif;--name-font:"DotGothic16",sans-serif}
+.font-yuji{--body-font:"Yuji Syuku",serif;--name-font:"Yuji Syuku",serif}
+.font-klee{--body-font:"Klee One",cursive;--name-font:"Klee One",cursive}
+.font-inter{--body-font:"Inter",sans-serif;--name-font:"Inter",sans-serif}
+.font-poppins{--body-font:"Poppins",sans-serif;--name-font:"Poppins",sans-serif}
+.font-grotesk{--body-font:"Space Grotesk",sans-serif;--name-font:"Space Grotesk",sans-serif}
+.font-playfair{--body-font:"Playfair Display",serif;--name-font:"Playfair Display",serif}
+.font-pixel{--body-font:"VT323",monospace;--name-font:"VT323",monospace}
+.font-system{--body-font:system-ui,-apple-system,"Segoe UI",sans-serif;--name-font:system-ui,-apple-system,"Segoe UI",sans-serif}
+/* Message marker shapes — crisp SVG masks, theme-tinted, never distorted */
+.node-heart .chat-message__node,.node-star .chat-message__node,.node-spark .chat-message__node,.node-diamond .chat-message__node{background:none;box-shadow:none;border-radius:0}
+.node-heart .chat-message__node::after,.node-star .chat-message__node::after,.node-spark .chat-message__node::after,.node-diamond .chat-message__node::after{content:none;animation:none}
+.node-heart .chat-message__node::before,.node-star .chat-message__node::before,.node-spark .chat-message__node::before,.node-diamond .chat-message__node::before{content:"";position:absolute;left:50%;top:50%;width:15px;height:15px;transform:translate(-50%,-50%);background:var(--accent-3);filter:drop-shadow(0 0 5px var(--glow));-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}
+.node-heart .chat-message__node::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z'/%3E%3C/svg%3E")}
+.node-star .chat-message__node::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 20.5l1.4-6.8L2.2 9l6.9-.7z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l2.9 6.3 6.9.7-5.1 4.7 1.4 6.8L12 17.8 5.9 20.5l1.4-6.8L2.2 9l6.9-.7z'/%3E%3C/svg%3E")}
+.node-spark .chat-message__node::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c.6 4.9 2.1 6.4 7 7-4.9.6-6.4 2.1-7 7-.6-4.9-2.1-6.4-7-7 4.9-.6 6.4-2.1 7-7z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2c.6 4.9 2.1 6.4 7 7-4.9.6-6.4 2.1-7 7-.6-4.9-2.1-6.4-7-7 4.9-.6 6.4-2.1 7-7z'/%3E%3C/svg%3E")}
+.node-diamond .chat-message__node::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l10 10-10 10L2 12z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l10 10-10 10L2 12z'/%3E%3C/svg%3E")}
+/* Inline emotes */
+.chat-message__bubble .emote{height:1.55em;width:auto;vertical-align:-.35em;margin:0 1px}
+/* Free number inputs */
+.field-num{width:100%;height:39px;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:0 10px;background:#121321;color:#f2f2fb;outline:0}
+/* Apply-to-URL button */
+.apply-btn{width:100%;margin-bottom:10px;border:0;border-radius:9px;padding:11px;background:linear-gradient(115deg,var(--accent),var(--accent-2));color:#171426;font-size:12px;font-weight:900;cursor:pointer}
+.apply-btn:active{transform:translateY(1px)}

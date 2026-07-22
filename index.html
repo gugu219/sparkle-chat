@@ -6,7 +6,7 @@
   <title>SPARKLECHAT — OBS Widget Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700;900&family=Kosugi+Maru&family=Shippori+Mincho:wght@500;700;800&family=Zen+Old+Mincho:wght@400;700;900&family=DotGothic16&family=Yuji+Syuku&family=Klee+One:wght@400;600&family=Inter:wght@400;500;700;800&family=Poppins:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="app-shell theme-selene">
@@ -32,7 +32,28 @@
           <legend>APPEARANCE</legend>
           <div class="field-grid">
             <label class="field-label">テーマ<select name="theme"><option value="selene">Sélène — Violet</option><option value="rose">Rosé — Pink</option><option value="aurora">Aurora — Mint</option></select></label>
-            <label class="field-label">フォント<select name="font"><option value="zen">Zen Kaku Gothic</option><option value="rounded">M PLUS Rounded</option><option value="system">System Sans</option></select></label>
+            <label class="field-label">フォント<select name="font">
+              <optgroup label="日本語">
+                <option value="zen">Zen Kaku Gothic（標準・読みやすい）</option>
+                <option value="noto">Noto Sans JP（読みやすい）</option>
+                <option value="rounded">M PLUS Rounded（丸ゴシック）</option>
+                <option value="maru">Zen Maru Gothic（丸・上品）</option>
+                <option value="kosugi">Kosugi Maru（丸・カジュアル）</option>
+                <option value="shippori">Shippori Mincho（明朝・きれい）</option>
+                <option value="oldmincho">Zen Old Mincho（明朝・上品）</option>
+                <option value="dot">DotGothic16（ドット）</option>
+                <option value="yuji">Yuji Syuku（筆・和風）</option>
+                <option value="klee">Klee One（手書き風）</option>
+              </optgroup>
+              <optgroup label="English">
+                <option value="inter">Inter（clean）</option>
+                <option value="poppins">Poppins（geometric）</option>
+                <option value="grotesk">Space Grotesk（modern）</option>
+                <option value="playfair">Playfair Display（elegant）</option>
+                <option value="pixel">VT323（pixel / dot）</option>
+              </optgroup>
+              <optgroup label="その他"><option value="system">System Sans</option></optgroup>
+            </select></label>
           </div>
           <span class="field-label">背景モード</span>
           <div class="segmented" role="group" aria-label="背景モード">
@@ -40,13 +61,22 @@
             <label><input type="radio" name="bg" value="clear"><span>透過</span></label>
             <label><input type="radio" name="bg" value="black"><span>黒</span></label>
           </div>
+          <span class="field-label">メッセージのマーカー</span>
+          <div class="segmented" role="group" aria-label="マーカー">
+            <label><input type="radio" name="node" value="dot" checked><span>●</span></label>
+            <label><input type="radio" name="node" value="heart"><span>♥&#xFE0E;</span></label>
+            <label><input type="radio" name="node" value="star"><span>★&#xFE0E;</span></label>
+            <label><input type="radio" name="node" value="spark"><span>✦</span></label>
+            <label><input type="radio" name="node" value="diamond"><span>◆</span></label>
+          </div>
           <div class="range-row"><label class="field-label" for="opacity">ガラスの濃さ <output id="opacity-value">78%</output></label><input id="opacity" name="opacity" type="range" min="25" max="100" value="78"></div>
-          <div class="field-grid compact"><label class="field-label">文字サイズ<select name="textSize"><option value="14">14 px</option><option value="15" selected>15 px</option><option value="16">16 px</option><option value="18">18 px</option></select></label><label class="field-label">表示件数<select name="limit"><option value="8">8 件</option><option value="12" selected>12 件</option><option value="16">16 件</option><option value="20">20 件</option></select></label></div>
+          <div class="field-grid compact"><label class="field-label">文字サイズ (px)<input class="field-num" type="number" name="textSize" min="8" max="80" step="1" value="15" inputmode="numeric"></label><label class="field-label">表示件数<input class="field-num" type="number" name="limit" min="1" max="200" step="1" value="12" inputmode="numeric"></label></div>
           <label class="toggle"><input type="checkbox" name="blur" checked><span class="toggle__track"></span><span>ガラスぼかし（高負荷時はOFF）</span></label>
         </fieldset>
 
         <fieldset class="publish-box"><legend>PUBLISH</legend>
           <label class="field-label" for="obs-url">OBSブラウザソース URL</label>
+          <button type="button" id="apply-url" class="apply-btn">現在の設定をURLに反映</button>
           <div class="url-output"><input id="obs-url" readonly aria-label="OBSブラウザソース URL"><button type="button" id="copy-url">コピー</button></div>
           <p class="field-hint">OBSのブラウザソースに貼り付け、幅440px前後でご利用ください。</p>
         </fieldset>
