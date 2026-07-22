@@ -20,6 +20,7 @@
       <div class="tab-bar" role="tablist" aria-label="オーバーレイの種類">
         <button type="button" class="tab is-active" data-tab="chat" role="tab" aria-selected="true">チャット</button>
         <button type="button" class="tab" data-tab="frame" role="tab" aria-selected="false">枠</button>
+        <button type="button" class="tab" data-tab="alert" role="tab" aria-selected="false">アラート</button>
       </div>
       <form id="widget-form" class="settings-form" data-panel="chat">
         <fieldset>
@@ -143,10 +144,20 @@
               <button type="button" id="color-del">− 減らす</button>
             </div>
             <input type="hidden" name="ccount" id="ccount" value="4">
+            <div class="preset-row">
+              <select id="pal-list" aria-label="保存済みカラー"></select>
+              <button type="button" id="pal-load">読込</button>
+              <button type="button" id="pal-del">削除</button>
+            </div>
+            <div class="preset-row">
+              <input id="pal-name" placeholder="カラー名を付けて保存" aria-label="カラー名">
+              <button type="button" id="pal-save">保存</button>
+            </div>
           </div>
           <div class="range-row"><label class="field-label" for="glow">発光の強さ <output id="glow-value">55%</output></label><input id="glow" name="glow" type="range" min="0" max="100" value="55"></div>
           <div class="range-row"><label class="field-label" for="flow">アニメーション速度 <output id="flow-value">40</output></label><input id="flow" name="flow" type="range" min="0" max="100" value="40"></div>
           <div class="range-row"><label class="field-label" for="shine">光が流れる速度 <output id="shine-value">50</output></label><input id="shine" name="shine" type="range" min="0" max="100" value="50"></div>
+          <label class="toggle"><input type="checkbox" name="sheenOn" checked><span class="toggle__track"></span><span>枠を流れる発光を表示</span></label>
           <div class="range-row"><label class="field-label" for="spark">キラキラの量 <output id="spark-value">14</output></label><input id="spark" name="spark" type="range" min="0" max="40" value="14"></div>
         </fieldset>
 
@@ -216,13 +227,74 @@
           <p class="field-hint">チャットとは別のブラウザソースとして、1920×1080 で追加してください。</p>
         </fieldset>
       </form>
+
+      <form id="alert-form" class="settings-form" data-panel="alert" hidden>
+        <fieldset>
+          <legend>CHANNEL</legend>
+          <div class="field">
+            <label class="field-label" for="alert-channel">Twitch チャンネル名</label>
+            <div class="input-with-prefix"><span>twitch.tv/</span><input id="alert-channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
+          </div>
+          <p class="field-hint">サブスク・ギフト・Bits に自動で反応します。ログイン不要。</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>BUBBLE</legend>
+          <div class="field">
+            <span class="field-label">表示位置</span>
+            <div class="pos-grid" id="pos-grid">
+              <label><input type="radio" name="pos" value="tl"><span></span></label>
+              <label><input type="radio" name="pos" value="tc"><span></span></label>
+              <label><input type="radio" name="pos" value="tr"><span></span></label>
+              <label><input type="radio" name="pos" value="ml"><span></span></label>
+              <label><input type="radio" name="pos" value="mc"><span></span></label>
+              <label><input type="radio" name="pos" value="mr"><span></span></label>
+              <label><input type="radio" name="pos" value="bl"><span></span></label>
+              <label><input type="radio" name="pos" value="bc" checked><span></span></label>
+              <label><input type="radio" name="pos" value="br"><span></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">カラー（吹き出し / 文字 / アクセント）</span>
+            <div class="color-row">
+              <input type="color" name="bub" value="#fff4fa" aria-label="吹き出しの色">
+              <input type="color" name="txt" value="#4a3b52" aria-label="文字の色">
+              <input type="color" name="acc" value="#ff8fc5" aria-label="アクセントの色">
+            </div>
+          </div>
+          <div class="range-row"><label class="field-label" for="asize">文字サイズ <output id="asize-value">26px</output></label><input id="asize" name="size" type="range" min="12" max="70" value="26"></div>
+          <div class="range-row"><label class="field-label" for="aradius">角の丸み <output id="aradius-value">28px</output></label><input id="aradius" name="radius" type="range" min="0" max="80" value="28"></div>
+          <div class="range-row"><label class="field-label" for="apad">内側の余白 <output id="apad-value">22px</output></label><input id="apad" name="pad" type="range" min="8" max="50" value="22"></div>
+          <div class="range-row"><label class="field-label" for="adur">表示時間 <output id="adur-value">5秒</output></label><input id="adur" name="dur" type="range" min="1" max="20" value="5"></div>
+          <label class="toggle"><input type="checkbox" name="tail" checked><span class="toggle__track"></span><span>吹き出しのしっぽを表示</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>EVENTS</legend>
+          <label class="toggle"><input type="checkbox" name="sub" checked><span class="toggle__track"></span><span>サブスク</span></label>
+          <label class="toggle"><input type="checkbox" name="gift" checked><span class="toggle__track"></span><span>サブギフト</span></label>
+          <label class="toggle"><input type="checkbox" name="follow" checked><span class="toggle__track"></span><span>フォロー</span></label>
+          <label class="toggle"><input type="checkbox" name="bits" checked><span class="toggle__track"></span><span>Bits</span></label>
+          <label class="toggle"><input type="checkbox" name="points" checked><span class="toggle__track"></span><span>チャンネルポイント</span></label>
+          <label class="toggle"><input type="checkbox" name="donate" checked><span class="toggle__track"></span><span>ドネーション</span></label>
+          <p class="field-hint">フォロー・ドネーションは匿名では自動検知できないため、テスト再生のみ対応です。</p>
+        </fieldset>
+
+        <fieldset class="publish-box"><legend>PUBLISH</legend>
+          <label class="field-label" for="alert-url">OBSブラウザソース（アラート）</label>
+          <button type="button" id="alert-copy" class="apply-btn">これらの設定をURLに反映してコピー</button>
+          <div class="url-output"><input id="alert-url" readonly aria-label="アラート URL"></div>
+          <p class="field-hint">1920×1080 のブラウザソースとして、他とは別に追加してください。</p>
+        </fieldset>
+      </form>
     </section>
 
     <section class="preview-panel" aria-label="リアルタイムプレビュー">
       <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">匿名表示 · ログイン不要</span></div>
-      <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" data-panel="chat" title="チャットプレビュー"></iframe><iframe id="frame-preview" data-panel="frame" title="枠プレビュー" hidden></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
+      <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" data-panel="chat" title="チャットプレビュー"></iframe><iframe id="frame-preview" data-panel="frame" title="枠プレビュー" hidden></iframe><iframe id="alert-preview" data-panel="alert" title="アラートプレビュー" hidden></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
       <div class="test-controls" data-panel="chat"><span>TEST EVENT</span><button type="button" class="demo-btn" data-test="demo">▶ デモ再生 / 停止</button><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
       <div class="test-controls" data-panel="frame" hidden><span>TEST EVENT</span><button type="button" data-frame-event="sub">サブスク</button><button type="button" data-frame-event="gift">サブギフト</button><button type="button" data-frame-event="follow">フォロー</button><button type="button" data-frame-event="bits">Bits</button><button type="button" data-frame-event="points">チャンネルポイント</button><button type="button" data-frame-event="donate">ドネーション</button><button type="button" id="frame-clear">クリア</button></div>
+      <div class="test-controls" data-panel="alert" hidden><span>TEST EVENT</span><button type="button" data-alert-event="sub">サブスク</button><button type="button" data-alert-event="gift">サブギフト</button><button type="button" data-alert-event="follow">フォロー</button><button type="button" data-alert-event="bits">Bits</button><button type="button" data-alert-event="points">ポイント</button><button type="button" data-alert-event="donate">ドネーション</button></div>
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>

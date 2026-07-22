@@ -39,6 +39,7 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
   background:linear-gradient(115deg,transparent 43%,rgba(255,255,255,.92) 50%,transparent 57%);
   animation:sheen-sweep var(--shine) linear infinite;will-change:transform}
 @keyframes sheen-sweep{from{transform:translate3d(-55%,0,0)}to{transform:translate3d(55%,0,0)}}
+.no-sheen .sheen{display:none}
 
 /* ---- sparkles along the frame ---- */
 .sparkles{position:absolute;inset:0}

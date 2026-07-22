@@ -1,0 +1,69 @@
+/* SPARKLECHAT — Alert Overlay (OBS Browser Source)
+   A soft "mochi" speech bubble that pops in with a squash-and-stretch bounce. */
+:root{
+  --bub:#fff4fa;          /* bubble fill        */
+  --txt:#4a3b52;          /* body text          */
+  --acc:#ff8fc5;          /* name / accent      */
+  --size:26px;            /* base text size     */
+  --radius:28px;          /* corner radius      */
+  --pad:22px;             /* inner padding      */
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;
+  font-family:"Zen Maru Gothic","M PLUS Rounded 1c","Zen Kaku Gothic New",sans-serif}
+.stage{position:fixed;inset:0;display:flex;padding:36px;pointer-events:none}
+
+/* placement */
+.pos-tl{align-items:flex-start;justify-content:flex-start}
+.pos-tc{align-items:flex-start;justify-content:center}
+.pos-tr{align-items:flex-start;justify-content:flex-end}
+.pos-ml{align-items:center;justify-content:flex-start}
+.pos-mc{align-items:center;justify-content:center}
+.pos-mr{align-items:center;justify-content:flex-end}
+.pos-bl{align-items:flex-end;justify-content:flex-start}
+.pos-bc{align-items:flex-end;justify-content:center}
+.pos-br{align-items:flex-end;justify-content:flex-end}
+
+/* bubble */
+.bubble{position:relative;display:none;max-width:min(80%,900px);
+  padding:var(--pad) calc(var(--pad) * 1.35);
+  border-radius:var(--radius);
+  background:var(--bub);
+  box-shadow:0 14px 34px -12px rgba(60,30,60,.35),0 0 0 6px rgba(255,255,255,.35);
+  transform-origin:center bottom;will-change:transform,opacity}
+.bubble.is-on{display:block}
+.bubble.is-in{animation:pop-in .72s cubic-bezier(.22,1.2,.36,1) both}
+.bubble.is-out{animation:pop-out .34s ease-in both}
+
+.bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .7)}
+.bubble__icon{flex:none;font-size:calc(var(--size) * 1.9);line-height:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.12));
+  animation:icon-wobble 1.6s ease-in-out infinite}
+.bubble__text{min-width:0}
+.bubble__title{margin:0 0 .18em;color:var(--acc);font-size:calc(var(--size) * .62);font-weight:800;letter-spacing:.12em}
+.bubble__msg{margin:0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.bubble__msg .n{color:var(--acc)}
+
+/* tail */
+.bubble__tail{position:absolute;left:calc(var(--radius) + 10px);bottom:calc(var(--tail-h) * -1 + 2px);
+  --tail-h:22px;width:30px;height:var(--tail-h);
+  background:var(--bub);clip-path:path("M0 0 C 14 2, 22 8, 30 22 C 16 18, 8 12, 0 6 Z")}
+.no-tail .bubble__tail{display:none}
+/* when the bubble sits at the top, flip the tail up */
+.pos-tl .bubble__tail,.pos-tc .bubble__tail,.pos-tr .bubble__tail{bottom:auto;top:calc(var(--tail-h) * -1 + 2px);transform:scaleY(-1)}
+.pos-tl .bubble,.pos-tc .bubble,.pos-tr .bubble{transform-origin:center top}
+
+/* the "poyon" bounce */
+@keyframes pop-in{
+  0%{opacity:0;transform:scale(.25) translateY(16px)}
+  42%{opacity:1;transform:scale(1.16,.85) translateY(-8px)}
+  62%{transform:scale(.93,1.09) translateY(3px)}
+  78%{transform:scale(1.05,.96) translateY(-2px)}
+  90%{transform:scale(.985,1.02) translateY(1px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes pop-out{
+  0%{opacity:1;transform:scale(1)}
+  28%{transform:scale(1.08,.92)}
+  100%{opacity:0;transform:scale(.3) translateY(12px)}}
+@keyframes icon-wobble{0%,100%{transform:rotate(-6deg) scale(1)}50%{transform:rotate(6deg) scale(1.06)}}
+
+@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.bubble__icon{animation:none!important}}

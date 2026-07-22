@@ -60,7 +60,48 @@
     const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast');
     const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0',extras:form.elements.extras.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer,frameLoaded=false,lastChannel=null;const sendLive=s=>frame.contentWindow?.postMessage({source:'prism-editor',type:'settings',settings:s},location.protocol==='file:'?'*':location.origin);const update=()=>{const s=values();apply(s);out.value=url();document.querySelector('#opacity-value').textContent=`${s.opacity}%`;document.querySelector('#wrap-value').textContent=s.wrap;if(!frameLoaded||s.channel!==lastChannel){lastChannel=s.channel;frameLoaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url(true);},400);}else sendLive(s);};
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
-    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();collapsibles();
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();alertEditor();collapsibles();
+  }
+
+  /* ---------- editor: alert overlay ---------- */
+  function alertEditor(){
+    const form=document.querySelector('#alert-form');if(!form)return;
+    const frame=document.querySelector('#alert-preview'),out=document.querySelector('#alert-url'),toast=document.querySelector('#toast');
+    const EVENTS=['sub','gift','follow','bits','points','donate'];
+    const DEF={pos:'bc',bub:'#fff4fa',txt:'#4a3b52',acc:'#ff8fc5',size:'26',radius:'28',pad:'22',dur:'5',tail:'1',
+      sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',channel:''};
+    const CHECKS=[...EVENTS,'tail'];
+    const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒']};
+    const target=location.protocol==='file:'?'*':location.origin;
+    const NAMES=['mikan_tea','はると','Kaito','ちゃんゆき','LunaTV','pixel_fan'];
+    const AMT={sub:'',gift:5,follow:'',bits:500,points:'',donate:'¥1,000'};
+    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
+    const url=()=>`${new URL('alert.html',location.href).href}?${new URLSearchParams(values())}`;
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    let timer,loaded=false,lastCh=null;
+    const update=()=>{
+      const v=values();out.value=url();
+      for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=v[k]+u;}
+      if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
+      else frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-settings',settings:v},target);
+    };
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+
+    const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
+      const sc=Math.min(r.width/1920,r.height/1080);
+      Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
+    window.addEventListener('resize',fit);
+    window.addEventListener('panelchange',e=>{if(e.detail==='alert')fit();});
+
+    document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
+      const ev=e.target.dataset.alertEvent;if(!ev)return;
+      frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,
+        name:NAMES[Math.floor(Math.random()*NAMES.length)],amount:AMT[ev]},target);});
+    document.querySelector('#alert-copy').onclick=async()=>{update();
+      try{await navigator.clipboard.writeText(out.value);flash('アラートのURLをコピーしました');}
+      catch{out.select();document.execCommand('copy');flash('アラートのURLをコピーしました');}};
+
+    update();fit();
   }
 
   /* ---------- editor: collapsible sections ---------- */
@@ -88,7 +129,7 @@
     const frame=document.querySelector('#frame-preview'),out=document.querySelector('#frame-url'),toast=document.querySelector('#toast');
     const DEF={fw:'14',fr:'28',fri:'14',mode:'gradient',ccount:'4',
       c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',c5:'#fff3c4',c6:'#ffd9d9',c7:'#d9f2ff',c8:'#f0d9ff',
-      glow:'55',flow:'40',shine:'50',spark:'14',
+      glow:'55',flow:'40',shine:'50',sheenOn:'1',spark:'14',
       sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',
       subA:'burst',giftA:'burst',followA:'pulse',bitsA:'shine',pointsA:'rainbow',donateA:'burst',
       subP:'1',giftP:'1',followP:'0',bitsP:'1',pointsP:'0',donateP:'1',channel:''};
@@ -101,8 +142,9 @@
     const SHAPE_OPTS=[['heart','♥︎'],['coin','●'],['shine','✦'],['mix','ミックス']];
     const MOTION_OPTS=[['rise','下から'],['fall','上から'],['float','ふわふわ'],['pile','積もる']];
     EVENTS.forEach(e=>{const[sh,mo,ct,sz,sp,op]=P_DEF[e];
-      Object.assign(DEF,{[e+'pShape']:sh,[e+'pMotion']:mo,[e+'pCount']:ct,[e+'pSize']:sz,[e+'pSpeed']:sp,[e+'pOpa']:op,[e+'pCMode']:'mix',[e+'pC']:'#ffd6ec'});});
-    const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P')];
+      Object.assign(DEF,{[e+'pShape']:sh,[e+'pMotion']:mo,[e+'pCount']:ct,[e+'pSize']:sz,[e+'pSpeed']:sp,[e+'pOpa']:op,
+        [e+'pCMode']:'mix',[e+'pC1']:'#ffd6ec',[e+'pC2']:'#cde7ff',[e+'pC3']:'#e6d9ff',[e+'pC4']:'#fff3c4'});});
+    const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P'),'sheenOn'];
     const UNITS={fw:'px',fr:'px',fri:'px',glow:'%'};
     const OUTS=['fw','fr','fri','glow','flow','shine','spark'];
     const P_OUTS=['pCount','pSize','pSpeed','pOpa'],P_UNITS={pSize:'px',pOpa:'%'};
@@ -136,9 +178,12 @@
           +`</div></div>`
           +range('pCount','量',0,60,ct,'')+range('pSize','大きさ',8,90,sz,'px')
           +range('pSpeed','速さ',0,100,sp,'')+range('pOpa','濃さ',10,100,op,'%')
-          +`<div class="field"><span class="field-label">カラー</span><div class="preset-row">`
-          +`<select name="${e}pCMode"><option value="mix">枠カラーをミックス</option><option value="solid">指定色</option></select>`
-          +`<input type="color" name="${e}pC" value="#ffd6ec"></div></div>`;
+          +`<div class="field"><span class="field-label">カラー</span>`
+          +`<select name="${e}pCMode"><option value="mix">枠カラーをミックス</option><option value="custom">選んだ4色から</option></select>`
+          +`<div class="color-row">`
+          +[['pC1','#ffd6ec'],['pC2','#cde7ff'],['pC3','#e6d9ff'],['pC4','#fff3c4']]
+            .map(([k,v],i)=>`<input type="color" name="${e}${k}" value="${v}" aria-label="パーティクル色${i+1}">`).join('')
+          +`</div></div>`;
         host.appendChild(panel);
       });
       tabs.addEventListener('click',ev=>{const b=ev.target.closest('[data-pev]');if(!b)return;
@@ -157,6 +202,24 @@
     const bumpColors=d=>{form.elements.ccount.value=String((+form.elements.ccount.value||4)+d);syncColors();update();};
     document.querySelector('#color-add').onclick=()=>bumpColors(1);
     document.querySelector('#color-del').onclick=()=>bumpColors(-1);
+
+    /* saved colour palettes (localStorage) */
+    const PKEY='sparklechat-palettes';
+    const palRead=()=>{try{return JSON.parse(localStorage.getItem(PKEY))||{};}catch{return{};}};
+    const palWrite=p=>{try{localStorage.setItem(PKEY,JSON.stringify(p));}catch{}};
+    const palList=document.querySelector('#pal-list');
+    const palRefresh=()=>{const p=palRead();palList.textContent='';
+      const o=document.createElement('option');o.value='';o.textContent='保存済みカラー…';palList.appendChild(o);
+      Object.keys(p).forEach(n=>{const x=document.createElement('option');x.value=n;x.textContent=n;palList.appendChild(x);});};
+    document.querySelector('#pal-save').onclick=()=>{const el=document.querySelector('#pal-name'),n=el.value.trim();if(!n)return;
+      const v=values(),pal={ccount:v.ccount};for(let i=1;i<=8;i++)pal['c'+i]=v['c'+i];
+      const p=palRead();p[n]=pal;palWrite(p);palRefresh();palList.value=n;el.value='';flash(`カラー「${n}」を保存しました`);};
+    document.querySelector('#pal-load').onclick=()=>{const v=palRead()[palList.value];if(!v)return;
+      for(const k in v){const el=form.elements[k];if(el)el.value=v[k];}
+      syncColors();update();flash('カラーを読み込みました');};
+    document.querySelector('#pal-del').onclick=()=>{const p=palRead();if(!palList.value||!p[palList.value])return;
+      delete p[palList.value];palWrite(p);palRefresh();flash('カラーを削除しました');};
+    palRefresh();
 
     /* render the preview at true 1920x1080 and scale it down, so it matches OBS exactly */
     const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;

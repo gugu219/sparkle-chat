@@ -23,7 +23,7 @@
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
-    glow: '55', flow: '40', shine: '50', spark: '14',
+    glow: '55', flow: '40', shine: '50', sheenOn: '1', spark: '14',
     sub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
     subA: 'burst', giftA: 'burst', followA: 'pulse', bitsA: 'shine', pointsA: 'rainbow', donateA: 'burst',
     subP: '1', giftP: '1', followP: '0', bitsP: '1', pointsP: '0', donateP: '1',
@@ -34,7 +34,8 @@
     Object.assign(DEFAULTS, {
       [e + 'pShape']: sh, [e + 'pMotion']: mo, [e + 'pCount']: ct,
       [e + 'pSize']: sz, [e + 'pSpeed']: sp, [e + 'pOpa']: op,
-      [e + 'pCMode']: 'mix', [e + 'pC']: '#ffd6ec'
+      [e + 'pCMode']: 'mix',
+      [e + 'pC1']: '#ffd6ec', [e + 'pC2']: '#cde7ff', [e + 'pC3']: '#e6d9ff', [e + 'pC4']: '#fff3c4'
     });
   });
 
@@ -97,6 +98,7 @@
     root.style.setProperty('--glow', (clamp(s.glow, 0, 100) / 100).toFixed(3));
     root.style.setProperty('--flow', ((110 - clamp(s.flow, 0, 100)) / 2).toFixed(1) + 's');
     root.style.setProperty('--shine', ((110 - clamp(s.shine, 0, 100)) / 8).toFixed(2) + 's');
+    stage.classList.toggle('no-sheen', s.sheenOn !== '1');
     buildMask();
     buildSparkles();
   }
@@ -145,8 +147,8 @@
       size: clamp(s[kind + 'pSize'], 6, 200),
       speed: clamp(s[kind + 'pSpeed'], 0, 100),
       opa: clamp(s[kind + 'pOpa'], 0, 100) / 100,
-      solid: s[kind + 'pCMode'] === 'solid',
-      col: hex(s[kind + 'pC'], '#ffd6ec')
+      custom: s[kind + 'pCMode'] === 'custom',
+      cols: [1, 2, 3, 4].map(i => hex(s[kind + 'pC' + i], '#ffd6ec'))
     };
     if (!cfg.count) return;
     const cs = palette(), keys = Object.keys(SHAPES);
@@ -161,8 +163,9 @@
       el.style.setProperty('--pm', SHAPES[shape]);
       el.style.setProperty('--ps', size.toFixed(1) + 'px');
       el.style.setProperty('--po', cfg.opa.toFixed(2));
-      el.style.setProperty('--pc1', cfg.solid ? cfg.col : pick(cs));
-      el.style.setProperty('--pc2', cfg.solid ? cfg.col : pick(cs));
+      const src = cfg.custom ? cfg.cols : cs;
+      el.style.setProperty('--pc1', pick(src));
+      el.style.setProperty('--pc2', pick(src));
       el.style.left = x.toFixed(2) + '%';
       let dur = base * (.75 + Math.random() * .6), spin = 240;
 
