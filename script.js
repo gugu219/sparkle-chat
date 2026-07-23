@@ -60,6 +60,8 @@
     const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast');
     const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0',extras:form.elements.extras.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer,frameLoaded=false,lastChannel=null;const sendLive=s=>frame.contentWindow?.postMessage({source:'prism-editor',type:'settings',settings:s},location.protocol==='file:'?'*':location.origin);const update=()=>{const s=values();apply(s);out.value=url();document.querySelector('#opacity-value').textContent=`${s.opacity}%`;document.querySelector('#wrap-value').textContent=s.wrap;if(!frameLoaded||s.channel!==lastChannel){lastChannel=s.channel;frameLoaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url(true);},400);}else sendLive(s);};
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    const chatStore=persist(form,'sparklechat-chat',values);chatStore.restore();
+    [...form.elements].forEach(x=>{x.addEventListener('input',()=>chatStore.save());x.addEventListener('change',()=>chatStore.save());});
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();alertEditor();collapsibles();syncChannels();
   }
 
@@ -81,11 +83,13 @@
     const EVENTS=['sub','resub','gift','follow','bits','points','donate'];
     const DEF={pos:'bc',font:'maru',anim:'poyon',dur:'5',tail:'0',
       size:'26',radius:'100',pad:'22',txt:'#ffffff',acc:'#ff8fc5',ico:'#ffffff',icoBg:'#ff8fc5',icoBgA:'100',
-      snd:'',vol:'70',
+      vol:'70',
       bg:'#181226',bgA:'62',blur:'14',glass:'140',
       brOn:'0',brC:'#ffffff',brW:'2',brA:'45',
       glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
       sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',demo:'0',channel:''};
+    EVENTS.forEach(e=>{DEF[e+'Snd']='';DEF[e+'Vol']='80';});
+    const EV_LABEL={sub:'サブスク',resub:'継続',gift:'ギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ'};
     const CHECKS=[...EVENTS,'tail','brOn','glOn','demo'];
     const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒'],
       abgA:['bgA','%'],ablur:['blur','px'],aglass:['glass','%'],aicoBgA:['icoBgA','%'],avol:['vol','%'],
@@ -104,9 +108,59 @@
     const update=()=>{
       const v=values();out.value=url();
       for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=(k==='radius'&&+v[k]>=100)?'まる':v[k]+u;}
+      EVENTS.forEach(e=>{const el=document.querySelector(`#${e}Vol-value`);if(el)el.textContent=v[e+'Vol']+'%';});
+      store.save();
       if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
       else frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-settings',settings:v},target);
     };
+
+    /* ---- reusable sound library (kept in the browser, so nothing has to be re-uploaded) ---- */
+    const SLIB='sparklechat-sounds';
+    const libRead=()=>{try{return JSON.parse(localStorage.getItem(SLIB))||[];}catch{return[];}};
+    const libWrite=a=>{try{localStorage.setItem(SLIB,JSON.stringify(a));}catch{}};
+    const sndInfo=document.querySelector('#snd-info');
+    const setSndInfo=t=>{if(sndInfo)sndInfo.textContent=t;};
+    const activeSev=()=>document.querySelector('#snd-tabs .pev.is-active')?.dataset.sev||'sub';
+    function refreshLib(){
+      const lib=libRead();
+      EVENTS.forEach(e=>{
+        const sel=document.querySelector(`#${e}Snd`);if(!sel)return;
+        const cur=sel.value;sel.textContent='';
+        const none=document.createElement('option');none.value='';none.textContent='なし';sel.appendChild(none);
+        lib.forEach(x=>{const o=document.createElement('option');o.value=x.src;o.textContent=x.name;sel.appendChild(o);});
+        sel.value=cur;
+      });
+    }
+    const libAdd=(name,src)=>{const lib=libRead();
+      if(!lib.some(x=>x.src===src))lib.push({name:String(name).slice(0,48),src});
+      libWrite(lib);refreshLib();
+      const sel=form.elements[activeSev()+'Snd'];if(sel){sel.value=src;}
+      update();};
+
+    /* per-event sound panels, switched by the tabs above */
+    (()=>{
+      const tabs=document.querySelector('#snd-tabs'),host=document.querySelector('#snd-panels');
+      if(!tabs||!host)return;
+      tabs.textContent='';host.textContent='';
+      EVENTS.forEach((e,i)=>{
+        const b=document.createElement('button');b.type='button';b.className='pev'+(i?'':' is-active');b.dataset.sev=e;b.textContent=EV_LABEL[e];tabs.appendChild(b);
+        const p=document.createElement('div');p.className='pblock';p.dataset.sev=e;if(i)p.hidden=true;
+        p.innerHTML=`<div class="field"><label class="field-label" for="${e}Snd">効果音</label>`
+          +`<div class="preset-row"><select id="${e}Snd" name="${e}Snd"></select><button type="button" data-sndtest="${e}">▶ 試聴</button></div></div>`
+          +`<div class="range-row"><label class="field-label" for="${e}Vol">音量 <output id="${e}Vol-value">80%</output></label>`
+          +`<input id="${e}Vol" name="${e}Vol" type="range" min="0" max="100" value="80"></div>`;
+        host.appendChild(p);
+      });
+      tabs.addEventListener('click',ev=>{const b=ev.target.closest('[data-sev]');if(!b)return;
+        tabs.querySelectorAll('.pev').forEach(x=>x.classList.toggle('is-active',x===b));
+        host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.sev!==b.dataset.sev;});});
+      host.addEventListener('click',ev=>{const k=ev.target.dataset.sndtest;if(!k)return;
+        frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-sound',event:k},target);});
+    })();
+    refreshLib();
+    const store=persist(form,'sparklechat-alert',values);
+    store.restore();
+
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
 
     const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
@@ -122,39 +176,54 @@
         name:NAMES[Math.floor(Math.random()*NAMES.length)],detail,
         num:+(e.target.dataset.alertNum||num),numLabel},target);});
 
-    /* local sound file -> embedded as a data URI so it also plays inside OBS */
-    const sndInfo=document.querySelector('#snd-info');
-    const setSndInfo=t=>{if(sndInfo)sndInfo.textContent='効果音: '+t;};
     document.querySelector('#snd-file')?.addEventListener('change',async e=>{
       const f=e.target.files&&e.target.files[0];if(!f)return;
       if(f.size>260000){flash('音声が大きすぎます（260KB以下の短い効果音にしてください）');e.target.value='';return;}
       let dataUri='';
       try{dataUri=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(String(rd.result||''));rd.onerror=rej;rd.readAsDataURL(f);});}
       catch{flash('音声の読み込みに失敗しました');return;}
-      if(location.protocol==='file:'){   /* local testing: preview only, never goes in the URL */
-        form.elements.snd.value=dataUri;setSndInfo(`${f.name}（ローカル試聴のみ）`);update();return;
-      }
+      if(location.protocol==='file:'){libAdd(f.name+'（ローカル試聴のみ）',dataUri);return;}
       setSndInfo(`${f.name} をアップロード中…`);
       try{
         const r=await fetch('/api/sound',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:dataUri})});
         const j=await r.json().catch(()=>({}));
         if(!r.ok||!j.id)throw new Error(j.error||`保存に失敗しました (${r.status})`);
-        form.elements.snd.value=j.id;
-        setSndInfo(`${f.name}（${Math.round(f.size/1024)}KB）`);
-        update();flash('効果音を保存しました');
+        libAdd(f.name,j.id);
+        setSndInfo(`「${f.name}」を一覧に追加しました。次回からは選ぶだけで使えます。`);
+        flash('効果音を一覧に追加しました');
       }catch(err){setSndInfo('アップロードに失敗しました');flash('効果音の保存に失敗: '+err.message);}
+      e.target.value='';
     });
-    document.querySelector('#snd-test')?.addEventListener('click',()=>{
-      if(!form.elements.snd.value){flash('先に効果音ファイルを選んでください');return;}
-      frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-sound'},target);});
-    document.querySelector('#snd-clear')?.addEventListener('click',()=>{
-      form.elements.snd.value='';const fi=document.querySelector('#snd-file');if(fi)fi.value='';
-      setSndInfo('未設定');update();flash('効果音を解除しました');});
+    document.querySelector('#snd-url-add')?.addEventListener('click',()=>{
+      const el=document.querySelector('#snd-url'),u=el.value.trim();if(!u)return;
+      libAdd(u.split('/').pop()||u,u);el.value='';flash('サウンドを一覧に追加しました');});
+    document.querySelector('#snd-lib-del')?.addEventListener('click',()=>{
+      const sel=form.elements[activeSev()+'Snd'],cur=sel&&sel.value;if(!cur)return;
+      libWrite(libRead().filter(x=>x.src!==cur));
+      EVENTS.forEach(e=>{const s2=form.elements[e+'Snd'];if(s2&&s2.value===cur)s2.value='';});
+      refreshLib();update();flash('サウンドを一覧から削除しました');});
     document.querySelector('#alert-copy').onclick=async()=>{update();
       try{await navigator.clipboard.writeText(out.value);flash('アラートのURLをコピーしました');}
       catch{out.select();document.execCommand('copy');flash('アラートのURLをコピーしました');}};
 
     update();fit();
+  }
+
+  /* ---------- editor: remember every setting between visits ---------- */
+  function persist(form,key,values){
+    return {
+      save(){try{localStorage.setItem(key,JSON.stringify(values()));}catch{}},
+      restore(){
+        let v=null;try{v=JSON.parse(localStorage.getItem(key)||'null');}catch{}
+        if(!v||typeof v!=='object')return false;
+        for(const k in v){
+          const el=form.elements[k];if(!el)continue;
+          if(el.type==='checkbox')el.checked=v[k]==='1';
+          else{try{el.value=v[k];}catch{}}
+        }
+        return true;
+      }
+    };
   }
 
   /* ---------- editor: collapsible sections ---------- */
@@ -244,6 +313,8 @@
         host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.pev!==b.dataset.pev;});});
     })();
 
+    const frameStore=persist(form,'sparklechat-frame',values);frameStore.restore();
+    [...form.elements].forEach(x=>{x.addEventListener('input',()=>frameStore.save());x.addEventListener('change',()=>frameStore.save());});
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
     document.querySelector('#frame-clear')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-clear'},target));
 

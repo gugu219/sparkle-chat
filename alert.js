@@ -21,13 +21,16 @@
     size: '26', radius: '100', pad: '22',
     txt: '#ffffff', acc: '#ff8fc5',
     ico: '#ffffff', icoBg: '#ff8fc5', icoBgA: '100',
-    snd: '', vol: '70',
+    vol: '70',
     bg: '#181226', bgA: '62', blur: '14', glass: '140',
     brOn: '0', brC: '#ffffff', brW: '2', brA: '45',
     glOn: '0', glC: '#ff8fc5', glS: '40', glB: '40',
     sub: '1', resub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
     demo: '0', channel: ''
   };
+  /* each event carries its own sound + volume */
+  EVENTS.forEach(e => { DEFAULTS[e + 'Snd'] = ''; DEFAULTS[e + 'Vol'] = '80'; });
+
   const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins'];
   const ANIMS = ['poyon', 'slide', 'drop', 'zoom'];
   const POS = ['tl', 'tc', 'tr', 'ml', 'mc', 'mr', 'bl', 'bc', 'br'];
@@ -88,22 +91,23 @@
   }
 
   /* ---- sound ----
-     s.snd may be a stored id, a direct URL, or a data URI (local preview). */
-  function soundSrc() {
-    const v = String(s.snd || '').trim();
+     s[kind+'Snd'] may be a stored id, a direct URL, or a data URI (local preview). */
+  function soundSrc(kind) {
+    const v = String(s[kind + 'Snd'] || '').trim();
     if (!v) return '';
     if (/^(https?:|data:|blob:)/i.test(v)) return v;
     return '/api/sound?id=' + encodeURIComponent(v);
   }
-  let audioEl = null, audioSrc = '';
-  function playSound() {
-    const src = soundSrc();
+  const audioCache = {};
+  function playSound(kind) {
+    const src = soundSrc(kind);
     if (!src) return;
     try {
-      if (audioSrc !== src) { audioEl = new Audio(src); audioSrc = src; }
-      audioEl.volume = clamp(s.vol, 0, 100) / 100;
-      audioEl.currentTime = 0;
-      audioEl.play().catch(() => {});
+      let a = audioCache[src];
+      if (!a) { a = new Audio(src); audioCache[src] = a; }
+      a.volume = (clamp(s[kind + 'Vol'], 0, 100) / 100) * (clamp(s.vol, 0, 100) / 100);
+      a.currentTime = 0;
+      a.play().catch(() => {});
     } catch {}
   }
 
@@ -176,7 +180,7 @@
     bubble.classList.add('is-on');
     void bubble.offsetWidth;
     bubble.classList.add('is-in');
-    playSound();
+    playSound(item.kind);
     if (num > 1) setTimeout(() => { const c = elDetail.querySelector('.cnt'); if (c) countUp(c, num); }, 380);
 
     const hold = clamp(s.dur, 1, 30) * 1000;
@@ -191,7 +195,7 @@
   window.addEventListener('message', e => {
     if (e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'alert-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
-    if (e.data.type === 'alert-sound') { playSound(); return; }
+    if (e.data.type === 'alert-sound') { playSound(e.data.event || 'sub'); return; }
     if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel);
   });
 

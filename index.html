@@ -297,20 +297,22 @@
 
         <fieldset>
           <legend>SOUND</legend>
-          <div class="preset-row">
-            <input type="file" id="snd-file" accept="audio/*" aria-label="効果音ファイル">
-          </div>
-          <div class="preset-row">
-            <button type="button" id="snd-test">▶ 試聴</button>
-            <button type="button" id="snd-clear">クリア</button>
-          </div>
-          <p class="field-hint" id="snd-info">効果音: 未設定</p>
-          <div class="range-row"><label class="field-label" for="avol">音量 <output id="avol-value">70%</output></label><input id="avol" name="vol" type="range" min="0" max="100" value="70"></div>
           <div class="field">
-            <label class="field-label" for="snd">音源ID / 音声URL</label>
-            <div class="url-output"><input id="snd" name="snd" placeholder="ファイルを選ぶと自動で入ります（音声URLの直接貼り付けも可）"></div>
+            <span class="field-label">イベントごとの効果音</span>
+            <div class="pev-tabs" id="snd-tabs"></div>
           </div>
-          <p class="field-hint">ローカル音源はサーバーに保存され、URLには短いIDだけが入ります。OBSでもそのまま鳴ります（目安260KBまでの短い効果音）。</p>
+          <div id="snd-panels"></div>
+          <div class="range-row"><label class="field-label" for="avol">全体音量 <output id="avol-value">70%</output></label><input id="avol" name="vol" type="range" min="0" max="100" value="70"></div>
+          <div class="field">
+            <span class="field-label">サウンドを追加（一覧に保存されます）</span>
+            <div class="preset-row"><input type="file" id="snd-file" accept="audio/*" aria-label="効果音ファイル"></div>
+            <div class="preset-row">
+              <input id="snd-url" placeholder="または音声URLを貼り付け">
+              <button type="button" id="snd-url-add">追加</button>
+            </div>
+            <div class="preset-row"><button type="button" id="snd-lib-del">選択中のサウンドを一覧から削除</button></div>
+          </div>
+          <p class="field-hint" id="snd-info">追加した効果音はブラウザに記憶され、次回は選ぶだけで使えます（アップロード不要）。</p>
         </fieldset>
 
         <fieldset>
