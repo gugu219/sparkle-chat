@@ -373,7 +373,13 @@
     </section>
 
     <section class="preview-panel" aria-label="リアルタイムプレビュー">
-      <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><span id="connection-status" class="status-chip">匿名表示 · ログイン不要</span></div>
+      <div class="preview-toolbar"><div><p class="eyebrow">LIVE PREVIEW</p><h2>OBS表示イメージ</h2></div><div class="bg-picker" id="bg-picker" role="group" aria-label="プレビュー背景">
+        <button type="button" class="is-active" data-bg="checker" title="市松">◧</button>
+        <button type="button" data-bg="dark" title="暗い背景">■</button>
+        <button type="button" data-bg="light" title="明るい背景">□</button>
+        <button type="button" data-bg="green" title="グリーンバック">▣</button>
+        <input type="color" id="bg-custom" value="#3a6ea5" aria-label="背景色を指定">
+      </div></div>
       <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" data-panel="chat" title="チャットプレビュー"></iframe><iframe id="frame-preview" data-panel="frame" title="枠プレビュー" hidden></iframe><iframe id="alert-preview" data-panel="alert" title="アラートプレビュー" hidden></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
       <div class="test-controls" data-panel="chat"><span>TEST EVENT</span><button type="button" class="demo-btn" data-test="demo">▶ デモ再生 / 停止</button><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
       <div class="test-controls" data-panel="frame" hidden><span>TEST EVENT</span><button type="button" data-frame-event="sub">サブスク</button><button type="button" data-frame-event="gift">サブギフト</button><button type="button" data-frame-event="follow">フォロー</button><button type="button" data-frame-event="bits">Bits</button><button type="button" data-frame-event="points">チャンネルポイント</button><button type="button" data-frame-event="donate">ドネーション</button><button type="button" id="frame-clear">クリア</button></div>

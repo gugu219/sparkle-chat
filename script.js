@@ -62,7 +62,7 @@
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     const chatStore=persist(form,'sparklechat-chat',values);chatStore.restore();
     [...form.elements].forEach(x=>{x.addEventListener('input',()=>chatStore.save());x.addEventListener('change',()=>chatStore.save());});
-    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();alertEditor();collapsibles();syncChannels();
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();alertEditor();collapsibles();syncChannels();previewBg();
   }
 
   /* ---------- editor: carry the channel name into the other tabs while they are empty ---------- */
@@ -224,6 +224,25 @@
         return true;
       }
     };
+  }
+
+  /* ---------- editor: preview backdrop (helps when judging opacity) ---------- */
+  function previewBg(){
+    const pick=document.querySelector('#bg-picker'),stage=document.querySelector('.preview-stage');
+    if(!pick||!stage)return;
+    const KEY='sparklechat-preview-bg';
+    const set=(mode,custom)=>{
+      stage.className='preview-stage bg-'+mode;
+      stage.style.background=mode==='custom'?custom:'';
+      pick.querySelectorAll('button').forEach(b=>b.classList.toggle('is-active',b.dataset.bg===mode));
+      try{localStorage.setItem(KEY,JSON.stringify({mode,custom}));}catch{}
+    };
+    pick.addEventListener('click',e=>{const b=e.target.closest('[data-bg]');if(b)set(b.dataset.bg,'');});
+    const col=document.querySelector('#bg-custom');
+    col?.addEventListener('input',()=>set('custom',col.value));
+    let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}
+    if(saved&&saved.mode){if(saved.mode==='custom'&&saved.custom)col.value=saved.custom;set(saved.mode,saved.custom||col.value);}
+    else set('checker','');
   }
 
   /* ---------- editor: collapsible sections ---------- */
