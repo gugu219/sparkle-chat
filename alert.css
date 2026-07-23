@@ -1,14 +1,30 @@
 /* SPARKLECHAT — Alert Overlay (OBS Browser Source)
-   Refined pill-shaped notification, Duolingo-like: bold rounded type,
-   an icon badge, generous padding, crisp layered shadows. */
+   Every surface (shape / background / border / glow / icon) is variable-driven
+   so the same widget can read as cute, minimal, gaming or glassmorphic. */
 :root{
-  --bub:#ffffff;          /* bubble fill        */
-  --txt:#3c3450;          /* body text          */
-  --acc:#ff8fc5;          /* accent             */
-  --size:26px;            /* base text size     */
-  --radius:999px;         /* corner radius (pill by default) */
-  --pad:22px;             /* inner padding      */
+  --size:26px;                 /* base text size            */
+  --radius:999px;              /* corner radius             */
+  --pad:22px;                  /* inner padding             */
+  --txt:#ffffff;               /* body text                 */
+  --acc:#ff8fc5;               /* accent                    */
+  --ico:#ffffff;               /* icon stroke colour        */
+  --icoBg:#ff8fc5;             /* icon badge background     */
+  --bgc:rgba(24,18,38,.62);    /* bubble background (rgba)  */
+  --blur:14px;                 /* backdrop blur             */
+  --glass:140%;                /* backdrop saturation       */
+  --brW:0px;                   /* border width              */
+  --brc:transparent;           /* border colour (rgba)      */
+  --shadow:0 12px 30px -14px rgba(10,5,20,.55);
   --bfont:"Zen Maru Gothic","M PLUS Rounded 1c",sans-serif;
+
+  /* white line icons */
+  --i-crown:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 18h14l1.6-9.4-4.9 3.2L12 4.8 8.3 11.8 3.4 8.6z'/%3E%3Cpath d='M6 20.5h12'/%3E%3C/svg%3E");
+  --i-gift:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 11.5h15V20h-15z'/%3E%3Cpath d='M3 7.5h18v4H3z'/%3E%3Cpath d='M12 7.5V20'/%3E%3Cpath d='M12 7.5S10.6 4 8.6 4a2 2 0 0 0 0 3.5z'/%3E%3Cpath d='M12 7.5S13.4 4 15.4 4a2 2 0 0 1 0 3.5z'/%3E%3C/svg%3E");
+  --i-heart:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20.2C7 16.6 4 14.1 4 10.6A3.6 3.6 0 0 1 12 8.2a3.6 3.6 0 0 1 8 2.4c0 3.5-3 6-8 9.6z'/%3E%3C/svg%3E");
+  --i-follow:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 19.5v-1.2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1.2'/%3E%3Ccircle cx='8.5' cy='7.5' r='3.5'/%3E%3Cpath d='M18.5 8v6M21.5 11h-6'/%3E%3C/svg%3E");
+  --i-bits:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.2 3.5h11.6l3.2 6-9 11.5-9-11.5z'/%3E%3Cpath d='M3 9.5h18'/%3E%3Cpath d='M9.2 3.5 6.2 9.5 12 21l5.8-11.5-3-6'/%3E%3C/svg%3E");
+  --i-coin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.8'/%3E%3Cpath d='M12 6.6v10.8'/%3E%3Cpath d='M14.6 9.4c0-1-1.2-1.7-2.6-1.7s-2.6.7-2.6 1.7 1.1 1.5 2.6 2 2.6 1 2.6 2.1-1.2 1.7-2.6 1.7-2.6-.7-2.6-1.7'/%3E%3C/svg%3E");
+  --i-star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.6l2.7 5.6 6.1.9-4.4 4.3 1.1 6.1-5.5-2.9-5.5 2.9 1.1-6.1L3.2 10.1l6.1-.9z'/%3E%3C/svg%3E");
 }
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:var(--bfont)}
@@ -21,8 +37,6 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .font-poppins{--bfont:"Poppins","Zen Maru Gothic",sans-serif}
 
 .stage{position:fixed;inset:0;display:flex;padding:44px;pointer-events:none}
-
-/* placement */
 .pos-tl{align-items:flex-start;justify-content:flex-start}
 .pos-tc{align-items:flex-start;justify-content:center}
 .pos-tr{align-items:flex-start;justify-content:flex-end}
@@ -33,87 +47,62 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .pos-bc{align-items:flex-end;justify-content:center}
 .pos-br{align-items:flex-end;justify-content:flex-end}
 
-/* ---- the pill ---- */
-.bubble{position:relative;display:none;max-width:min(82%,940px);
-  padding:calc(var(--pad) * .82) calc(var(--pad) * 1.5) calc(var(--pad) * .82) calc(var(--pad) * .82);
+/* ---- the notification surface ---- */
+.bubble{position:relative;display:none;max-width:min(84%,960px);
+  padding:calc(var(--pad) * .8) calc(var(--pad) * 1.45) calc(var(--pad) * .8) calc(var(--pad) * .8);
   border-radius:var(--radius);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--bub) 97%,#fff),var(--bub));
-  border:1px solid color-mix(in srgb,var(--acc) 16%,transparent);
-  box-shadow:
-    0 2px 0 color-mix(in srgb,var(--acc) 10%,transparent),
-    0 12px 28px -10px color-mix(in srgb,var(--acc) 42%,rgba(40,20,50,.28)),
-    0 30px 60px -24px rgba(35,20,55,.35),
-    inset 0 1px 0 rgba(255,255,255,.9);
+  background:var(--bgc);
+  border:var(--brW) solid var(--brc);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--glass));
+  backdrop-filter:blur(var(--blur)) saturate(var(--glass));
+  box-shadow:var(--shadow);
   transform-origin:center bottom;will-change:transform,opacity}
 .bubble.is-on{display:block}
 .pos-tl .bubble,.pos-tc .bubble,.pos-tr .bubble{transform-origin:center top}
 
-/* soft halo behind the pill */
-.bubble::before{content:"";position:absolute;inset:-14%;z-index:-1;border-radius:inherit;
-  background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 26%,transparent),transparent 75%);
-  filter:blur(14px)}
+.bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .7)}
 
-.bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .72)}
-
-/* icon badge: gradient coin with a glossy top */
+/* icon badge — flat circle, colour fully user-controlled */
 .bubble__badge{flex:none;display:grid;place-items:center;
-  width:calc(var(--size) * 2.55);height:calc(var(--size) * 2.55);border-radius:50%;
-  background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 55%,#fff),var(--acc) 62%,color-mix(in srgb,var(--acc) 72%,#7a4a8a));
-  box-shadow:0 4px 10px -3px color-mix(in srgb,var(--acc) 70%,transparent),
-    inset 0 2px 3px rgba(255,255,255,.65),inset 0 -3px 6px rgba(80,30,80,.22)}
-.bubble__icon{font-size:calc(var(--size) * 1.32);line-height:1;filter:drop-shadow(0 2px 3px rgba(60,20,60,.25));
-  animation:icon-wobble 1.7s ease-in-out infinite}
+  width:calc(var(--size) * 2.4);height:calc(var(--size) * 2.4);
+  border-radius:50%;background:var(--icoBg)}
+.bubble__icon{display:block;width:calc(var(--size) * 1.32);height:calc(var(--size) * 1.32);
+  background:var(--ico);
+  -webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
 
-.bubble__text{min-width:0;padding-right:calc(var(--pad) * .25)}
-.bubble__title{margin:0 0 .3em;display:inline-block;
-  padding:.28em .85em;border-radius:999px;
-  background:color-mix(in srgb,var(--acc) 14%,transparent);
-  color:color-mix(in srgb,var(--acc) 78%,var(--txt));
-  font-size:calc(var(--size) * .5);font-weight:900;letter-spacing:.22em}
-.bubble__msg{margin:0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.4;
+.bubble__text{min-width:0;padding-right:calc(var(--pad) * .2)}
+.bubble__title{margin:0;color:var(--acc);font-size:calc(var(--size) * .52);font-weight:900;letter-spacing:.24em}
+.bubble__msg{margin:.16em 0 0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.32;
   letter-spacing:.015em;overflow-wrap:anywhere}
-.bubble__msg .n{color:var(--acc);text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.bubble__detail{margin:.1em 0 0;color:var(--acc);font-size:calc(var(--size) * .72);font-weight:900;letter-spacing:.1em}
+.bubble__detail:empty{display:none}
 
-/* tail (optional, subtle round drop) */
-.bubble__tail{position:absolute;left:calc(var(--size) * 2.1);bottom:-9px;width:22px;height:22px;border-radius:50% 50% 58% 42%;
-  background:var(--bub);box-shadow:0 6px 12px -6px rgba(35,20,55,.3);transform:rotate(12deg)}
+/* month counter (slot-style count up) */
+.cnt{display:inline-block;min-width:1.6em}
+.cnt.tick{animation:cnt-tick .11s ease-out}
+@keyframes cnt-tick{0%{transform:translateY(-22%) scale(.9);opacity:.55}100%{transform:none;opacity:1}}
+.cnt.landed{animation:cnt-land .5s cubic-bezier(.2,1.5,.35,1)}
+@keyframes cnt-land{0%{transform:scale(1)}35%{transform:scale(1.38)}100%{transform:scale(1)}}
+
+/* optional tail */
+.bubble__tail{position:absolute;left:calc(var(--size) * 2);bottom:-9px;width:22px;height:22px;
+  border-radius:50% 50% 58% 42%;background:var(--bgc);transform:rotate(12deg)}
 .no-tail .bubble__tail{display:none}
 .pos-tl .bubble__tail,.pos-tc .bubble__tail,.pos-tr .bubble__tail{bottom:auto;top:-9px}
 
 /* ================= entrance styles ================= */
-/* poyon: mochi squash & stretch */
 .anim-poyon .bubble.is-in{animation:in-poyon .74s cubic-bezier(.22,1.2,.36,1) both}
-@keyframes in-poyon{
-  0%{opacity:0;transform:scale(.25) translateY(18px)}
-  42%{opacity:1;transform:scale(1.14,.86) translateY(-8px)}
-  62%{transform:scale(.94,1.08) translateY(3px)}
-  78%{transform:scale(1.04,.97) translateY(-2px)}
-  100%{opacity:1;transform:scale(1) translateY(0)}}
-/* slide: rises softly and settles */
+@keyframes in-poyon{0%{opacity:0;transform:scale(.25) translateY(18px)}42%{opacity:1;transform:scale(1.14,.86) translateY(-8px)}
+  62%{transform:scale(.94,1.08) translateY(3px)}78%{transform:scale(1.04,.97) translateY(-2px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .anim-slide .bubble.is-in{animation:in-slide .6s cubic-bezier(.16,1,.3,1) both}
-@keyframes in-slide{
-  0%{opacity:0;transform:translateY(46px) scale(.97)}
-  70%{opacity:1;transform:translateY(-6px) scale(1.005)}
-  100%{opacity:1;transform:translateY(0) scale(1)}}
-/* drop: falls in and bounces once */
+@keyframes in-slide{0%{opacity:0;transform:translateY(46px) scale(.97)}70%{opacity:1;transform:translateY(-6px) scale(1.005)}100%{opacity:1;transform:translateY(0) scale(1)}}
 .anim-drop .bubble.is-in{animation:in-drop .68s cubic-bezier(.3,.9,.35,1.15) both}
-@keyframes in-drop{
-  0%{opacity:0;transform:translateY(-64px) scale(.94)}
-  55%{opacity:1;transform:translateY(6px) scale(1.02,.97)}
-  75%{transform:translateY(-4px) scale(.99,1.02)}
-  100%{opacity:1;transform:translateY(0) scale(1)}}
-/* zoom: crisp scale-fade */
+@keyframes in-drop{0%{opacity:0;transform:translateY(-64px) scale(.94)}55%{opacity:1;transform:translateY(6px) scale(1.02,.97)}
+  75%{transform:translateY(-4px) scale(.99,1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
 .anim-zoom .bubble.is-in{animation:in-zoom .5s cubic-bezier(.2,1.1,.3,1) both}
-@keyframes in-zoom{
-  0%{opacity:0;transform:scale(.7)}
-  100%{opacity:1;transform:scale(1)}}
+@keyframes in-zoom{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
 
-/* exit */
 .bubble.is-out{animation:pop-out .34s ease-in both}
-@keyframes pop-out{
-  0%{opacity:1;transform:scale(1)}
-  28%{transform:scale(1.06,.94)}
-  100%{opacity:0;transform:scale(.42) translateY(10px)}}
-@keyframes icon-wobble{0%,100%{transform:rotate(-6deg) scale(1)}50%{transform:rotate(6deg) scale(1.06)}}
+@keyframes pop-out{0%{opacity:1;transform:scale(1)}28%{transform:scale(1.06,.94)}100%{opacity:0;transform:scale(.42) translateY(10px)}}
 
-@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.bubble__icon{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt{animation:none!important}}

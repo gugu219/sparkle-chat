@@ -269,24 +269,69 @@
               <option value="zoom">ズーム</option>
             </select></label>
           </div>
+          <div class="range-row"><label class="field-label" for="adur">表示時間 <output id="adur-value">5秒</output></label><input id="adur" name="dur" type="range" min="1" max="20" value="5"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>SHAPE</legend>
+          <div class="range-row"><label class="field-label" for="aradius">角の丸み（四角 ⇔ 完全な丸） <output id="aradius-value">まる</output></label><input id="aradius" name="radius" type="range" min="0" max="100" value="100"></div>
+          <div class="range-row"><label class="field-label" for="asize">文字サイズ <output id="asize-value">26px</output></label><input id="asize" name="size" type="range" min="12" max="70" value="26"></div>
+          <div class="range-row"><label class="field-label" for="apad">内側の余白 <output id="apad-value">22px</output></label><input id="apad" name="pad" type="range" min="8" max="50" value="22"></div>
+          <label class="toggle"><input type="checkbox" name="tail"><span class="toggle__track"></span><span>しっぽを表示</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>ICON &amp; TEXT</legend>
           <div class="field">
-            <span class="field-label">カラー（吹き出し / 文字 / アクセント）</span>
+            <span class="field-label">アイコン色 / アイコン背景 / 文字色 / アクセント</span>
             <div class="color-row">
-              <input type="color" name="bub" value="#ffffff" aria-label="吹き出しの色">
-              <input type="color" name="txt" value="#3c3450" aria-label="文字の色">
+              <input type="color" name="ico" value="#ffffff" aria-label="アイコンの色">
+              <input type="color" name="icoBg" value="#ff8fc5" aria-label="アイコン背景色">
+              <input type="color" name="txt" value="#ffffff" aria-label="文字の色">
               <input type="color" name="acc" value="#ff8fc5" aria-label="アクセントの色">
             </div>
           </div>
-          <div class="range-row"><label class="field-label" for="asize">文字サイズ <output id="asize-value">26px</output></label><input id="asize" name="size" type="range" min="12" max="70" value="26"></div>
-          <div class="range-row"><label class="field-label" for="aradius">角の丸み <output id="aradius-value">まる</output></label><input id="aradius" name="radius" type="range" min="0" max="100" value="100"></div>
-          <div class="range-row"><label class="field-label" for="apad">内側の余白 <output id="apad-value">22px</output></label><input id="apad" name="pad" type="range" min="8" max="50" value="22"></div>
-          <div class="range-row"><label class="field-label" for="adur">表示時間 <output id="adur-value">5秒</output></label><input id="adur" name="dur" type="range" min="1" max="20" value="5"></div>
-          <label class="toggle"><input type="checkbox" name="tail"><span class="toggle__track"></span><span>吹き出しのしっぽを表示</span></label>
+          <p class="field-hint">アイコンは白ラインのシンプルなデザイン（イベントごとに自動で切替）。</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>BACKGROUND</legend>
+          <div class="field">
+            <span class="field-label">背景色</span>
+            <div class="color-row"><input type="color" name="bg" value="#181226" aria-label="背景色"></div>
+          </div>
+          <div class="range-row"><label class="field-label" for="abgA">背景の不透明度 <output id="abgA-value">62%</output></label><input id="abgA" name="bgA" type="range" min="0" max="100" value="62"></div>
+          <div class="range-row"><label class="field-label" for="ablur">すりガラス Blur量 <output id="ablur-value">14px</output></label><input id="ablur" name="blur" type="range" min="0" max="60" value="14"></div>
+          <div class="range-row"><label class="field-label" for="aglass">ガラスの強さ（彩度） <output id="aglass-value">140%</output></label><input id="aglass" name="glass" type="range" min="100" max="300" value="140"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>BORDER</legend>
+          <label class="toggle"><input type="checkbox" name="brOn"><span class="toggle__track"></span><span>縁線を表示</span></label>
+          <div class="field">
+            <span class="field-label">縁線の色</span>
+            <div class="color-row"><input type="color" name="brC" value="#ffffff" aria-label="縁線の色"></div>
+          </div>
+          <div class="range-row"><label class="field-label" for="abrW">太さ <output id="abrW-value">2px</output></label><input id="abrW" name="brW" type="range" min="0" max="12" value="2"></div>
+          <div class="range-row"><label class="field-label" for="abrA">不透明度 <output id="abrA-value">45%</output></label><input id="abrA" name="brA" type="range" min="0" max="100" value="45"></div>
+          <p class="field-hint">背景の不透明度を0にして縁線だけ、という作りも可能です。</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>GLOW</legend>
+          <label class="toggle"><input type="checkbox" name="glOn"><span class="toggle__track"></span><span>発光を有効にする</span></label>
+          <div class="field">
+            <span class="field-label">発光の色</span>
+            <div class="color-row"><input type="color" name="glC" value="#ff8fc5" aria-label="発光の色"></div>
+          </div>
+          <div class="range-row"><label class="field-label" for="aglS">強さ <output id="aglS-value">40</output></label><input id="aglS" name="glS" type="range" min="0" max="100" value="40"></div>
+          <div class="range-row"><label class="field-label" for="aglB">ぼかし量 <output id="aglB-value">40px</output></label><input id="aglB" name="glB" type="range" min="0" max="120" value="40"></div>
         </fieldset>
 
         <fieldset>
           <legend>EVENTS</legend>
-          <label class="toggle"><input type="checkbox" name="sub" checked><span class="toggle__track"></span><span>サブスク</span></label>
+          <label class="toggle"><input type="checkbox" name="sub" checked><span class="toggle__track"></span><span>サブスク（NEW SUB）</span></label>
+          <label class="toggle"><input type="checkbox" name="resub" checked><span class="toggle__track"></span><span>継続サブスク（RESUB）</span></label>
           <label class="toggle"><input type="checkbox" name="gift" checked><span class="toggle__track"></span><span>サブギフト</span></label>
           <label class="toggle"><input type="checkbox" name="follow" checked><span class="toggle__track"></span><span>フォロー</span></label>
           <label class="toggle"><input type="checkbox" name="bits" checked><span class="toggle__track"></span><span>Bits</span></label>
@@ -309,7 +354,7 @@
       <div class="preview-stage"><div class="checkerboard"></div><iframe id="widget-preview" data-panel="chat" title="チャットプレビュー"></iframe><iframe id="frame-preview" data-panel="frame" title="枠プレビュー" hidden></iframe><iframe id="alert-preview" data-panel="alert" title="アラートプレビュー" hidden></iframe><div class="preview-corner preview-corner--tl"></div><div class="preview-corner preview-corner--br"></div></div>
       <div class="test-controls" data-panel="chat"><span>TEST EVENT</span><button type="button" class="demo-btn" data-test="demo">▶ デモ再生 / 停止</button><button type="button" data-test="message">チャット</button><button type="button" data-test="sub">サブスク</button><button type="button" data-test="gift">サブギフト</button><button type="button" data-test="cheer">Bits</button><button type="button" data-test="highlight">強調</button></div>
       <div class="test-controls" data-panel="frame" hidden><span>TEST EVENT</span><button type="button" data-frame-event="sub">サブスク</button><button type="button" data-frame-event="gift">サブギフト</button><button type="button" data-frame-event="follow">フォロー</button><button type="button" data-frame-event="bits">Bits</button><button type="button" data-frame-event="points">チャンネルポイント</button><button type="button" data-frame-event="donate">ドネーション</button><button type="button" id="frame-clear">クリア</button></div>
-      <div class="test-controls" data-panel="alert" hidden><span>TEST EVENT</span><button type="button" data-alert-event="sub">サブスク</button><button type="button" data-alert-event="gift">サブギフト</button><button type="button" data-alert-event="follow">フォロー</button><button type="button" data-alert-event="bits">Bits</button><button type="button" data-alert-event="points">ポイント</button><button type="button" data-alert-event="donate">ドネーション</button></div>
+      <div class="test-controls" data-panel="alert" hidden><span>TEST EVENT</span><button type="button" data-alert-event="sub">サブスク</button><button type="button" data-alert-event="resub">継続12ヶ月</button><button type="button" data-alert-event="gift">サブギフト</button><button type="button" data-alert-event="follow">フォロー</button><button type="button" data-alert-event="bits">Bits</button><button type="button" data-alert-event="points">ポイント</button><button type="button" data-alert-event="donate">ドネーション</button></div>
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>

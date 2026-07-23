@@ -67,14 +67,21 @@
   function alertEditor(){
     const form=document.querySelector('#alert-form');if(!form)return;
     const frame=document.querySelector('#alert-preview'),out=document.querySelector('#alert-url'),toast=document.querySelector('#toast');
-    const EVENTS=['sub','gift','follow','bits','points','donate'];
-    const DEF={pos:'bc',bub:'#ffffff',txt:'#3c3450',acc:'#ff8fc5',size:'26',radius:'100',pad:'22',dur:'5',tail:'0',
-      font:'maru',anim:'poyon',sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',channel:''};
-    const CHECKS=[...EVENTS,'tail'];
-    const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒']};
+    const EVENTS=['sub','resub','gift','follow','bits','points','donate'];
+    const DEF={pos:'bc',font:'maru',anim:'poyon',dur:'5',tail:'0',
+      size:'26',radius:'100',pad:'22',txt:'#ffffff',acc:'#ff8fc5',ico:'#ffffff',icoBg:'#ff8fc5',
+      bg:'#181226',bgA:'62',blur:'14',glass:'140',
+      brOn:'0',brC:'#ffffff',brW:'2',brA:'45',
+      glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
+      sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',channel:''};
+    const CHECKS=[...EVENTS,'tail','brOn','glOn'];
+    const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒'],
+      abgA:['bgA','%'],ablur:['blur','px'],aglass:['glass','%'],
+      abrW:['brW','px'],abrA:['brA','%'],aglS:['glS',''],aglB:['glB','px']};
     const target=location.protocol==='file:'?'*':location.origin;
     const NAMES=['mikan_tea','はると','Kaito','ちゃんゆき','LunaTV','pixel_fan'];
-    const AMT={sub:'',gift:5,follow:'',bits:500,points:'',donate:'¥1,000'};
+    /* [detail, months] used by the test buttons */
+    const SAMPLE={sub:['Tier 1',0],resub:['',12],gift:['×5',0],follow:['',0],bits:['500 BITS',0],points:['',0],donate:['¥1,000',0]};
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
     const url=()=>`${new URL('alert.html',location.href).href}?${new URLSearchParams(values())}`;
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
@@ -95,8 +102,9 @@
 
     document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
       const ev=e.target.dataset.alertEvent;if(!ev)return;
+      const[detail,months]=SAMPLE[ev]||['',0];
       frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,
-        name:NAMES[Math.floor(Math.random()*NAMES.length)],amount:AMT[ev]},target);});
+        name:NAMES[Math.floor(Math.random()*NAMES.length)],detail,months},target);});
     document.querySelector('#alert-copy').onclick=async()=>{update();
       try{await navigator.clipboard.writeText(out.value);flash('アラートのURLをコピーしました');}
       catch{out.select();document.execCommand('copy');flash('アラートのURLをコピーしました');}};
