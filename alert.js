@@ -20,7 +20,8 @@
     pos: 'bc', font: 'maru', anim: 'poyon', dur: '5', tail: '0',
     size: '26', radius: '100', pad: '22',
     txt: '#ffffff', acc: '#ff8fc5',
-    ico: '#ffffff', icoBg: '#ff8fc5',
+    ico: '#ffffff', icoBg: '#ff8fc5', icoBgA: '100',
+    snd: '', vol: '70',
     bg: '#181226', bgA: '62', blur: '14', glass: '140',
     brOn: '0', brC: '#ffffff', brW: '2', brA: '45',
     glOn: '0', glC: '#ff8fc5', glS: '40', glB: '40',
@@ -67,7 +68,7 @@
     root.style.setProperty('--txt', hex(s.txt, DEFAULTS.txt));
     root.style.setProperty('--acc', hex(s.acc, DEFAULTS.acc));
     root.style.setProperty('--ico', hex(s.ico, DEFAULTS.ico));
-    root.style.setProperty('--icoBg', hex(s.icoBg, DEFAULTS.icoBg));
+    root.style.setProperty('--icoBg', rgba(s.icoBg, s.icoBgA));
 
     /* background: colour + opacity + frosted glass */
     root.style.setProperty('--bgc', rgba(s.bg, s.bgA));
@@ -86,22 +87,52 @@
       : depth);
   }
 
-  /* ---- month counter: discrete slot-machine ticks that slow to a stop ---- */
+  /* ---- sound ---- */
+  let audioEl = null, audioSrc = '';
+  function playSound() {
+    const src = String(s.snd || '');
+    if (!src) return;
+    try {
+      if (audioSrc !== src) { audioEl = new Audio(src); audioSrc = src; }
+      audioEl.volume = clamp(s.vol, 0, 100) / 100;
+      audioEl.currentTime = 0;
+      audioEl.play().catch(() => {});
+    } catch {}
+  }
+
+  /* ---- counter: discrete slot ticks that slow to a stop, with milestones ---- */
+  const MS = ['ms1', 'ms2', 'ms3', 'ms4', 'ms5'];
   let cntTimer = null;
+  function milestone(el, lvl) {
+    if (lvl < 1) return;
+    lvl = Math.min(5, lvl);
+    el.classList.remove(...MS); void el.offsetWidth;
+    el.classList.add('ms' + lvl);
+    if (lvl >= 3) {
+      const body = document.querySelector('.bubble__body');
+      if (body) { body.classList.remove('sh3', 'sh4', 'sh5'); void body.offsetWidth; body.classList.add('sh' + lvl); }
+    }
+  }
   function countUp(el, target) {
     clearTimeout(cntTimer);
     const total = Math.max(1, Math.round(target));
     el.textContent = '×1';
     if (total <= 1) { el.classList.add('landed'); return; }
     let i = 1;
+    const finish = () => {
+      el.classList.remove('tick', ...MS); void el.offsetWidth;
+      el.classList.add('landed');
+      milestone(el, Math.floor(total / 10));      /* final flourish scales with the total */
+    };
     const tick = () => {
       i++;
       el.textContent = '×' + i;
-      el.classList.remove('tick', 'landed'); void el.offsetWidth;
-      if (i >= total) { el.classList.add('landed'); return; }
-      el.classList.add('tick');
-      const p = i / total;                                   /* 0 -> 1 */
-      cntTimer = setTimeout(tick, 55 + Math.pow(p, 3) * 430); /* fast at first, slow at the end */
+      el.classList.remove('tick', 'landed', ...MS); void el.offsetWidth;
+      if (i >= total) return finish();
+      if (i % 10 === 0) milestone(el, i / 10);    /* every 10 -> a bigger flourish, capped at 50 */
+      else el.classList.add('tick');
+      const p = i / total;
+      cntTimer = setTimeout(tick, 55 + Math.pow(p, 3) * 430);   /* fast first, slow at the end */
     };
     cntTimer = setTimeout(tick, 90);
   }
@@ -111,11 +142,11 @@
   let busy = false;
   const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star' };
 
-  function show(kind, name, detail, months) {
+  function show(kind, name, detail, num, numLabel) {
     if (!EVENTS.includes(kind)) return;
     const gate = kind === 'resub' ? 'sub' : kind;           /* resub follows the sub toggle */
     if (s[gate] !== '1' && s[kind] !== '1') return;
-    queue.push({ kind, name, detail, months });
+    queue.push({ kind, name, detail, num, numLabel });
     if (!busy) next();
   }
   function next() {
@@ -127,9 +158,9 @@
     elTitle.textContent = title;
     elMsg.textContent = item.name || 'Someone';
 
-    const months = +item.months || 0;
-    if (months > 1) {
-      elDetail.innerHTML = `<span class="cnt">×1</span> MONTHS`;
+    const num = +item.num || 0;
+    if (num > 1) {
+      elDetail.innerHTML = `<span class="cnt">×1</span> ${esc(item.numLabel || '')}`;
     } else {
       elDetail.textContent = item.detail || '';
     }
@@ -138,7 +169,8 @@
     bubble.classList.add('is-on');
     void bubble.offsetWidth;
     bubble.classList.add('is-in');
-    if (months > 1) setTimeout(() => { const c = elDetail.querySelector('.cnt'); if (c) countUp(c, months); }, 380);
+    playSound();
+    if (num > 1) setTimeout(() => { const c = elDetail.querySelector('.cnt'); if (c) countUp(c, num); }, 380);
 
     const hold = clamp(s.dur, 1, 30) * 1000;
     setTimeout(() => {
@@ -152,7 +184,8 @@
   window.addEventListener('message', e => {
     if (e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'alert-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
-    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.months);
+    if (e.data.type === 'alert-sound') { playSound(); return; }
+    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel);
   });
 
   apply();
@@ -167,9 +200,9 @@
       channels: [channel]
     });
     c.on('subscription', (_ch, u, m) => show('sub', u, tier(m && m.plan), 0));
-    c.on('resub', (_ch, u, months, _msg, _t, m) => show('resub', u, tier(m && m.plan), months));
+    c.on('resub', (_ch, u, months, _msg, _t, m) => show('resub', u, tier(m && m.plan), months, 'MONTHS'));
     c.on('subgift', (_ch, u, _s, r) => show('gift', u, r ? `→ ${r}` : '×1', 0));
-    c.on('submysterygift', (_ch, u, n) => show('gift', u, `×${n || 1}`, 0));
+    c.on('submysterygift', (_ch, u, n) => show('gift', u, '×1', n || 1, 'GIFTS'));
     c.on('cheer', (_ch, t) => show('bits', (t && (t['display-name'] || t.username)) || '', `${(t && t.bits) || 0} BITS`, 0));
     c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) show('points', t['display-name'] || t.username, '', 0); });
     c.connect().catch(err => console.warn('[sparklechat] alert connect failed', err));

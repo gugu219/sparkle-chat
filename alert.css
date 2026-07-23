@@ -62,7 +62,7 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 
 .bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .7)}
 
-/* icon badge — flat circle, colour fully user-controlled */
+/* icon badge — flat circle, colour + opacity fully user-controlled */
 .bubble__badge{flex:none;display:grid;place-items:center;
   width:calc(var(--size) * 2.4);height:calc(var(--size) * 2.4);
   border-radius:50%;background:var(--icoBg)}
@@ -71,18 +71,56 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
   -webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
 
 .bubble__text{min-width:0;padding-right:calc(var(--pad) * .2)}
-.bubble__title{margin:0;color:var(--acc);font-size:calc(var(--size) * .52);font-weight:900;letter-spacing:.24em}
-.bubble__msg{margin:.16em 0 0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.32;
+/* title matches the detail line size */
+.bubble__title{margin:0;color:var(--acc);font-size:calc(var(--size) * .72);font-weight:900;letter-spacing:.24em}
+.bubble__msg{margin:.14em 0 0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.32;
   letter-spacing:.015em;overflow-wrap:anywhere}
-.bubble__detail{margin:.1em 0 0;color:var(--acc);font-size:calc(var(--size) * .72);font-weight:900;letter-spacing:.1em}
+.bubble__detail{margin:.08em 0 0;color:var(--acc);font-size:calc(var(--size) * .72);font-weight:900;letter-spacing:.1em}
 .bubble__detail:empty{display:none}
 
-/* month counter (slot-style count up) */
+/* title gets its own entrance */
+.bubble.is-in .bubble__title{animation:title-in .62s .1s both cubic-bezier(.2,1.2,.3,1)}
+@keyframes title-in{
+  0%{opacity:0;transform:translateY(-7px) scale(.92);letter-spacing:.6em}
+  55%{opacity:1;letter-spacing:.19em}
+  100%{opacity:1;transform:none;letter-spacing:.24em}}
+
+/* ---- number counter (slot-style) ---- */
 .cnt{display:inline-block;min-width:1.6em}
 .cnt.tick{animation:cnt-tick .11s ease-out}
 @keyframes cnt-tick{0%{transform:translateY(-22%) scale(.9);opacity:.55}100%{transform:none;opacity:1}}
 .cnt.landed{animation:cnt-land .5s cubic-bezier(.2,1.5,.35,1)}
 @keyframes cnt-land{0%{transform:scale(1)}35%{transform:scale(1.38)}100%{transform:scale(1)}}
+
+/* milestone flourishes — escalate every 10, capped at 50+ */
+.cnt.ms1{animation:ms-1 .45s cubic-bezier(.2,1.5,.35,1)}
+.cnt.ms2{animation:ms-2 .5s cubic-bezier(.2,1.5,.35,1)}
+.cnt.ms3{animation:ms-3 .55s cubic-bezier(.2,1.5,.35,1)}
+.cnt.ms4{animation:ms-4 .62s cubic-bezier(.2,1.6,.35,1)}
+.cnt.ms5{animation:ms-5 .75s cubic-bezier(.2,1.6,.35,1)}
+@keyframes ms-1{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+@keyframes ms-2{0%{transform:scale(1);filter:none}40%{transform:scale(1.55);filter:brightness(1.5)}100%{transform:scale(1);filter:none}}
+@keyframes ms-3{0%{transform:scale(1) rotate(0);filter:none}
+  35%{transform:scale(1.7) rotate(-4deg);filter:brightness(1.7) drop-shadow(0 0 10px var(--acc))}
+  100%{transform:scale(1) rotate(0);filter:none}}
+@keyframes ms-4{0%{transform:scale(1) rotate(0);filter:none}
+  30%{transform:scale(1.9) rotate(5deg);filter:brightness(2) drop-shadow(0 0 18px var(--acc))}
+  68%{transform:scale(1.18) rotate(-2deg)}100%{transform:scale(1) rotate(0);filter:none}}
+@keyframes ms-5{0%{transform:scale(1) rotate(0);filter:none}
+  16%{transform:scale(2.25) rotate(-8deg);filter:brightness(2.5) saturate(1.7) drop-shadow(0 0 26px var(--acc))}
+  42%{transform:scale(1.3) rotate(5deg);filter:brightness(1.4)}
+  66%{transform:scale(1.65) rotate(-3deg);filter:brightness(2) drop-shadow(0 0 20px var(--acc))}
+  100%{transform:scale(1) rotate(0);filter:none}}
+/* the whole row shakes from level 3 up */
+.bubble__body.sh3{animation:shake-s .38s ease-in-out}
+.bubble__body.sh4{animation:shake-m .48s ease-in-out}
+.bubble__body.sh5{animation:shake-l .62s ease-in-out}
+@keyframes shake-s{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes shake-m{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}48%{transform:translateX(5px)}74%{transform:translateX(-3px)}}
+@keyframes shake-l{0%,100%{transform:translate(0,0) rotate(0)}
+  12%{transform:translate(-9px,2px) rotate(-1deg)}30%{transform:translate(8px,-2px) rotate(1deg)}
+  50%{transform:translate(-6px,1px) rotate(-.6deg)}70%{transform:translate(5px,-1px) rotate(.5deg)}
+  86%{transform:translate(-3px,0) rotate(0)}}
 
 /* optional tail */
 .bubble__tail{position:absolute;left:calc(var(--size) * 2);bottom:-9px;width:22px;height:22px;
@@ -105,4 +143,4 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .bubble.is-out{animation:pop-out .34s ease-in both}
 @keyframes pop-out{0%{opacity:1;transform:scale(1)}28%{transform:scale(1.06,.94)}100%{opacity:0;transform:scale(.42) translateY(10px)}}
 
-@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt,.bubble__body{animation:none!important}}
