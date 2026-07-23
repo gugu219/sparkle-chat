@@ -1,17 +1,26 @@
 /* SPARKLECHAT — Alert Overlay (OBS Browser Source)
-   A soft "mochi" speech bubble that pops in with a squash-and-stretch bounce. */
+   Refined pill-shaped notification, Duolingo-like: bold rounded type,
+   an icon badge, generous padding, crisp layered shadows. */
 :root{
-  --bub:#fff4fa;          /* bubble fill        */
-  --txt:#4a3b52;          /* body text          */
-  --acc:#ff8fc5;          /* name / accent      */
+  --bub:#ffffff;          /* bubble fill        */
+  --txt:#3c3450;          /* body text          */
+  --acc:#ff8fc5;          /* accent             */
   --size:26px;            /* base text size     */
-  --radius:28px;          /* corner radius      */
+  --radius:999px;         /* corner radius (pill by default) */
   --pad:22px;             /* inner padding      */
+  --bfont:"Zen Maru Gothic","M PLUS Rounded 1c",sans-serif;
 }
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;
-  font-family:"Zen Maru Gothic","M PLUS Rounded 1c","Zen Kaku Gothic New",sans-serif}
-.stage{position:fixed;inset:0;display:flex;padding:36px;pointer-events:none}
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:var(--bfont)}
+
+/* font choices */
+.font-maru{--bfont:"Zen Maru Gothic",sans-serif}
+.font-rounded{--bfont:"M PLUS Rounded 1c",sans-serif}
+.font-kaku{--bfont:"Zen Kaku Gothic New",sans-serif}
+.font-noto{--bfont:"Noto Sans JP",sans-serif}
+.font-poppins{--bfont:"Poppins","Zen Maru Gothic",sans-serif}
+
+.stage{position:fixed;inset:0;display:flex;padding:44px;pointer-events:none}
 
 /* placement */
 .pos-tl{align-items:flex-start;justify-content:flex-start}
@@ -24,46 +33,87 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .pos-bc{align-items:flex-end;justify-content:center}
 .pos-br{align-items:flex-end;justify-content:flex-end}
 
-/* bubble */
-.bubble{position:relative;display:none;max-width:min(80%,900px);
-  padding:var(--pad) calc(var(--pad) * 1.35);
+/* ---- the pill ---- */
+.bubble{position:relative;display:none;max-width:min(82%,940px);
+  padding:calc(var(--pad) * .82) calc(var(--pad) * 1.5) calc(var(--pad) * .82) calc(var(--pad) * .82);
   border-radius:var(--radius);
-  background:var(--bub);
-  box-shadow:0 14px 34px -12px rgba(60,30,60,.35),0 0 0 6px rgba(255,255,255,.35);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--bub) 97%,#fff),var(--bub));
+  border:1px solid color-mix(in srgb,var(--acc) 16%,transparent);
+  box-shadow:
+    0 2px 0 color-mix(in srgb,var(--acc) 10%,transparent),
+    0 12px 28px -10px color-mix(in srgb,var(--acc) 42%,rgba(40,20,50,.28)),
+    0 30px 60px -24px rgba(35,20,55,.35),
+    inset 0 1px 0 rgba(255,255,255,.9);
   transform-origin:center bottom;will-change:transform,opacity}
 .bubble.is-on{display:block}
-.bubble.is-in{animation:pop-in .72s cubic-bezier(.22,1.2,.36,1) both}
-.bubble.is-out{animation:pop-out .34s ease-in both}
-
-.bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .7)}
-.bubble__icon{flex:none;font-size:calc(var(--size) * 1.9);line-height:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.12));
-  animation:icon-wobble 1.6s ease-in-out infinite}
-.bubble__text{min-width:0}
-.bubble__title{margin:0 0 .18em;color:var(--acc);font-size:calc(var(--size) * .62);font-weight:800;letter-spacing:.12em}
-.bubble__msg{margin:0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.35;overflow-wrap:anywhere}
-.bubble__msg .n{color:var(--acc)}
-
-/* tail */
-.bubble__tail{position:absolute;left:calc(var(--radius) + 10px);bottom:calc(var(--tail-h) * -1 + 2px);
-  --tail-h:22px;width:30px;height:var(--tail-h);
-  background:var(--bub);clip-path:path("M0 0 C 14 2, 22 8, 30 22 C 16 18, 8 12, 0 6 Z")}
-.no-tail .bubble__tail{display:none}
-/* when the bubble sits at the top, flip the tail up */
-.pos-tl .bubble__tail,.pos-tc .bubble__tail,.pos-tr .bubble__tail{bottom:auto;top:calc(var(--tail-h) * -1 + 2px);transform:scaleY(-1)}
 .pos-tl .bubble,.pos-tc .bubble,.pos-tr .bubble{transform-origin:center top}
 
-/* the "poyon" bounce */
-@keyframes pop-in{
-  0%{opacity:0;transform:scale(.25) translateY(16px)}
-  42%{opacity:1;transform:scale(1.16,.85) translateY(-8px)}
-  62%{transform:scale(.93,1.09) translateY(3px)}
-  78%{transform:scale(1.05,.96) translateY(-2px)}
-  90%{transform:scale(.985,1.02) translateY(1px)}
+/* soft halo behind the pill */
+.bubble::before{content:"";position:absolute;inset:-14%;z-index:-1;border-radius:inherit;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 26%,transparent),transparent 75%);
+  filter:blur(14px)}
+
+.bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .72)}
+
+/* icon badge: gradient coin with a glossy top */
+.bubble__badge{flex:none;display:grid;place-items:center;
+  width:calc(var(--size) * 2.55);height:calc(var(--size) * 2.55);border-radius:50%;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 55%,#fff),var(--acc) 62%,color-mix(in srgb,var(--acc) 72%,#7a4a8a));
+  box-shadow:0 4px 10px -3px color-mix(in srgb,var(--acc) 70%,transparent),
+    inset 0 2px 3px rgba(255,255,255,.65),inset 0 -3px 6px rgba(80,30,80,.22)}
+.bubble__icon{font-size:calc(var(--size) * 1.32);line-height:1;filter:drop-shadow(0 2px 3px rgba(60,20,60,.25));
+  animation:icon-wobble 1.7s ease-in-out infinite}
+
+.bubble__text{min-width:0;padding-right:calc(var(--pad) * .25)}
+.bubble__title{margin:0 0 .3em;display:inline-block;
+  padding:.28em .85em;border-radius:999px;
+  background:color-mix(in srgb,var(--acc) 14%,transparent);
+  color:color-mix(in srgb,var(--acc) 78%,var(--txt));
+  font-size:calc(var(--size) * .5);font-weight:900;letter-spacing:.22em}
+.bubble__msg{margin:0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.4;
+  letter-spacing:.015em;overflow-wrap:anywhere}
+.bubble__msg .n{color:var(--acc);text-shadow:0 1px 0 rgba(255,255,255,.6)}
+
+/* tail (optional, subtle round drop) */
+.bubble__tail{position:absolute;left:calc(var(--size) * 2.1);bottom:-9px;width:22px;height:22px;border-radius:50% 50% 58% 42%;
+  background:var(--bub);box-shadow:0 6px 12px -6px rgba(35,20,55,.3);transform:rotate(12deg)}
+.no-tail .bubble__tail{display:none}
+.pos-tl .bubble__tail,.pos-tc .bubble__tail,.pos-tr .bubble__tail{bottom:auto;top:-9px}
+
+/* ================= entrance styles ================= */
+/* poyon: mochi squash & stretch */
+.anim-poyon .bubble.is-in{animation:in-poyon .74s cubic-bezier(.22,1.2,.36,1) both}
+@keyframes in-poyon{
+  0%{opacity:0;transform:scale(.25) translateY(18px)}
+  42%{opacity:1;transform:scale(1.14,.86) translateY(-8px)}
+  62%{transform:scale(.94,1.08) translateY(3px)}
+  78%{transform:scale(1.04,.97) translateY(-2px)}
   100%{opacity:1;transform:scale(1) translateY(0)}}
+/* slide: rises softly and settles */
+.anim-slide .bubble.is-in{animation:in-slide .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes in-slide{
+  0%{opacity:0;transform:translateY(46px) scale(.97)}
+  70%{opacity:1;transform:translateY(-6px) scale(1.005)}
+  100%{opacity:1;transform:translateY(0) scale(1)}}
+/* drop: falls in and bounces once */
+.anim-drop .bubble.is-in{animation:in-drop .68s cubic-bezier(.3,.9,.35,1.15) both}
+@keyframes in-drop{
+  0%{opacity:0;transform:translateY(-64px) scale(.94)}
+  55%{opacity:1;transform:translateY(6px) scale(1.02,.97)}
+  75%{transform:translateY(-4px) scale(.99,1.02)}
+  100%{opacity:1;transform:translateY(0) scale(1)}}
+/* zoom: crisp scale-fade */
+.anim-zoom .bubble.is-in{animation:in-zoom .5s cubic-bezier(.2,1.1,.3,1) both}
+@keyframes in-zoom{
+  0%{opacity:0;transform:scale(.7)}
+  100%{opacity:1;transform:scale(1)}}
+
+/* exit */
+.bubble.is-out{animation:pop-out .34s ease-in both}
 @keyframes pop-out{
   0%{opacity:1;transform:scale(1)}
-  28%{transform:scale(1.08,.92)}
-  100%{opacity:0;transform:scale(.3) translateY(12px)}}
+  28%{transform:scale(1.06,.94)}
+  100%{opacity:0;transform:scale(.42) translateY(10px)}}
 @keyframes icon-wobble{0%,100%{transform:rotate(-6deg) scale(1)}50%{transform:rotate(6deg) scale(1.06)}}
 
 @media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.bubble__icon{animation:none!important}}

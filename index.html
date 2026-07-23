@@ -254,19 +254,34 @@
               <label><input type="radio" name="pos" value="br"><span></span></label>
             </div>
           </div>
+          <div class="field-grid">
+            <label class="field-label">フォント<select name="font">
+              <option value="maru">Zen Maru Gothic</option>
+              <option value="rounded">M PLUS Rounded</option>
+              <option value="kaku">Zen Kaku Gothic</option>
+              <option value="noto">Noto Sans JP</option>
+              <option value="poppins">Poppins</option>
+            </select></label>
+            <label class="field-label">出方<select name="anim">
+              <option value="poyon">ぽよん（弾む）</option>
+              <option value="slide">スライド</option>
+              <option value="drop">上から落ちる</option>
+              <option value="zoom">ズーム</option>
+            </select></label>
+          </div>
           <div class="field">
             <span class="field-label">カラー（吹き出し / 文字 / アクセント）</span>
             <div class="color-row">
-              <input type="color" name="bub" value="#fff4fa" aria-label="吹き出しの色">
-              <input type="color" name="txt" value="#4a3b52" aria-label="文字の色">
+              <input type="color" name="bub" value="#ffffff" aria-label="吹き出しの色">
+              <input type="color" name="txt" value="#3c3450" aria-label="文字の色">
               <input type="color" name="acc" value="#ff8fc5" aria-label="アクセントの色">
             </div>
           </div>
           <div class="range-row"><label class="field-label" for="asize">文字サイズ <output id="asize-value">26px</output></label><input id="asize" name="size" type="range" min="12" max="70" value="26"></div>
-          <div class="range-row"><label class="field-label" for="aradius">角の丸み <output id="aradius-value">28px</output></label><input id="aradius" name="radius" type="range" min="0" max="80" value="28"></div>
+          <div class="range-row"><label class="field-label" for="aradius">角の丸み <output id="aradius-value">まる</output></label><input id="aradius" name="radius" type="range" min="0" max="100" value="100"></div>
           <div class="range-row"><label class="field-label" for="apad">内側の余白 <output id="apad-value">22px</output></label><input id="apad" name="pad" type="range" min="8" max="50" value="22"></div>
           <div class="range-row"><label class="field-label" for="adur">表示時間 <output id="adur-value">5秒</output></label><input id="adur" name="dur" type="range" min="1" max="20" value="5"></div>
-          <label class="toggle"><input type="checkbox" name="tail" checked><span class="toggle__track"></span><span>吹き出しのしっぽを表示</span></label>
+          <label class="toggle"><input type="checkbox" name="tail"><span class="toggle__track"></span><span>吹き出しのしっぽを表示</span></label>
         </fieldset>
 
         <fieldset>

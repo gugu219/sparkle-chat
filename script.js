@@ -68,8 +68,8 @@
     const form=document.querySelector('#alert-form');if(!form)return;
     const frame=document.querySelector('#alert-preview'),out=document.querySelector('#alert-url'),toast=document.querySelector('#toast');
     const EVENTS=['sub','gift','follow','bits','points','donate'];
-    const DEF={pos:'bc',bub:'#fff4fa',txt:'#4a3b52',acc:'#ff8fc5',size:'26',radius:'28',pad:'22',dur:'5',tail:'1',
-      sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',channel:''};
+    const DEF={pos:'bc',bub:'#ffffff',txt:'#3c3450',acc:'#ff8fc5',size:'26',radius:'100',pad:'22',dur:'5',tail:'0',
+      font:'maru',anim:'poyon',sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',channel:''};
     const CHECKS=[...EVENTS,'tail'];
     const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒']};
     const target=location.protocol==='file:'?'*':location.origin;
@@ -81,7 +81,7 @@
     let timer,loaded=false,lastCh=null;
     const update=()=>{
       const v=values();out.value=url();
-      for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=v[k]+u;}
+      for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=(k==='radius'&&+v[k]>=100)?'まる':v[k]+u;}
       if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
       else frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-settings',settings:v},target);
     };

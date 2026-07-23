@@ -16,11 +16,14 @@
   };
 
   const DEFAULTS = {
-    pos: 'bc', bub: '#fff4fa', txt: '#4a3b52', acc: '#ff8fc5',
-    size: '26', radius: '28', pad: '22', dur: '5', tail: '1',
+    pos: 'bc', bub: '#ffffff', txt: '#3c3450', acc: '#ff8fc5',
+    size: '26', radius: '100', pad: '22', dur: '5', tail: '0',
+    font: 'maru', anim: 'poyon',
     sub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
     channel: ''
   };
+  const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins'];
+  const ANIMS = ['poyon', 'slide', 'drop', 'zoom'];
 
   const qs = new URLSearchParams(location.search);
   let s = Object.fromEntries(Object.keys(DEFAULTS).map(k => [k, qs.get(k) ?? DEFAULTS[k]]));
@@ -40,12 +43,16 @@
 
   function apply() {
     const pos = POS.includes(s.pos) ? s.pos : 'bc';
-    stage.className = 'stage pos-' + pos + (s.tail === '1' ? '' : ' no-tail');
+    const font = FONTS.includes(s.font) ? s.font : 'maru';
+    const anim = ANIMS.includes(s.anim) ? s.anim : 'poyon';
+    document.body.className = 'font-' + font;
+    stage.className = 'stage pos-' + pos + ' anim-' + anim + (s.tail === '1' ? '' : ' no-tail');
     root.style.setProperty('--bub', hex(s.bub, DEFAULTS.bub));
     root.style.setProperty('--txt', hex(s.txt, DEFAULTS.txt));
     root.style.setProperty('--acc', hex(s.acc, DEFAULTS.acc));
     root.style.setProperty('--size', clamp(s.size, 10, 90) + 'px');
-    root.style.setProperty('--radius', clamp(s.radius, 0, 90) + 'px');
+    const rad = clamp(s.radius, 0, 100);
+    root.style.setProperty('--radius', rad >= 100 ? '999px' : rad + 'px');   /* max = full pill */
     root.style.setProperty('--pad', clamp(s.pad, 6, 60) + 'px');
   }
 
