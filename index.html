@@ -235,7 +235,7 @@
             <label class="field-label" for="alert-channel">Twitch チャンネル名</label>
             <div class="input-with-prefix"><span>twitch.tv/</span><input id="alert-channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
           </div>
-          <p class="field-hint">サブスク・ギフト・Bits に自動で反応します。ログイン不要。</p>
+          <p class="field-hint">サブスク・ギフト・Bits に自動で反応します。<strong>ここが空だとOBSで何も表示されません。</strong></p>
         </fieldset>
 
         <fieldset>
@@ -360,6 +360,8 @@
           <label class="field-label" for="alert-url">OBSブラウザソース（アラート）</label>
           <button type="button" id="alert-copy" class="apply-btn">これらの設定をURLに反映してコピー</button>
           <div class="url-output"><input id="alert-url" readonly aria-label="アラート URL"></div>
+          <label class="toggle"><input type="checkbox" name="demo"><span class="toggle__track"></span><span>テスト表示（OBSで動作確認用にサンプルを繰り返す）</span></label>
+          <p class="field-hint">アラートは<strong>実際にサブスク等が発生した時だけ</strong>表示されます。OBSに貼った直後は何も出ないのが正常です。動作を確かめたい時は上の「テスト表示」をONにしてURLを貼り直してください（確認後はOFFに戻す）。</p>
           <p class="field-hint">1920×1080 のブラウザソースとして、他とは別に追加してください。</p>
         </fieldset>
       </form>

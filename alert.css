@@ -143,4 +143,8 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .bubble.is-out{animation:pop-out .34s ease-in both}
 @keyframes pop-out{0%{opacity:1;transform:scale(1)}28%{transform:scale(1.06,.94)}100%{opacity:0;transform:scale(.42) translateY(10px)}}
 
+/* setup helper, only with &debug=1 */
+#diag{position:fixed;left:10px;top:10px;z-index:99;padding:7px 11px;border-radius:8px;
+  background:rgba(10,8,20,.82);color:#8affc1;font:12px/1.4 "DM Mono",monospace;pointer-events:none}
+
 @media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt,.bubble__body{animation:none!important}}

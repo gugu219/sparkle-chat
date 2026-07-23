@@ -26,7 +26,7 @@
     brOn: '0', brC: '#ffffff', brW: '2', brA: '45',
     glOn: '0', glC: '#ff8fc5', glS: '40', glB: '40',
     sub: '1', resub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
-    channel: ''
+    demo: '0', channel: ''
   };
   const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins'];
   const ANIMS = ['poyon', 'slide', 'drop', 'zoom'];
@@ -190,10 +190,37 @@
 
   apply();
 
+  /* ---- optional on-screen status, for setting things up inside OBS ---- */
+  const dbg = qs.get('debug') === '1';
+  function status(t) {
+    console.log('[sparklechat/alert]', t);
+    if (!dbg) return;
+    let el = document.querySelector('#diag');
+    if (!el) { el = document.createElement('div'); el.id = 'diag'; document.body.appendChild(el); }
+    el.textContent = t;
+  }
+
+  /* ---- demo loop: proves the source works in OBS while no real events happen ---- */
+  if (s.demo === '1') {
+    const reel = [
+      ['sub', 'Mika', 'Tier 1', 0, ''],
+      ['gift', 'Kaito', '×1', 5, 'GIFTS'],
+      ['bits', 'LunaTV', '500 BITS', 0, ''],
+      ['follow', 'はると', '', 0, ''],
+      ['resub', 'ちゃんゆき', '', 12, 'MONTHS']
+    ];
+    let i = 0;
+    const run = () => show(...reel[i++ % reel.length]);
+    setTimeout(run, 800);
+    setInterval(run, Math.max(4500, (clamp(s.dur, 1, 30) + 3) * 1000));
+  }
+
   /* ---- real Twitch events over anonymous IRC ---- */
   const tier = p => p === 'Prime' ? 'PRIME' : p === '2000' ? 'Tier 2' : p === '3000' ? 'Tier 3' : 'Tier 1';
   const channel = String(s.channel || '').trim().toLowerCase();
+  if (!channel) status('チャンネル名が未設定です（実際のイベントは受信しません）');
   if (channel && window.tmi) {
+    status(`接続中… #${channel}`);
     const c = new window.tmi.Client({
       connection: { secure: true, reconnect: true },
       options: { skipMembership: true },
@@ -205,6 +232,8 @@
     c.on('submysterygift', (_ch, u, n) => show('gift', u, '×1', n || 1, 'GIFTS'));
     c.on('cheer', (_ch, t) => show('bits', (t && (t['display-name'] || t.username)) || '', `${(t && t.bits) || 0} BITS`, 0));
     c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) show('points', t['display-name'] || t.username, '', 0); });
-    c.connect().catch(err => console.warn('[sparklechat] alert connect failed', err));
+    c.on('connected', () => status(`接続済み #${channel} · イベント待機中`));
+    c.on('disconnected', why => status(`切断: ${why || '不明'}`));
+    c.connect().catch(err => status(`接続エラー: ${err}`));
   }
 })();

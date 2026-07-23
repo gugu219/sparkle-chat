@@ -60,7 +60,18 @@
     const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast');
     const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0',extras:form.elements.extras.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer,frameLoaded=false,lastChannel=null;const sendLive=s=>frame.contentWindow?.postMessage({source:'prism-editor',type:'settings',settings:s},location.protocol==='file:'?'*':location.origin);const update=()=>{const s=values();apply(s);out.value=url();document.querySelector('#opacity-value').textContent=`${s.opacity}%`;document.querySelector('#wrap-value').textContent=s.wrap;if(!frameLoaded||s.channel!==lastChannel){lastChannel=s.channel;frameLoaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url(true);},400);}else sendLive(s);};
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
-    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();alertEditor();collapsibles();
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};update();tabs();frameEditor();alertEditor();collapsibles();syncChannels();
+  }
+
+  /* ---------- editor: carry the channel name into the other tabs while they are empty ---------- */
+  function syncChannels(){
+    const chat=document.querySelector('#channel');if(!chat)return;
+    chat.addEventListener('input',()=>{
+      ['#frame-channel','#alert-channel'].forEach(sel=>{
+        const el=document.querySelector(sel);
+        if(el&&!el.value.trim()){el.value=chat.value;el.dispatchEvent(new Event('input',{bubbles:true}));}
+      });
+    });
   }
 
   /* ---------- editor: alert overlay ---------- */
@@ -74,8 +85,8 @@
       bg:'#181226',bgA:'62',blur:'14',glass:'140',
       brOn:'0',brC:'#ffffff',brW:'2',brA:'45',
       glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
-      sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',channel:''};
-    const CHECKS=[...EVENTS,'tail','brOn','glOn'];
+      sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',demo:'0',channel:''};
+    const CHECKS=[...EVENTS,'tail','brOn','glOn','demo'];
     const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒'],
       abgA:['bgA','%'],ablur:['blur','px'],aglass:['glass','%'],aicoBgA:['icoBgA','%'],avol:['vol','%'],
       abrW:['brW','px'],abrA:['brA','%'],aglS:['glS',''],aglB:['glB','px']};
