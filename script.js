@@ -96,7 +96,9 @@
     const SAMPLE={sub:['Tier 1',0,''],resub:['',12,'MONTHS'],gift:['×1',5,'GIFTS'],follow:['',0,''],
       bits:['500 BITS',0,''],points:['',0,''],donate:['¥1,000',0,'']};
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
-    const url=()=>`${new URL('alert.html',location.href).href}?${new URLSearchParams(values())}`;
+    /* a data: URI must never reach the URL — it would blow the length limit (414) */
+    const url=()=>{const v=values();if(/^data:/i.test(String(v.snd||'')))v.snd='';
+      return `${new URL('alert.html',location.href).href}?${new URLSearchParams(v)}`;};
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     let timer,loaded=false,lastCh=null;
     const update=()=>{
@@ -123,13 +125,24 @@
     /* local sound file -> embedded as a data URI so it also plays inside OBS */
     const sndInfo=document.querySelector('#snd-info');
     const setSndInfo=t=>{if(sndInfo)sndInfo.textContent='効果音: '+t;};
-    document.querySelector('#snd-file')?.addEventListener('change',e=>{
+    document.querySelector('#snd-file')?.addEventListener('change',async e=>{
       const f=e.target.files&&e.target.files[0];if(!f)return;
       if(f.size>260000){flash('音声が大きすぎます（260KB以下の短い効果音にしてください）');e.target.value='';return;}
-      const rd=new FileReader();
-      rd.onload=()=>{form.elements.snd.value=String(rd.result||'');setSndInfo(`${f.name}（${Math.round(f.size/1024)}KB）`);update();flash('効果音を設定しました');};
-      rd.onerror=()=>flash('音声の読み込みに失敗しました');
-      rd.readAsDataURL(f);
+      let dataUri='';
+      try{dataUri=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(String(rd.result||''));rd.onerror=rej;rd.readAsDataURL(f);});}
+      catch{flash('音声の読み込みに失敗しました');return;}
+      if(location.protocol==='file:'){   /* local testing: preview only, never goes in the URL */
+        form.elements.snd.value=dataUri;setSndInfo(`${f.name}（ローカル試聴のみ）`);update();return;
+      }
+      setSndInfo(`${f.name} をアップロード中…`);
+      try{
+        const r=await fetch('/api/sound',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:dataUri})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok||!j.id)throw new Error(j.error||`保存に失敗しました (${r.status})`);
+        form.elements.snd.value=j.id;
+        setSndInfo(`${f.name}（${Math.round(f.size/1024)}KB）`);
+        update();flash('効果音を保存しました');
+      }catch(err){setSndInfo('アップロードに失敗しました');flash('効果音の保存に失敗: '+err.message);}
     });
     document.querySelector('#snd-test')?.addEventListener('click',()=>{
       if(!form.elements.snd.value){flash('先に効果音ファイルを選んでください');return;}

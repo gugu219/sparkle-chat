@@ -87,10 +87,17 @@
       : depth);
   }
 
-  /* ---- sound ---- */
+  /* ---- sound ----
+     s.snd may be a stored id, a direct URL, or a data URI (local preview). */
+  function soundSrc() {
+    const v = String(s.snd || '').trim();
+    if (!v) return '';
+    if (/^(https?:|data:|blob:)/i.test(v)) return v;
+    return '/api/sound?id=' + encodeURIComponent(v);
+  }
   let audioEl = null, audioSrc = '';
   function playSound() {
-    const src = String(s.snd || '');
+    const src = soundSrc();
     if (!src) return;
     try {
       if (audioSrc !== src) { audioEl = new Audio(src); audioSrc = src; }
