@@ -2,7 +2,7 @@ import { json, redis, id } from './_lib.js';
 
 /* Stores a short alert sound and serves it back by id, so the OBS URL only
    has to carry the id (embedding the audio in the URL blows the length limit). */
-const MAX = 900000;                       /* base64 characters (~650KB file) */
+const MAX = 1000000;                      /* base64 characters (~730KB file) */
 const TTL = 60 * 60 * 24 * 365;           /* keep for a year */
 
 export default {async fetch(req){

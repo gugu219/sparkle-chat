@@ -181,7 +181,7 @@
 
     document.querySelector('#snd-file')?.addEventListener('change',async e=>{
       const f=e.target.files&&e.target.files[0];if(!f)return;
-      if(f.size>260000){flash('音声が大きすぎます（260KB以下の短い効果音にしてください）');e.target.value='';return;}
+      if(f.size>700000){flash('音声が大きすぎます（700KBまで）。長い曲は「音声URLを貼り付け」をご利用ください');e.target.value='';return;}
       let dataUri='';
       try{dataUri=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(String(rd.result||''));rd.onerror=rej;rd.readAsDataURL(f);});}
       catch{flash('音声の読み込みに失敗しました');return;}
