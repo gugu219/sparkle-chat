@@ -247,8 +247,20 @@
     });
     c.on('subscription', () => fire('sub', 1));
     c.on('resub', () => fire('sub', 1));
-    c.on('subgift', () => fire('gift', 1));
-    c.on('submysterygift', (_ch, _u, n) => fire('gift', Math.max(1, Math.min(20, +n || 1))));
+    /* one burst per bulk gift, not one per recipient */
+    const giftHush = {}, giftHushT = {};
+    c.on('submysterygift', (_ch, u, n) => {
+      const count = Math.max(1, +n || 1);
+      if (count < 2) return;
+      giftHush[u] = (giftHush[u] || 0) + count;
+      clearTimeout(giftHushT[u]);
+      giftHushT[u] = setTimeout(() => { delete giftHush[u]; }, 90000);
+      fire('gift', Math.min(20, count));
+    });
+    c.on('subgift', (_ch, u) => {
+      if (giftHush[u] > 0) { if (--giftHush[u] <= 0) { delete giftHush[u]; clearTimeout(giftHushT[u]); } return; }
+      fire('gift', 1);
+    });
     c.on('cheer', (_ch, t) => fire('bits', Math.max(1, Math.min(10, Math.round((+(t && t.bits) || 100) / 100)))));
     c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) fire('points', 1); });
     c.connect().catch(err => console.warn('[sparklechat] frame connect failed', err));

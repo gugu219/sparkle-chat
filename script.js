@@ -80,7 +80,7 @@
   function alertEditor(){
     const form=document.querySelector('#alert-form');if(!form)return;
     const frame=document.querySelector('#alert-preview'),out=document.querySelector('#alert-url'),toast=document.querySelector('#toast');
-    const EVENTS=['sub','resub','gift','follow','bits','points','donate'];
+    const EVENTS=['sub','resub','gift','follow','bits','points','donate','streak'];
     const DEF={pos:'bc',font:'maru',anim:'poyon',dur:'5',tail:'0',
       size:'26',radius:'100',pad:'22',txt:'#ffffff',acc:'#ff8fc5',ico:'#ffffff',icoBg:'#ff8fc5',icoBgA:'100',
       vol:'70',
@@ -89,7 +89,7 @@
       glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
       sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',demo:'0',channel:''};
     EVENTS.forEach(e=>{DEF[e+'Snd']='';DEF[e+'Vol']='80';DEF[e+'Dur']='5';});
-    const EV_LABEL={sub:'サブスク',resub:'継続',gift:'ギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ'};
+    const EV_LABEL={sub:'サブスク',resub:'継続',gift:'ギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ',streak:'連続視聴'};
     const CHECKS=[...EVENTS,'tail','brOn','glOn','demo'];
     const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],
       abgA:['bgA','%'],ablur:['blur','px'],aglass:['glass','%'],aicoBgA:['icoBgA','%'],avol:['vol','%'],
@@ -97,8 +97,9 @@
     const target=location.protocol==='file:'?'*':location.origin;
     const NAMES=['mikan_tea','はると','Kaito','ちゃんゆき','LunaTV','pixel_fan'];
     /* [detail, number, numberLabel] used by the test buttons */
+    /* [detail, num, numLabel, numPrefix?] */
     const SAMPLE={sub:['Tier 1',0,''],resub:['',12,'MONTHS'],gift:['×1',5,'GIFTS'],follow:['',0,''],
-      bits:['500 BITS',0,''],points:['',0,''],donate:['¥1,000',0,'']};
+      bits:['500 BITS',0,''],points:['',0,''],donate:['¥1,000',0,''],streak:['',25,'回','']};
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
     /* a data: URI must never reach the URL — it would blow the length limit (414) */
     const url=()=>{const v=values();if(/^data:/i.test(String(v.snd||'')))v.snd='';
@@ -174,10 +175,10 @@
 
     document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
       const ev=e.target.dataset.alertEvent;if(!ev)return;
-      const[detail,num,numLabel]=SAMPLE[ev]||['',0,''];
+      const[detail,num,numLabel,numPrefix]=SAMPLE[ev]||['',0,''];
       frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,
-        name:NAMES[Math.floor(Math.random()*NAMES.length)],detail,
-        num:+(e.target.dataset.alertNum||num),numLabel},target);});
+        name:NAMES[Math.floor(Math.random()*NAMES.length)],detail:e.target.dataset.alertDetail||detail,
+        num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'},target);});
 
     document.querySelector('#snd-file')?.addEventListener('change',async e=>{
       const f=e.target.files&&e.target.files[0];if(!f)return;

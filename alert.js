@@ -3,7 +3,7 @@
 (() => {
   'use strict';
 
-  const EVENTS = ['sub', 'resub', 'gift', 'follow', 'bits', 'points', 'donate'];
+  const EVENTS = ['sub', 'resub', 'gift', 'follow', 'bits', 'points', 'donate', 'streak'];
 
   /* icon key + English title. detail is built per event. */
   const PRESET = {
@@ -13,7 +13,8 @@
     follow: ['follow', 'NEW FOLLOWER'],
     bits:   ['bits',   'CHEER'],
     points: ['star',   'CHANNEL POINTS'],
-    donate: ['coin',   'DONATION']
+    donate: ['coin',   'DONATION'],
+    streak: ['flame',  'WATCH STREAK']
   };
 
   const DEFAULTS = {
@@ -25,7 +26,7 @@
     bg: '#181226', bgA: '62', blur: '14', glass: '140',
     brOn: '0', brC: '#ffffff', brW: '2', brA: '45',
     glOn: '0', glC: '#ff8fc5', glS: '40', glB: '40',
-    sub: '1', resub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
+    sub: '1', resub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1', streak: '1',
     demo: '0', channel: ''
   };
   /* each event carries its own sound + volume + display time */
@@ -111,6 +112,89 @@
     } catch {}
   }
 
+  /* ---- 8-bit chiptune for watch streaks (procedural, no files) ---- */
+  const AC = { ctx: null, master: null };
+  function ac() {
+    if (AC.ctx === null) {
+      try { AC.ctx = new (window.AudioContext || window.webkitAudioContext)(); AC.master = AC.ctx.createGain(); AC.master.connect(AC.ctx.destination); }
+      catch { AC.ctx = false; }
+    }
+    if (AC.ctx && AC.ctx.state === 'suspended') AC.ctx.resume();
+    return AC.ctx || null;
+  }
+  addEventListener('pointerdown', ac, { once: true });   /* unlock audio in a browser tab (OBS plays from the start) */
+  addEventListener('keydown', ac, { once: true });
+  function tone(freq, dur, o = {}) {
+    const a = ac(); if (!a) return;
+    const t0 = a.currentTime + (o.delay || 0), osc = a.createOscillator(), g = a.createGain();
+    osc.type = o.type || 'square'; osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime((o.vol || 1) * .5, t0 + .008);
+    g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
+    osc.connect(g); g.connect(AC.master); osc.start(t0); osc.stop(t0 + dur + .05);
+  }
+  const chord = (fs, dur, o) => fs.forEach(f => tone(f, dur, o));
+  const NT = { C5:523,D5:587,E5:659,F5:698,G5:784,A5:880,B5:988,Cs6:1109,C6:1046,D6:1175,E6:1318,F6:1397,G6:1568,A6:1760,C7:2093,E7:2637 };
+  const chipVol = () => { if (ac()) AC.master.gain.value = (clamp(s.streakVol, 0, 100) / 100) * (clamp(s.vol, 0, 100) / 100) * .6; };
+  const streakRank = d => d >= 400 ? 11 : d >= 300 ? 10 : d >= 250 ? 9 : d >= 200 ? 8 : d >= 150 ? 7 : d >= 100 ? 6 : d >= 75 ? 5 : d >= 50 ? 4 : d >= 25 ? 3 : d >= 10 ? 2 : 1;
+  function chipAppear(r) {
+    chipVol();
+    if (r <= 1) [NT.C5, NT.G5].forEach((f, i) => tone(f, .11, { delay: i * .08, vol: .6 }));
+    else if (r <= 3) [NT.C5, NT.E5, NT.G5].forEach((f, i) => tone(f, .12, { delay: i * .07, vol: .7 }));
+    else [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .12, { delay: i * .06, vol: .7 }));
+  }
+  function chipTick(big, r) {
+    chipVol();
+    const f = big ? NT.E6 : NT.B5;
+    tone(f, .06, { vol: big ? .8 : .42 });
+    if (r >= 5) tone(f * 1.5, .05, { vol: .18, type: 'triangle' });
+  }
+  function chipLand(r, days) {
+    chipVol();
+    if (days >= 100 && days % 100 === 0) {                     /* grand milestone fanfare */
+      [NT.C5, NT.E5, NT.G5, NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .07, { delay: i * .045, vol: .6 }));
+      chord([NT.C5, NT.E5, NT.G5, NT.C6], .12, { delay: .3, vol: .7 });
+      chord([NT.F5, NT.A5, NT.C6, NT.F6], .18, { delay: .45, vol: .72 });
+      chord([NT.G5, NT.B5, NT.D6, NT.G6], .18, { delay: .63, vol: .75 });
+      chord([NT.C5, NT.G5, NT.C6, NT.E6, NT.G6], .7, { delay: .82, vol: .8 });
+      [NT.C7, NT.E7, NT.G6, NT.C7].forEach((f, i) => tone(f, .09, { delay: .9 + i * .08, vol: .3, type: 'triangle' }));
+      return;
+    }
+    if (r <= 1) [NT.A5, NT.Cs6].forEach((f, i) => tone(f, .13, { delay: i * .09, vol: .7 }));
+    else if (r <= 3) [NT.A5, NT.Cs6, NT.E6].forEach((f, i) => tone(f, .14, { delay: i * .08, vol: .8 }));
+    else if (r <= 5) [NT.G5, NT.B5, NT.D6, NT.G6].forEach((f, i) => tone(f, .16, { delay: i * .09, vol: .85 }));
+    else {
+      [NT.G5, NT.B5, NT.D6, NT.G6].forEach((f, i) => { tone(f, .16, { delay: i * .08, vol: .9 }); tone(f * 1.5, .13, { delay: i * .08, vol: .22, type: 'triangle' }); });
+      chord([NT.C6, NT.E6, NT.G6], .35, { delay: .4, vol: .55 });
+      [NT.C7, NT.A6, NT.C7].forEach((f, i) => tone(f, .08, { delay: .48 + i * .07, vol: .32, type: 'triangle' }));
+    }
+  }
+
+  /* ---- streak count-up: time-based (handles big numbers), pulses & sounds every 10 ---- */
+  function countUpStreak(el, target) {
+    clearTimeout(cntTimer);
+    const total = Math.max(1, Math.round(target)), r = streakRank(total);
+    el.textContent = '1';
+    if (total <= 1) { el.classList.add('landed'); chipLand(r, total); return; }
+    const dur = Math.min(3000, 900 + total * 8), t0 = Date.now();
+    let last = 1;
+    const step = () => {
+      const p = Math.min(1, (Date.now() - t0) / dur);
+      const val = Math.max(1, Math.round(total * (1 - Math.pow(1 - p, 3))));
+      if (val !== last) {
+        el.textContent = String(val);
+        if (Math.floor(val / 10) > Math.floor(last / 10)) {
+          const big = Math.floor(val / 100) > Math.floor(last / 100);
+          milestone(el, big ? 5 : Math.min(4, Math.floor(val / 50) + 1));
+          chipTick(big, r);
+        }
+        last = val;
+      }
+      if (p < 1) cntTimer = setTimeout(step, 45);
+      else { el.classList.remove(...MS); void el.offsetWidth; el.classList.add('landed'); milestone(el, Math.min(5, Math.floor(total / 25) + 1)); chipLand(r, total); }
+    };
+    cntTimer = setTimeout(step, 45);
+  }
+
   /* ---- counter: discrete slot ticks that slow to a stop, with milestones ---- */
   const MS = ['ms1', 'ms2', 'ms3', 'ms4', 'ms5'];
   let cntTimer = null;
@@ -124,10 +208,11 @@
       if (body) { body.classList.remove('sh3', 'sh4', 'sh5'); void body.offsetWidth; body.classList.add('sh' + lvl); }
     }
   }
-  function countUp(el, target) {
+  function countUp(el, target, prefix) {
+    prefix = prefix != null ? prefix : '×';
     clearTimeout(cntTimer);
     const total = Math.max(1, Math.round(target));
-    el.textContent = '×1';
+    el.textContent = prefix + '1';
     if (total <= 1) { el.classList.add('landed'); return; }
     let i = 1;
     const finish = () => {
@@ -137,7 +222,7 @@
     };
     const tick = () => {
       i++;
-      el.textContent = '×' + i;
+      el.textContent = prefix + i;
       el.classList.remove('tick', 'landed', ...MS); void el.offsetWidth;
       if (i >= total) return finish();
       if (i % 10 === 0) milestone(el, i / 10);    /* every 10 -> a bigger flourish, capped at 50 */
@@ -151,13 +236,13 @@
   /* ---- queue so alerts never overlap ---- */
   const queue = [];
   let busy = false;
-  const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star' };
+  const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star', flame: '--i-flame' };
 
-  function show(kind, name, detail, num, numLabel) {
+  function show(kind, name, detail, num, numLabel, numPrefix) {
     if (!EVENTS.includes(kind)) return;
     const gate = kind === 'resub' ? 'sub' : kind;           /* resub follows the sub toggle */
     if (s[gate] !== '1' && s[kind] !== '1') return;
-    queue.push({ kind, name, detail, num, numLabel });
+    queue.push({ kind, name, detail, num, numLabel, numPrefix });
     if (!busy) next();
   }
   function next() {
@@ -170,8 +255,9 @@
     elMsg.textContent = item.name || 'Someone';
 
     const num = +item.num || 0;
+    const prefix = item.numPrefix != null ? item.numPrefix : '×';
     if (num > 1) {
-      elDetail.innerHTML = `<span class="cnt">×1</span> ${esc(item.numLabel || '')}`;
+      elDetail.innerHTML = `<span class="cnt">${esc(prefix)}1</span> ${esc(item.numLabel || '')}`;
     } else {
       elDetail.textContent = item.detail || '';
     }
@@ -181,7 +267,12 @@
     void bubble.offsetWidth;
     bubble.classList.add('is-in');
     playSound(item.kind);
-    if (num > 1) setTimeout(() => { const c = elDetail.querySelector('.cnt'); if (c) countUp(c, num); }, 380);
+    if (item.kind === 'streak') chipAppear(streakRank(num || 1));
+    if (num > 1) setTimeout(() => {
+      const c = elDetail.querySelector('.cnt'); if (!c) return;
+      if (item.kind === 'streak') countUpStreak(c, num);
+      else countUp(c, num, prefix);
+    }, 380);
 
     const hold = clamp(s[item.kind + 'Dur'] || s.dur, 1, 30) * 1000;
     setTimeout(() => {
@@ -196,7 +287,7 @@
     if (e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'alert-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
     if (e.data.type === 'alert-sound') { playSound(e.data.event || 'sub'); return; }
-    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel);
+    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel, e.data.numPrefix);
   });
 
   apply();
@@ -218,7 +309,8 @@
       ['gift', 'Kaito', '×1', 5, 'GIFTS'],
       ['bits', 'LunaTV', '500 BITS', 0, ''],
       ['follow', 'はると', '', 0, ''],
-      ['resub', 'ちゃんゆき', '', 12, 'MONTHS']
+      ['resub', 'ちゃんゆき', '', 12, 'MONTHS'],
+      ['streak', 'guguttemy_fan', '', 25, '回', '']
     ];
     let i = 0;
     const run = () => show(...reel[i++ % reel.length]);
@@ -239,10 +331,46 @@
     });
     c.on('subscription', (_ch, u, m) => show('sub', u, tier(m && m.plan), 0));
     c.on('resub', (_ch, u, months, _msg, _t, m) => show('resub', u, tier(m && m.plan), months, 'MONTHS'));
-    c.on('subgift', (_ch, u, _s, r) => show('gift', u, r ? `→ ${r}` : '×1', 0));
-    c.on('submysterygift', (_ch, u, n) => show('gift', u, '×1', n || 1, 'GIFTS'));
+    /* Bulk (mystery) gifts fire one summary event + one subgift per recipient.
+       Announce the bulk once and swallow the individual gifts; a lone gift still
+       shows sender -> recipient. */
+    const giftHush = {}, giftHushT = {};
+    c.on('submysterygift', (_ch, u, n) => {
+      const count = Math.max(1, +n || 1);
+      if (count < 2) return;                                   /* a single gift is shown as sender -> recipient */
+      giftHush[u] = (giftHush[u] || 0) + count;
+      clearTimeout(giftHushT[u]);
+      giftHushT[u] = setTimeout(() => { delete giftHush[u]; }, 90000);
+      show('gift', u, '×1', count, 'GIFTS');
+    });
+    c.on('subgift', (_ch, u, _s, r) => {
+      if (giftHush[u] > 0) { if (--giftHush[u] <= 0) { delete giftHush[u]; clearTimeout(giftHushT[u]); } return; }
+      show('gift', u, r ? `→ ${r}` : '×1', 0);
+    });
     c.on('cheer', (_ch, t) => show('bits', (t && (t['display-name'] || t.username)) || '', `${(t && t.bits) || 0} BITS`, 0));
-    c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) show('points', t['display-name'] || t.username, '', 0); });
+
+    /* watch streaks: official viewermilestone (most reliable) + JP/EN text reposts */
+    const toHalf = x => String(x).replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+    const reJP = /([^\s　！!？?。、,，]+)\s*さんは\s*(?:現在)?\s*[、,]?\s*([0-9０-９,，]+)\s*日?\s*(?:連続視聴|日連続視聴)中/;
+    const reEN = /(\S+)\s+watched\s+([\d,]+)\s+consecutive\s+streams/i;
+    const streakShow = (name, days) => {
+      name = String(name || '').trim();
+      days = parseInt(String(days).replace(/[,，]/g, ''), 10);
+      if (name && days > 0) show('streak', name, '', days, '回', '');
+    };
+    c.on('message', (_ch, t, text) => {
+      if (t && t['custom-reward-id']) show('points', t['display-name'] || t.username, '', 0);
+      if (!text) return;
+      let m = text.match(reEN); if (m) return streakShow(m[1], m[2]);
+      m = text.match(reJP);     if (m) return streakShow(m[1], toHalf(m[2]));
+    });
+    c.on('raw_message', (_cloned, msg) => {
+      const tg = msg && msg.tags;
+      if (tg && msg.command === 'USERNOTICE' && tg['msg-id'] === 'viewermilestone'
+          && (tg['msg-param-category'] || 'watch-streak') === 'watch-streak') {
+        streakShow(tg['display-name'] || tg['login'], tg['msg-param-value']);
+      }
+    });
     c.on('connected', () => status(`接続済み #${channel} · イベント待機中`));
     c.on('disconnected', why => status(`切断: ${why || '不明'}`));
     c.connect().catch(err => status(`接続エラー: ${err}`));
