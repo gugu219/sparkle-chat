@@ -28,8 +28,8 @@
     sub: '1', resub: '1', gift: '1', follow: '1', bits: '1', points: '1', donate: '1',
     demo: '0', channel: ''
   };
-  /* each event carries its own sound + volume */
-  EVENTS.forEach(e => { DEFAULTS[e + 'Snd'] = ''; DEFAULTS[e + 'Vol'] = '80'; });
+  /* each event carries its own sound + volume + display time */
+  EVENTS.forEach(e => { DEFAULTS[e + 'Snd'] = ''; DEFAULTS[e + 'Vol'] = '80'; DEFAULTS[e + 'Dur'] = '5'; });
 
   const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins'];
   const ANIMS = ['poyon', 'slide', 'drop', 'zoom'];
@@ -183,7 +183,7 @@
     playSound(item.kind);
     if (num > 1) setTimeout(() => { const c = elDetail.querySelector('.cnt'); if (c) countUp(c, num); }, 380);
 
-    const hold = clamp(s.dur, 1, 30) * 1000;
+    const hold = clamp(s[item.kind + 'Dur'] || s.dur, 1, 30) * 1000;
     setTimeout(() => {
       bubble.classList.remove('is-in');
       bubble.classList.add('is-out');

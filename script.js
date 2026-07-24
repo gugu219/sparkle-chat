@@ -88,10 +88,10 @@
       brOn:'0',brC:'#ffffff',brW:'2',brA:'45',
       glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
       sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',demo:'0',channel:''};
-    EVENTS.forEach(e=>{DEF[e+'Snd']='';DEF[e+'Vol']='80';});
+    EVENTS.forEach(e=>{DEF[e+'Snd']='';DEF[e+'Vol']='80';DEF[e+'Dur']='5';});
     const EV_LABEL={sub:'サブスク',resub:'継続',gift:'ギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ'};
     const CHECKS=[...EVENTS,'tail','brOn','glOn','demo'];
-    const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],adur:['dur','秒'],
+    const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],
       abgA:['bgA','%'],ablur:['blur','px'],aglass:['glass','%'],aicoBgA:['icoBgA','%'],avol:['vol','%'],
       abrW:['brW','px'],abrA:['brA','%'],aglS:['glS',''],aglB:['glB','px']};
     const target=location.protocol==='file:'?'*':location.origin;
@@ -108,7 +108,8 @@
     const update=()=>{
       const v=values();out.value=url();
       for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=(k==='radius'&&+v[k]>=100)?'まる':v[k]+u;}
-      EVENTS.forEach(e=>{const el=document.querySelector(`#${e}Vol-value`);if(el)el.textContent=v[e+'Vol']+'%';});
+      EVENTS.forEach(e=>{const vl=document.querySelector(`#${e}Vol-value`);if(vl)vl.textContent=v[e+'Vol']+'%';
+        const dl=document.querySelector(`#${e}Dur-value`);if(dl)dl.textContent=v[e+'Dur']+'秒';});
       store.save();
       if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
       else frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-settings',settings:v},target);
@@ -148,7 +149,9 @@
         p.innerHTML=`<div class="field"><label class="field-label" for="${e}Snd">効果音</label>`
           +`<div class="preset-row"><select id="${e}Snd" name="${e}Snd"></select><button type="button" data-sndtest="${e}">▶ 試聴</button></div></div>`
           +`<div class="range-row"><label class="field-label" for="${e}Vol">音量 <output id="${e}Vol-value">80%</output></label>`
-          +`<input id="${e}Vol" name="${e}Vol" type="range" min="0" max="100" value="80"></div>`;
+          +`<input id="${e}Vol" name="${e}Vol" type="range" min="0" max="100" value="80"></div>`
+          +`<div class="range-row"><label class="field-label" for="${e}Dur">表示時間 <output id="${e}Dur-value">5秒</output></label>`
+          +`<input id="${e}Dur" name="${e}Dur" type="range" min="1" max="20" value="5"></div>`;
         host.appendChild(p);
       });
       tabs.addEventListener('click',ev=>{const b=ev.target.closest('[data-sev]');if(!b)return;
