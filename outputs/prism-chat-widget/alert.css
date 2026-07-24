@@ -1,0 +1,165 @@
+/* SPARKLECHAT — Alert Overlay (OBS Browser Source)
+   Every surface (shape / background / border / glow / icon) is variable-driven
+   so the same widget can read as cute, minimal, gaming or glassmorphic. */
+:root{
+  --size:26px;                 /* base text size            */
+  --radius:999px;              /* corner radius             */
+  --pad:22px;                  /* inner padding             */
+  --txt:#ffffff;               /* body text                 */
+  --acc:#ff8fc5;               /* accent                    */
+  --ico:#ffffff;               /* icon stroke colour        */
+  --icoBg:#ff8fc5;             /* icon badge background     */
+  --bgc:rgba(24,18,38,.62);    /* bubble background (rgba)  */
+  --blur:14px;                 /* backdrop blur             */
+  --glass:140%;                /* backdrop saturation       */
+  --brW:0px;                   /* border width              */
+  --brc:transparent;           /* border colour (rgba)      */
+  --shadow:0 12px 30px -14px rgba(10,5,20,.55);
+  --bfont:"Zen Maru Gothic","M PLUS Rounded 1c",sans-serif;
+
+  /* white line icons */
+  --i-crown:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 18h14l1.6-9.4-4.9 3.2L12 4.8 8.3 11.8 3.4 8.6z'/%3E%3Cpath d='M6 20.5h12'/%3E%3C/svg%3E");
+  --i-gift:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 11.5h15V20h-15z'/%3E%3Cpath d='M3 7.5h18v4H3z'/%3E%3Cpath d='M12 7.5V20'/%3E%3Cpath d='M12 7.5S10.6 4 8.6 4a2 2 0 0 0 0 3.5z'/%3E%3Cpath d='M12 7.5S13.4 4 15.4 4a2 2 0 0 1 0 3.5z'/%3E%3C/svg%3E");
+  --i-heart:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20.2C7 16.6 4 14.1 4 10.6A3.6 3.6 0 0 1 12 8.2a3.6 3.6 0 0 1 8 2.4c0 3.5-3 6-8 9.6z'/%3E%3C/svg%3E");
+  --i-follow:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 19.5v-1.2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1.2'/%3E%3Ccircle cx='8.5' cy='7.5' r='3.5'/%3E%3Cpath d='M18.5 8v6M21.5 11h-6'/%3E%3C/svg%3E");
+  --i-bits:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.2 3.5h11.6l3.2 6-9 11.5-9-11.5z'/%3E%3Cpath d='M3 9.5h18'/%3E%3Cpath d='M9.2 3.5 6.2 9.5 12 21l5.8-11.5-3-6'/%3E%3C/svg%3E");
+  --i-coin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.8'/%3E%3Cpath d='M12 6.6v10.8'/%3E%3Cpath d='M14.6 9.4c0-1-1.2-1.7-2.6-1.7s-2.6.7-2.6 1.7 1.1 1.5 2.6 2 2.6 1 2.6 2.1-1.2 1.7-2.6 1.7-2.6-.7-2.6-1.7'/%3E%3C/svg%3E");
+  --i-star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.6l2.7 5.6 6.1.9-4.4 4.3 1.1 6.1-5.5-2.9-5.5 2.9 1.1-6.1L3.2 10.1l6.1-.9z'/%3E%3C/svg%3E");
+  --i-flame:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:var(--bfont)}
+
+/* font choices */
+.font-maru{--bfont:"Zen Maru Gothic",sans-serif}
+.font-rounded{--bfont:"M PLUS Rounded 1c",sans-serif}
+.font-kaku{--bfont:"Zen Kaku Gothic New",sans-serif}
+.font-noto{--bfont:"Noto Sans JP",sans-serif}
+.font-poppins{--bfont:"Poppins","Zen Maru Gothic",sans-serif}
+
+.stage{position:fixed;inset:0;display:flex;padding:44px;pointer-events:none}
+.pos-tl{align-items:flex-start;justify-content:flex-start}
+.pos-tc{align-items:flex-start;justify-content:center}
+.pos-tr{align-items:flex-start;justify-content:flex-end}
+.pos-ml{align-items:center;justify-content:flex-start}
+.pos-mc{align-items:center;justify-content:center}
+.pos-mr{align-items:center;justify-content:flex-end}
+.pos-bl{align-items:flex-end;justify-content:flex-start}
+.pos-bc{align-items:flex-end;justify-content:center}
+.pos-br{align-items:flex-end;justify-content:flex-end}
+
+/* ---- the notification surface ---- */
+.bubble{position:relative;display:none;max-width:min(84%,960px);
+  padding:calc(var(--pad) * .8) calc(var(--pad) * 1.45) calc(var(--pad) * .8) calc(var(--pad) * .8);
+  border-radius:var(--radius);
+  background:var(--bgc);
+  border:var(--brW) solid var(--brc);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--glass));
+  backdrop-filter:blur(var(--blur)) saturate(var(--glass));
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.18);
+  transform-origin:center bottom;will-change:transform,opacity}
+.bubble.is-on{display:block}
+.pos-tl .bubble,.pos-tc .bubble,.pos-tr .bubble{transform-origin:center top}
+
+.bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .7)}
+
+/* restrained premium sheen and lifetime bar */
+.bubble__shine{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;opacity:0}
+.bubble__shine::after{content:"";position:absolute;top:-40%;left:-32%;width:24%;height:180%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.26),transparent);
+  transform:translateX(-220%) skewX(-18deg);filter:blur(2px)}
+.bubble.is-in .bubble__shine{opacity:1}
+.bubble.is-in .bubble__shine::after{animation:alert-sheen 1.25s .12s cubic-bezier(.16,1,.3,1) both}
+@keyframes alert-sheen{to{transform:translateX(720%) skewX(-18deg)}}
+.bubble__progress{position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:0 0 var(--radius) var(--radius);
+  background:linear-gradient(90deg,var(--acc),rgba(255,255,255,.85),var(--acc));
+  transform:scaleX(0);transform-origin:left center;box-shadow:0 0 10px var(--acc);pointer-events:none}
+.bubble.is-in .bubble__progress{animation:alert-progress var(--alert-dur,5s) linear both}
+@keyframes alert-progress{from{transform:scaleX(0);opacity:1}92%{opacity:1}to{transform:scaleX(1);opacity:0}}
+
+/* icon badge — flat circle, colour + opacity fully user-controlled */
+.bubble__badge{flex:none;display:grid;place-items:center;
+  width:calc(var(--size) * 2.4);height:calc(var(--size) * 2.4);
+  border-radius:50%;background:var(--icoBg)}
+.bubble__icon{display:block;width:calc(var(--size) * 1.32);height:calc(var(--size) * 1.32);
+  background:var(--ico);
+  -webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+
+.bubble__text{min-width:0;padding-right:calc(var(--pad) * .2)}
+/* title matches the detail line size */
+.bubble__title{margin:0;color:var(--acc);font-size:calc(var(--size) * .72);font-weight:900;letter-spacing:.24em}
+.bubble__msg{margin:.14em 0 0;color:var(--txt);font-size:var(--size);font-weight:800;line-height:1.32;
+  letter-spacing:.015em;overflow-wrap:anywhere}
+.bubble__detail{margin:.08em 0 0;color:var(--acc);font-size:calc(var(--size) * .72);font-weight:900;letter-spacing:.1em}
+.bubble__detail:empty{display:none}
+
+/* title gets its own entrance */
+.bubble.is-in .bubble__title{animation:title-in .62s .1s both cubic-bezier(.2,1.2,.3,1)}
+@keyframes title-in{
+  0%{opacity:0;transform:translateY(-7px) scale(.92);letter-spacing:.6em}
+  55%{opacity:1;letter-spacing:.19em}
+  100%{opacity:1;transform:none;letter-spacing:.24em}}
+
+/* ---- number counter (slot-style) ---- */
+.cnt{display:inline-block;min-width:1.6em}
+.cnt.tick{animation:cnt-tick .11s ease-out}
+@keyframes cnt-tick{0%{transform:translateY(-22%) scale(.9);opacity:.55}100%{transform:none;opacity:1}}
+.cnt.landed{animation:cnt-land .5s cubic-bezier(.2,1.5,.35,1)}
+@keyframes cnt-land{0%{transform:scale(1)}35%{transform:scale(1.38)}100%{transform:scale(1)}}
+
+/* milestone flourishes — escalate every 10, capped at 50+ */
+.cnt.ms1{animation:ms-1 .45s cubic-bezier(.2,1.5,.35,1)}
+.cnt.ms2{animation:ms-2 .5s cubic-bezier(.2,1.5,.35,1)}
+.cnt.ms3{animation:ms-3 .55s cubic-bezier(.2,1.5,.35,1)}
+.cnt.ms4{animation:ms-4 .62s cubic-bezier(.2,1.6,.35,1)}
+.cnt.ms5{animation:ms-5 .75s cubic-bezier(.2,1.6,.35,1)}
+@keyframes ms-1{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+@keyframes ms-2{0%{transform:scale(1);filter:none}40%{transform:scale(1.55);filter:brightness(1.5)}100%{transform:scale(1);filter:none}}
+@keyframes ms-3{0%{transform:scale(1) rotate(0);filter:none}
+  35%{transform:scale(1.7) rotate(-4deg);filter:brightness(1.7) drop-shadow(0 0 10px var(--acc))}
+  100%{transform:scale(1) rotate(0);filter:none}}
+@keyframes ms-4{0%{transform:scale(1) rotate(0);filter:none}
+  30%{transform:scale(1.9) rotate(5deg);filter:brightness(2) drop-shadow(0 0 18px var(--acc))}
+  68%{transform:scale(1.18) rotate(-2deg)}100%{transform:scale(1) rotate(0);filter:none}}
+@keyframes ms-5{0%{transform:scale(1) rotate(0);filter:none}
+  16%{transform:scale(2.25) rotate(-8deg);filter:brightness(2.5) saturate(1.7) drop-shadow(0 0 26px var(--acc))}
+  42%{transform:scale(1.3) rotate(5deg);filter:brightness(1.4)}
+  66%{transform:scale(1.65) rotate(-3deg);filter:brightness(2) drop-shadow(0 0 20px var(--acc))}
+  100%{transform:scale(1) rotate(0);filter:none}}
+/* the whole row shakes from level 3 up */
+.bubble__body.sh3{animation:shake-s .38s ease-in-out}
+.bubble__body.sh4{animation:shake-m .48s ease-in-out}
+.bubble__body.sh5{animation:shake-l .62s ease-in-out}
+@keyframes shake-s{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes shake-m{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}48%{transform:translateX(5px)}74%{transform:translateX(-3px)}}
+@keyframes shake-l{0%,100%{transform:translate(0,0) rotate(0)}
+  12%{transform:translate(-9px,2px) rotate(-1deg)}30%{transform:translate(8px,-2px) rotate(1deg)}
+  50%{transform:translate(-6px,1px) rotate(-.6deg)}70%{transform:translate(5px,-1px) rotate(.5deg)}
+  86%{transform:translate(-3px,0) rotate(0)}}
+
+/* optional tail */
+.bubble__tail{position:absolute;left:calc(var(--size) * 2);bottom:-9px;width:22px;height:22px;
+  border-radius:50% 50% 58% 42%;background:var(--bgc);transform:rotate(12deg)}
+.no-tail .bubble__tail{display:none}
+.pos-tl .bubble__tail,.pos-tc .bubble__tail,.pos-tr .bubble__tail{bottom:auto;top:-9px}
+
+/* ================= entrance styles ================= */
+.anim-poyon .bubble.is-in{animation:in-poyon .74s cubic-bezier(.22,1.2,.36,1) both}
+@keyframes in-poyon{0%{opacity:0;transform:scale(.25) translateY(18px)}42%{opacity:1;transform:scale(1.14,.86) translateY(-8px)}
+  62%{transform:scale(.94,1.08) translateY(3px)}78%{transform:scale(1.04,.97) translateY(-2px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.anim-slide .bubble.is-in{animation:in-slide .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes in-slide{0%{opacity:0;transform:translateY(46px) scale(.97)}70%{opacity:1;transform:translateY(-6px) scale(1.005)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.anim-drop .bubble.is-in{animation:in-drop .68s cubic-bezier(.3,.9,.35,1.15) both}
+@keyframes in-drop{0%{opacity:0;transform:translateY(-64px) scale(.94)}55%{opacity:1;transform:translateY(6px) scale(1.02,.97)}
+  75%{transform:translateY(-4px) scale(.99,1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.anim-zoom .bubble.is-in{animation:in-zoom .5s cubic-bezier(.2,1.1,.3,1) both}
+@keyframes in-zoom{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
+
+.bubble.is-out{animation:pop-out .34s ease-in both}
+@keyframes pop-out{0%{opacity:1;transform:scale(1)}28%{transform:scale(1.06,.94)}100%{opacity:0;transform:scale(.42) translateY(10px)}}
+
+/* setup helper, only with &debug=1 */
+#diag{position:fixed;left:10px;top:10px;z-index:99;padding:7px 11px;border-radius:8px;
+  background:rgba(10,8,20,.82);color:#8affc1;font:12px/1.4 "DM Mono",monospace;pointer-events:none}
+
+@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt,.bubble__body{animation:none!important}}

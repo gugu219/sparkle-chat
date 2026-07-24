@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism Chat Widget</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================================
+       Prism Chat Widget | StreamElements Custom Widget ready
+       Tweak the tokens below first. The browser source stays transparent.
+       ========================================================= */
+    :root {
+      --widget-width: 440px;
+      --chat-gap: 13px;
+      --message-limit: 12;
+      --body-font: "Zen Kaku Gothic New", sans-serif;
+      --name-font: "M PLUS Rounded 1c", sans-serif;
+      --text-size: 15px;
+      --name-size: 14px;
+      --bubble-opacity: .78;
+      --glass: rgba(12, 13, 28, var(--bubble-opacity));
+      --glass-deep: rgba(8, 9, 21, .92);
+      --text: #f8f8ff;
+      --muted: #c6c9df;
+      --accent: #a997ff;
+      --accent-2: #70e4ff;
+      --accent-3: #ffd49b;
+      --line: rgba(184, 181, 255, .32);
+      --glow: rgba(143, 124, 255, .36);
+      --shadow: 0 10px 30px rgba(4, 5, 18, .34);
+    }
+
+    /* Optional palette classes: theme-rose / theme-aurora / theme-midnight */
+    .theme-rose { --accent:#ff91c6; --accent-2:#ffc58d; --accent-3:#ffe0ef; --line:rgba(255,171,211,.35); --glow:rgba(255,108,180,.3); }
+    .theme-aurora { --accent:#72dccd; --accent-2:#8eaaff; --accent-3:#d8fff3; --line:rgba(132,238,219,.34); --glow:rgba(73,218,194,.3); }
+    .theme-midnight { --accent:#8294ff; --accent-2:#6ee7f5; --accent-3:#e9efff; --line:rgba(145,159,255,.32); --glow:rgba(92,116,255,.31); }
+
+    * { box-sizing: border-box; }
+    html, body { width:100%; height:100%; margin:0; overflow:hidden; background:transparent; }
+    body { font-family:var(--body-font); color:var(--text); }
+
+    .chat {
+      position:relative;
+      width:min(var(--widget-width), 100%);
+      max-height:100vh;
+      display:flex;
+      flex-direction:column-reverse;
+      gap:var(--chat-gap);
+      padding:22px 18px 22px 34px;
+      overflow:hidden;
+      isolation:isolate;
+      mask-image:linear-gradient(to top, #000 88%, transparent 100%);
+    }
+    .chat::before {
+      content:""; position:absolute; z-index:-1; left:15px; top:18px; bottom:18px; width:1px;
+      background:linear-gradient(transparent, var(--line) 10%, var(--line) 90%, transparent);
+      box-shadow:0 0 8px var(--glow);
+    }
+
+    .msg { position:relative; min-width:0; transform-origin:left bottom; animation:message-in .48s cubic-bezier(.16, 1, .3, 1) both; }
+    .msg.is-leaving { pointer-events:none; animation:message-out .32s ease-in both; }
+    @keyframes message-in { from { opacity:0; transform:translate3d(-14px, 8px, 0) scale(.96); filter:blur(3px); } to { opacity:1; transform:translate3d(0,0,0) scale(1); filter:blur(0); } }
+    @keyframes message-out { to { opacity:0; transform:translate3d(12px, -7px, 0) scale(.96); } }
+
+    .node {
+      position:absolute; left:-25px; top:8px; width:12px; height:12px; border-radius:50%;
+      background:var(--accent-3); box-shadow:0 0 0 3px rgba(255,255,255,.08), 0 0 12px var(--accent-3);
+    }
+    .node::after { content:""; position:absolute; inset:3px; border-radius:inherit; background:white; animation:node-pulse 2.8s ease-in-out infinite; }
+    @keyframes node-pulse { 50% { opacity:.45; transform:scale(.45); } }
+
+    .msg__head { display:flex; align-items:center; gap:7px; min-height:20px; margin:0 0 5px 2px; }
+    .msg__name { font:800 var(--name-size)/1 var(--name-font); letter-spacing:.025em; color:var(--user-color, var(--accent-3)); text-shadow:0 1px 12px color-mix(in srgb, var(--user-color, var(--accent)) 42%, transparent); }
+    .badge { display:none; padding:3px 7px; border:1px solid rgba(255,255,255,.16); border-radius:999px; color:#160f22; font-size:9px; font-weight:900; letter-spacing:.08em; line-height:1; background:linear-gradient(120deg, var(--badge-a), var(--badge-b)); box-shadow:0 3px 10px -5px var(--badge-a); }
+    .badge:not(:empty) { display:inline-block; }
+    .badge--broadcaster { --badge-a:#ff78b4; --badge-b:#ffc072; }
+    .badge--mod { --badge-a:#5bd780; --badge-b:#b7f477; }
+    .badge--vip { --badge-a:#d880ff; --badge-b:#8c86ff; }
+    .badge--sub { --badge-a:#76aaff; --badge-b:#7ceaf7; }
+    .badge--artist { --badge-a:#ff9d68; --badge-b:#ffd773; }
+
+    .msg__bubble {
+      position:relative; width:fit-content; max-width:100%; padding:10px 14px;
+      border:1px solid transparent; border-radius:5px 15px 15px 15px;
+      background:linear-gradient(var(--glass),var(--glass)) padding-box, linear-gradient(135deg, color-mix(in srgb,var(--accent) 82%, white), color-mix(in srgb,var(--accent-2) 72%, transparent), rgba(255,255,255,.12)) border-box;
+      box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.11);
+      font-size:var(--text-size); font-weight:500; line-height:1.58; color:var(--text); overflow-wrap:anywhere;
+      text-shadow:0 1px 2px rgba(0,0,0,.25);
+    }
+    /* Backdrop blur can be turned off for lower-end streaming PCs. */
+    .use-blur .msg__bubble, .use-blur .alert__surface { backdrop-filter:blur(10px) saturate(125%); -webkit-backdrop-filter:blur(10px) saturate(125%); }
+    .msg--emote .msg__bubble { padding:4px 7px; border-color:transparent; background:none; box-shadow:none; font-size:31px; }
+
+    .alert { position:relative; overflow:hidden; border-radius:17px; padding:1px; background:linear-gradient(115deg, var(--alert-a), var(--alert-b), var(--alert-c), var(--alert-a)); background-size:220% 100%; box-shadow:0 0 28px -8px var(--alert-glow), var(--shadow); animation:alert-in .58s cubic-bezier(.16,1,.3,1) both, gradient-flow 5s linear infinite; }
+    .alert__surface { position:relative; min-height:82px; padding:14px 17px 15px; overflow:hidden; border-radius:16px; background:linear-gradient(118deg, rgba(15,15,33,.96), var(--glass-deep)); }
+    .alert__surface::before { content:""; position:absolute; width:115px; height:115px; right:-40px; top:-65px; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb,var(--alert-b) 36%, transparent), transparent 67%); pointer-events:none; }
+    .alert__surface::after { content:"✦"; position:absolute; right:15px; bottom:9px; font-size:22px; color:var(--alert-c); opacity:.76; text-shadow:0 0 14px var(--alert-c); animation:float 2.5s ease-in-out infinite; }
+    @keyframes alert-in { from { opacity:0; transform:translate3d(-18px,0,0) scale(.94); } to { opacity:1; transform:none; } }
+    @keyframes gradient-flow { to { background-position:220% 0; } }
+    @keyframes float { 50% { transform:translateY(-4px) rotate(12deg); opacity:1; } }
+    .alert--sub { --alert-a:#8b62ff; --alert-b:#c19cff; --alert-c:#ffe0a0; --alert-glow:rgba(145,99,255,.72); }
+    .alert--gift { --alert-a:#fa68b3; --alert-b:#ffaad7; --alert-c:#ac95ff; --alert-glow:rgba(255,97,185,.72); }
+    .alert--tip { --alert-a:#f4bf61; --alert-b:#ffe59c; --alert-c:#77dfad; --alert-glow:rgba(255,203,94,.68); }
+    .alert--cheer { --alert-a:#55dff3; --alert-b:#9c8dff; --alert-c:#ff7ad7; --alert-glow:rgba(88,217,255,.72); }
+    .alert__kind { position:relative; margin-bottom:5px; color:var(--alert-b); font:800 10px/1 var(--name-font); letter-spacing:.19em; text-transform:uppercase; }
+    .alert__line { position:relative; padding-right:28px; font-size:15px; font-weight:500; line-height:1.5; }
+    .a-name { color:var(--alert-c); font-weight:900; }
+    .a-amount { display:inline-block; margin-left:5px; color:#1d1630; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:900; background:linear-gradient(115deg,var(--alert-b),var(--alert-c)); }
+    .alert__note { position:relative; margin-top:5px; padding-right:22px; color:var(--muted); font-size:12px; line-height:1.45; overflow-wrap:anywhere; }
+
+    @media (prefers-reduced-motion: reduce) { .msg, .msg.is-leaving, .alert, .node::after, .alert__surface::after { animation:none !important; } }
+
+    /* Preview controls are never rendered in an OBS / StreamElements source. */
+    .preview { display:none; position:fixed; inset:auto 14px 14px auto; z-index:5; width:170px; padding:10px; border:1px solid rgba(255,255,255,.14); border-radius:12px; background:rgba(13,14,29,.88); color:white; font:12px sans-serif; }
+    .preview.is-visible { display:grid; gap:7px; }
+    .preview button { padding:7px; border:0; border-radius:7px; background:linear-gradient(110deg,var(--accent),var(--accent-2)); color:#131124; font-weight:800; cursor:pointer; }
+  </style>
+</head>
+<body class="theme-midnight use-blur">
+  <main class="chat" id="chat" aria-live="polite"></main>
+
+  <template id="message-template">
+    <article class="msg">
+      <i class="node" aria-hidden="true"></i>
+      <header class="msg__head"><span class="badge"></span><span class="msg__name"></span></header>
+      <div class="msg__bubble"></div>
+    </article>
+  </template>
+
+  <template id="alert-template">
+    <article class="msg"><i class="node" aria-hidden="true"></i><section class="alert"><div class="alert__surface"><div class="alert__kind"></div><div class="alert__line"></div><div class="alert__note"></div></div></section></article>
+  </template>
+
+  <aside class="preview" id="preview"><button data-demo="message">チャットを追加</button><button data-demo="sub">サブスク通知</button><button data-demo="gift">ギフト通知</button><button data-demo="tip">投げ銭通知</button></aside>
+
+  <script>
+    (() => {
+      'use strict';
+      const chat = document.querySelector('#chat');
+      const messageTemplate = document.querySelector('#message-template');
+      const alertTemplate = document.querySelector('#alert-template');
+      const rootStyle = document.documentElement.style;
+      let messageLimit = 12;
+
+      const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' })[char]);
+      const colorFromName = name => { let hash = 0; for (const char of String(name || 'viewer')) hash = (hash * 31 + char.charCodeAt(0)) % 360; return `hsl(${hash} 82% 77%)`; };
+      const cleanText = value => String(value || '').trim();
+
+      function roleFrom(tags = {}) {
+        const badges = tags.badges || '';
+        if (badges.includes('broadcaster')) return ['broadcaster', '配信者'];
+        if (badges.includes('moderator') || tags.mod === '1') return ['mod', 'MOD'];
+        if (badges.includes('vip')) return ['vip', 'VIP'];
+        if (badges.includes('artist')) return ['artist', 'ART'];
+        if (badges.includes('subscriber') || tags.subscriber === '1') return ['sub', 'SUB'];
+        return ['', ''];
+      }
+
+      function trimMessages() {
+        while (chat.childElementCount > messageLimit) {
+          const oldest = chat.lastElementChild;
+          if (!oldest) return;
+          oldest.classList.add('is-leaving');
+          window.setTimeout(() => oldest.remove(), 340);
+          if (chat.childElementCount <= messageLimit + 1) return;
+          oldest.remove();
+        }
+      }
+
+      function renderMessage(data = {}) {
+        const tags = data.tags || {};
+        const name = data.displayName || tags['display-name'] || data.nick || 'Viewer';
+        const [role, roleLabel] = roleFrom(tags);
+        const fragment = messageTemplate.content.cloneNode(true);
+        const msg = fragment.querySelector('.msg');
+        const badge = fragment.querySelector('.badge');
+        const nameEl = fragment.querySelector('.msg__name');
+        const bubble = fragment.querySelector('.msg__bubble');
+        if (role) { badge.classList.add(`badge--${role}`); badge.textContent = roleLabel; }
+        nameEl.textContent = name;
+        nameEl.style.setProperty('--user-color', tags.color || colorFromName(name));
+        // StreamElements supplies renderedText for emotes; plain messages are escaped.
+        bubble.innerHTML = data.renderedText || escapeHtml(data.text || '');
+        if (data.isEmote) msg.classList.add('msg--emote');
+        chat.prepend(fragment);
+        trimMessages();
+      }
+
+      function renderAlert(type, label, name, amount = '', note = '') {
+        const fragment = alertTemplate.content.cloneNode(true);
+        const alert = fragment.querySelector('.alert');
+        const kind = fragment.querySelector('.alert__kind');
+        const line = fragment.querySelector('.alert__line');
+        const noteEl = fragment.querySelector('.alert__note');
+        alert.classList.add(`alert--${type}`);
+        kind.textContent = label;
+        line.innerHTML = `<span class="a-name">${escapeHtml(name || 'Anonymous')}</span> さん${amount ? ` <span class="a-amount">${escapeHtml(amount)}</span>` : ''}`;
+        noteEl.textContent = cleanText(note);
+        if (!noteEl.textContent) noteEl.remove();
+        chat.prepend(fragment);
+        trimMessages();
+      }
+
+      function applySettings(fields = {}) {
+        const theme = fields.theme || 'midnight';
+        document.body.classList.remove('theme-rose', 'theme-aurora', 'theme-midnight');
+        document.body.classList.add(`theme-${theme}`);
+        document.body.classList.toggle('use-blur', fields.useBlur !== false && fields.useBlur !== 'false');
+        if (fields.messageLimit) messageLimit = Math.max(1, Number(fields.messageLimit) || 12);
+        if (fields.textSize) rootStyle.setProperty('--text-size', `${Number(fields.textSize)}px`);
+        if (fields.bubbleOpacity) rootStyle.setProperty('--bubble-opacity', Math.min(1, Math.max(.1, Number(fields.bubbleOpacity) / 100)));
+      }
+
+      // StreamElements event hooks.
+      window.addEventListener('onWidgetLoad', event => applySettings(event.detail?.fieldData || {}));
+      window.addEventListener('onEventReceived', event => {
+        const listener = event.detail?.listener;
+        const data = event.detail?.event?.data || {};
+        if (listener === 'message') return renderMessage(data);
+        if (listener === 'subscriber-latest') {
+          const quantity = data.amount || data.bulkGiftedAmount || '';
+          return data.gifted || data.bulkGifted
+            ? renderAlert('gift', 'GIFT SUB', data.sender || data.displayName, quantity ? `${quantity} gifted` : '', data.message)
+            : renderAlert('sub', 'NEW SUBSCRIBER', data.displayName, '', data.message);
+        }
+        if (listener === 'tip-latest') return renderAlert('tip', 'TIP', data.name, `${data.amount || ''}${data.currency || ''}`, data.message);
+        if (listener === 'cheer-latest') return renderAlert('cheer', 'CHEER', data.name, `${data.amount || ''} Bits`, data.message);
+      });
+
+      // Local preview: append ?preview=1 to the browser-source URL. Never active by default.
+      if (new URLSearchParams(location.search).has('preview')) {
+        const preview = document.querySelector('#preview');
+        preview.classList.add('is-visible');
+        const demo = {
+          message: () => renderMessage({ displayName:'星見ミカ', tags:{badges:'subscriber/6', subscriber:'1', color:'#d6a3ff'}, text:'最高のシーン！ 今日も配信ありがとう ✨' }),
+          sub: () => renderAlert('sub', 'NEW SUBSCRIBER', 'mikan_tea', '', 'メンバーになりました！'),
+          gift: () => renderAlert('gift', 'GIFT SUB', 'Rin', '5 gifted', 'みんなで楽しもう！'),
+          tip: () => renderAlert('tip', 'TIP', 'Kenta', '¥500', 'ナイスプレイ！')
+        };
+        preview.addEventListener('click', event => { const action = event.target.dataset.demo; if (demo[action]) demo[action](); });
+        demo.message(); window.setTimeout(demo.message, 180); window.setTimeout(demo.sub, 360);
+      }
+    })();
+  </script>
+</body>
+</html>
