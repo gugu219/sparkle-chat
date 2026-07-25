@@ -3,18 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Prism Chat — OBS View</title>
+  <title>SPARKLECHAT — OBS View</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700;900&family=Kosugi+Maru&family=Shippori+Mincho:wght@500;700;800&family=Zen+Old+Mincho:wght@400;700;900&family=DotGothic16&family=Yuji+Syuku&family=Klee+One:wght@400;600&family=Inter:wght@400;500;700;800&family=Poppins:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body class="widget theme-selene bg-glass">
   <main id="chat" class="chat-stack" aria-live="polite"></main>
   <div id="preview-channel" class="preview-channel" aria-hidden="true"></div>
-  <template id="message-template"><article class="chat-message"><i class="chat-message__node" aria-hidden="true"></i><header><span class="role-badge"></span><span class="chat-message__name"></span></header><div class="chat-message__bubble"></div></article></template>
+  <template id="message-template"><article class="chat-message"><i class="chat-message__node" aria-hidden="true"></i><header><span class="role-badge"></span><span class="badge-list"></span><span class="chat-message__name"></span></header><div class="chat-message__bubble"></div></article></template>
   <template id="alert-template"><article class="chat-alert"><i class="chat-message__node" aria-hidden="true"></i><div class="chat-alert__border"><div class="chat-alert__surface"><p class="chat-alert__kind"></p><p class="chat-alert__line"></p><p class="chat-alert__note"></p><span class="chat-alert__spark">✦</span></div></div></article></template>
-  <script src="https://unpkg.com/tmi.js@1.8.5/dist/tmi.min.js"></script>
-  <script src="script.js"></script>
+  <script type="module">
+    try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
+    catch(e){console.error('[prism] tmi.js bundle failed to load',e);}
+    await import('./script.js?v=2');
+  </script>
 </body>
 </html>

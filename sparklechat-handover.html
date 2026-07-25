@@ -1,0 +1,617 @@
+<!doctype html>
+<title>SPARKLECHAT — Project Handover</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* ── tokens ──────────────────────────────────── */
+:root {
+  --bg:      #0d0a14;
+  --surface: #18122b;
+  --card:    #211934;
+  --border:  rgba(255,143,197,.13);
+  --acc:     #ff8fc5;
+  --acc2:    #c87dff;
+  --txt:     #e8e0f0;
+  --muted:   #9080a8;
+  --dim:     #5e5070;
+  --code-bg: #110d1e;
+  --good:    #7affb2;
+  --warn:    #ffc87a;
+  --radius:  10px;
+}
+@media(prefers-color-scheme:light){:root{
+  --bg:      #faf8fd;
+  --surface: #f0ecf8;
+  --card:    #e9e3f5;
+  --border:  rgba(160,80,220,.15);
+  --acc:     #c5479e;
+  --acc2:    #7e3fc0;
+  --txt:     #1a1030;
+  --muted:   #6b5880;
+  --dim:     #9a88b0;
+  --code-bg: #e3daf2;
+  --good:    #1a7a44;
+  --warn:    #895600;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d0a14;--surface:#18122b;--card:#211934;--border:rgba(255,143,197,.13);
+  --acc:#ff8fc5;--acc2:#c87dff;--txt:#e8e0f0;--muted:#9080a8;--dim:#5e5070;
+  --code-bg:#110d1e;--good:#7affb2;--warn:#ffc87a;
+}
+:root[data-theme="light"]{
+  --bg:#faf8fd;--surface:#f0ecf8;--card:#e9e3f5;--border:rgba(160,80,220,.15);
+  --acc:#c5479e;--acc2:#7e3fc0;--txt:#1a1030;--muted:#6b5880;--dim:#9a88b0;
+  --code-bg:#e3daf2;--good:#1a7a44;--warn:#895600;
+}
+
+/* ── reset ───────────────────────────────────── */
+*,::before,::after{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--txt);
+  font:15px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;
+  min-height:100vh;
+}
+h1,h2,h3,h4{text-wrap:balance;font-weight:800;letter-spacing:-.02em}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre{font-family:ui-monospace,"Cascadia Code","JetBrains Mono",monospace;font-size:.88em}
+pre{
+  background:var(--code-bg);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;overflow-x:auto;
+  line-height:1.5;color:var(--txt);
+}
+@media(prefers-reduced-motion:no-preference){
+  .fadein{animation:fade .35s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+
+/* ── layout ──────────────────────────────────── */
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr;min-height:100vh}
+.topbar{
+  grid-column:1/-1;display:flex;align-items:center;gap:14px;
+  padding:14px 28px;border-bottom:1px solid var(--border);
+  background:var(--surface);position:sticky;top:0;z-index:10;
+}
+.brand{display:flex;align-items:center;gap:8px;font-weight:900;font-size:18px;letter-spacing:.04em}
+.brand mark{background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.badge{font-size:11px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:20px;
+  background:rgba(255,143,197,.15);color:var(--acc);border:1px solid rgba(255,143,197,.25)}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--muted);
+  border-radius:6px;padding:4px 8px;cursor:pointer;font-size:13px}
+.theme-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+.nav{
+  background:var(--surface);border-right:1px solid var(--border);
+  padding:24px 0;position:sticky;top:53px;height:calc(100vh - 53px);overflow-y:auto;
+}
+.nav-section{padding:0 16px 4px;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-top:18px}
+.nav-section:first-child{margin-top:0}
+.nav a{
+  display:block;padding:6px 16px;font-size:13.5px;color:var(--muted);
+  border-left:2px solid transparent;transition:color .15s,border-color .15s;
+}
+.nav a:hover,.nav a.active{color:var(--acc);border-left-color:var(--acc);background:rgba(255,143,197,.05);text-decoration:none}
+
+.main{padding:40px 48px;max-width:900px}
+
+/* ── sections ────────────────────────────────── */
+section{margin-bottom:56px}
+.section-eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);margin-bottom:8px}
+.section-title{font-size:22px;color:var(--txt);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+/* ── cards ───────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:12px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.card h4{font-size:13px;font-weight:700;color:var(--acc);letter-spacing:.05em;margin-bottom:6px}
+.card p{font-size:13.5px;color:var(--muted);line-height:1.55}
+
+/* ── file tree ───────────────────────────────── */
+.tree{
+  background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.9;
+  overflow-x:auto;
+}
+.tree .d{color:var(--acc2);font-weight:700}
+.tree .f{color:var(--txt)}
+.tree .note{color:var(--muted);font-style:italic}
+.tree .new{color:var(--good)}
+
+/* ── table ───────────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:4px}
+.tbl th{text-align:left;color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  padding:6px 12px;border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,143,197,.06);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.tbl .ok{color:var(--good)}
+.tbl .muted{color:var(--muted)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
+
+/* ── checklist ───────────────────────────────── */
+.check{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px}
+.check li{display:flex;align-items:flex-start;gap:10px;font-size:14px}
+.check li::before{content:"✓";flex:none;color:var(--good);font-weight:900;margin-top:1px}
+.check li.pend::before{content:"○";color:var(--warn)}
+
+/* ── highlight box ───────────────────────────── */
+.hl{
+  background:rgba(255,143,197,.07);border-left:3px solid var(--acc);
+  border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin-bottom:16px;
+  font-size:14px;color:var(--txt);
+}
+.hl strong{color:var(--acc)}
+
+/* ── tag ─────────────────────────────────────── */
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;
+  padding:2px 6px;border-radius:4px;margin-right:4px}
+.tag.blue{background:rgba(200,125,255,.15);color:var(--acc2);border:1px solid rgba(200,125,255,.25)}
+.tag.pink{background:rgba(255,143,197,.15);color:var(--acc);border:1px solid rgba(255,143,197,.25)}
+.tag.green{background:rgba(122,255,178,.12);color:var(--good);border:1px solid rgba(122,255,178,.2)}
+
+/* ── event table pills ───────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+  padding:3px 9px;border-radius:20px;letter-spacing:.04em}
+.pill.on{background:rgba(122,255,178,.12);color:var(--good);border:1px solid rgba(122,255,178,.2)}
+.pill.off{background:rgba(255,143,197,.08);color:var(--muted);border:1px solid var(--border)}
+
+/* ── divider ─────────────────────────────────── */
+hr{border:none;border-top:1px solid var(--border);margin:32px 0}
+
+/* ── responsive ──────────────────────────────── */
+@media(max-width:720px){
+  .shell{grid-template-columns:1fr}
+  .nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .main{padding:24px 18px}
+}
+</style>
+
+<div class="shell">
+  <!-- top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <span>✦</span>
+      <mark>SPARKLECHAT</mark>
+    </div>
+    <span class="badge">引き継ぎ文書 v2025-07-24</span>
+    <div class="topbar-right">
+      <button class="theme-btn" onclick="toggleTheme()">☀ / ☾</button>
+    </div>
+  </header>
+
+  <!-- side nav -->
+  <nav class="nav">
+    <div class="nav-section">概要</div>
+    <a href="#overview">プロジェクト全体像</a>
+    <a href="#stack">技術スタック</a>
+    <a href="#files">ファイル構成</a>
+
+    <div class="nav-section">各オーバーレイ</div>
+    <a href="#chat">Chat Overlay</a>
+    <a href="#frame">Frame Overlay</a>
+    <a href="#alert">Alert Overlay</a>
+    <a href="#editor">設定エディタ</a>
+
+    <div class="nav-section">パターン</div>
+    <a href="#settings-flow">設定フロー</a>
+    <a href="#tmi">Twitch IRC 接続</a>
+    <a href="#api">Vercel API</a>
+
+    <div class="nav-section">デプロイ</div>
+    <a href="#deploy">デプロイ手順</a>
+    <a href="#done">実装済み機能</a>
+    <a href="#design">デザイン方針</a>
+  </nav>
+
+  <!-- main content -->
+  <main class="main fadein">
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <div class="section-eyebrow">Project Brief</div>
+      <h2 class="section-title">SPARKLECHAT とは</h2>
+
+      <div class="hl">
+        <strong>商品概要：</strong>
+        Twitch 配信用の OBS ブラウザソース型チャットオーバーレイ。
+        ログイン不要で匿名接続し、チャット・枠・アラートの3種類のオーバーレイを提供する。
+        BOOTH でのファイル販売を想定して制作中。
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>販売者</h4>
+          <p>日本語話者のクリエイター。ikiiro56@gmail.com。BOOTHで販売予定のOBSウィジェット。</p>
+        </div>
+        <div class="card">
+          <h4>ユーザー</h4>
+          <p>日本語圏の Twitch 配信者。OBS に URL を貼るだけで使える手軽さが重要。</p>
+        </div>
+        <div class="card">
+          <h4>配信先</h4>
+          <p>GitHub: <code>gugu219/sparkle-chat</code><br>Vercel: <code>sparkle-chat-gamma.vercel.app</code></p>
+        </div>
+        <div class="card">
+          <h4>ビルドなし</h4>
+          <p>plain HTML / CSS / JS のみ。<code>npm run build</code> 不要。Vercel に push すれば即反映。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STACK -->
+    <section id="stack">
+      <div class="section-eyebrow">Architecture</div>
+      <h2 class="section-title">技術スタック</h2>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>レイヤー</th><th>使用技術</th><th>備考</th></tr></thead>
+          <tbody>
+            <tr><td>フロントエンド</td><td>HTML / CSS / JS (ES modules)</td><td class="muted">ビルドステップなし</td></tr>
+            <tr><td>Twitch IRC</td><td><code>vendor/tmi.bundle.mjs</code></td><td class="muted">匿名接続（OAuth不要）</td></tr>
+            <tr><td>設定永続化</td><td><code>localStorage</code> + URL params</td><td class="muted">OBS は URL params、エディタは localStorage</td></tr>
+            <tr><td>サーバー</td><td>Vercel Serverless Functions (ESM)</td><td class="muted"><code>export default { async fetch(req) {} }</code></td></tr>
+            <tr><td>DB</td><td>Upstash Redis (<code>@upstash/redis</code>)</td><td class="muted">バッジキャッシュ・音声データ保存</td></tr>
+            <tr><td>エフェクト音</td><td>Web Audio API（手続き型 8-bit）</td><td class="muted">音声ファイルなし、コードで生成</td></tr>
+            <tr><td>テーマ</td><td>CSS カスタムプロパティ</td><td class="muted">postMessage でライブ反映</td></tr>
+            <tr><td>フォント</td><td>Google Fonts（Zen Maru Gothic 等）</td><td class="muted">15種類実装済み</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FILES -->
+    <section id="files">
+      <div class="section-eyebrow">File Map</div>
+      <h2 class="section-title">ファイル構成</h2>
+
+      <div class="tree">
+<span class="d">prism-chat-widget/</span><br>
+├── <span class="f">index.html</span>     <span class="note">← 設定エディタ UI（3タブ）</span><br>
+├── <span class="f">script.js</span>      <span class="note">← エディタのロジック・localStorage・テストボタン</span><br>
+├── <span class="f">style.css</span>      <span class="note">← エディタのスタイル</span><br>
+├── <span class="f">view.html</span>      <span class="note">← チャットオーバーレイ本体（OBS URL）</span><br>
+├── <span class="f">frame.html</span>     <span class="note">← 枠オーバーレイ本体</span><br>
+├── <span class="f">frame.js</span>       <span class="note">← 枠のロジック・パーティクル・アニメ</span><br>
+├── <span class="f">frame.css</span>      <span class="note">← 枠のスタイル</span><br>
+├── <span class="new">alert.html</span>     <span class="note">← アラートオーバーレイ本体（OBS URL）</span><br>
+├── <span class="new">alert.js</span>      <span class="note">← アラートのロジック・8-bit音・連続視聴検知</span><br>
+├── <span class="new">alert.css</span>     <span class="note">← アラートのスタイル・全アイコン変数</span><br>
+├── <span class="d">api/</span><br>
+│   ├── <span class="f">_lib.js</span>    <span class="note">← redis() / token() / id() 共通ユーティリティ</span><br>
+│   ├── <span class="f">badges.js</span>  <span class="note">← Twitch Helix からバッジ画像取得・Redis 1h キャッシュ</span><br>
+│   └── <span class="f">sound.js</span>   <span class="note">← 音声データ URI を Redis 保存・短縮 ID 返却</span><br>
+├── <span class="d">vendor/</span><br>
+│   └── <span class="f">tmi.bundle.mjs</span>   <span class="note">← tmi.js バンドル（CDN 不使用）</span><br>
+└── <span class="f">package.json</span>    <span class="note">← Vercel 設定 + @upstash/redis のみ</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px"><span style="color:var(--good)">緑色</span>は最近追加・大幅更新されたファイル</p>
+    </section>
+
+    <hr>
+
+    <!-- CHAT OVERLAY -->
+    <section id="chat">
+      <div class="section-eyebrow">Overlay 1</div>
+      <h2 class="section-title">Chat Overlay — <code>view.html</code></h2>
+
+      <ul class="check">
+        <li>tmi.js で Twitch チャンネルに匿名接続（ログイン不要）</li>
+        <li>バッジ画像：<code>/api/badges</code> 経由で Twitch Helix から取得（サブスク・VIP・モデレータ等）</li>
+        <li>サブスク / VIP / モデ バッジを <em>グラデーション背景の丸バッジ</em>で表示、その他バッジは表示/非表示切替可</li>
+        <li>エモート：Twitch 公式エモートを画像で表示（BTTV 非対応）</li>
+        <li>メッセージマーカー（ハート・星・スパークル）、オプションで光るアニメ</li>
+        <li>チャンネルポイント使用時の強調表示</li>
+        <li>チアー（Bits）通知インライン表示</li>
+        <li>右寄せ / 左寄せ切り替え</li>
+        <li>文字サイズ・最大表示件数・改行文字数をスライダーで設定</li>
+        <li>デモモード：ループ再生で架空の日英チャットを流す</li>
+        <li>フォント 15 種類（日本語 10・英語 5）</li>
+      </ul>
+
+      <div class="hl" style="margin-top:20px">
+        <strong>バグ修正済み：</strong>
+        <code>t.badges</code> はオブジェクト型なのに <code>.includes()</code> を呼んでクラッシュしていた（→ <code>hasBadge(t,k)</code> 関数で修正）。<code>is-leaving</code> の要素もカウントして早期削除していた（→ 非leaving要素のみカウントに修正）。
+      </div>
+    </section>
+
+    <!-- FRAME OVERLAY -->
+    <section id="frame">
+      <div class="section-eyebrow">Overlay 2</div>
+      <h2 class="section-title">Frame Overlay — <code>frame.html</code></h2>
+
+      <ul class="check">
+        <li>SVG マスク技術（evenodd fill-rule）で中抜きリング型の枠を生成</li>
+        <li>外側・内側の角丸を独立して調整（<code>--fr</code> / <code>--fri</code>）</li>
+        <li>パーティクルシステム：rise / fall / float / pile の4モーション</li>
+        <li>pile: 画面下にたまる物理演算（列ごとの高さマップ）</li>
+        <li>イベント別パーティクル設定（形状・動き・数・サイズ・速度・不透明度・カラーモード・4色）</li>
+        <li>枠の発光（シーン）を ON/OFF する設定</li>
+        <li>カラーパレット保存（Web 上で複数カラーを保持）</li>
+        <li>サブスクギフトのサプレッション（submysterygift→1回のみ、個別 subgift は無視）</li>
+      </ul>
+    </section>
+
+    <!-- ALERT OVERLAY -->
+    <section id="alert">
+      <div class="section-eyebrow">Overlay 3</div>
+      <h2 class="section-title">Alert Overlay — <code>alert.html</code></h2>
+
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">
+        最も新しく、最も多機能。全イベントが独立した音・音量・表示時間を持つ。
+      </p>
+
+      <div class="tbl-wrap" style="margin-bottom:20px">
+        <table class="tbl">
+          <thead><tr><th>イベント</th><th>アイコン</th><th>特記事項</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill on">SUB</span></td><td>crown</td><td class="muted">TIER 1/2/3 表示</td></tr>
+            <tr><td><span class="pill on">RESUB</span></td><td>crown</td><td class="muted">継続月数カウントアップ</td></tr>
+            <tr><td><span class="pill on">GIFT SUB</span></td><td>gift</td><td class="muted">ギフト数カウントアップ（マイルストーン演出 10/20/30/40/50+）、1体のみ表示・個別通知サプレッション</td></tr>
+            <tr><td><span class="pill on">FOLLOW</span></td><td>follow</td><td class="muted">匿名 IRC で検知可</td></tr>
+            <tr><td><span class="pill on">CHEER</span></td><td>bits</td><td class="muted">Bits 数表示</td></tr>
+            <tr><td><span class="pill on">CHANNEL POINTS</span></td><td>star</td><td class="muted">チャンネルポイント使用</td></tr>
+            <tr><td><span class="pill on">DONATION</span></td><td>coin</td><td class="muted">外部ドネ（Streamlabs 等）向け枠</td></tr>
+            <tr><td><span class="pill on" style="background:rgba(255,143,197,.15);color:var(--acc)">WATCH STREAK</span></td><td>flame 🔥</td><td class="muted">連続視聴通知（最新追加）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--txt)">アラートデザイン仕様</h4>
+      <ul class="check">
+        <li>グラスモーフィズム吹き出し（背景色・不透明度・ぼかし・彩度）</li>
+        <li>アニメ種別：poyon / slide / drop / zoom の4種</li>
+        <li>吹き出しの角丸（0〜999px ピル型まで）</li>
+        <li>ボーダー・グロー（発光）独立設定</li>
+        <li>表示位置：9箇所（tl/tc/tr/ml/mc/mr/bl/bc/br）</li>
+        <li>タイトル文字の入場アニメ</li>
+        <li>数字カウントアップ演出（イージング付き）</li>
+        <li>連続視聴は「190 回」形式（× なし）、時間比例カウント</li>
+      </ul>
+
+      <h4 style="font-size:14px;font-weight:700;margin:20px 0 10px;color:var(--txt)">8-bit チップチューン音</h4>
+      <ul class="check">
+        <li>Web Audio API による手続き型生成（音声ファイルなし）</li>
+        <li>登場音・カウント中ビクンッ音・到達ジングル（回数で豪華さ変化）</li>
+        <li>100/200/300… 回でファンファーレ（grand jingle）</li>
+        <li>ユーザー定義音：ローカルファイル → <code>/api/sound</code> → Redis 保存 → 短縮 ID</li>
+        <li>最大ファイルサイズ：700KB（base64 で約93万文字）</li>
+      </ul>
+
+      <h4 style="font-size:14px;font-weight:700;margin:20px 0 10px;color:var(--txt)">連続視聴（Watch Streak）検知方法</h4>
+      <pre>// 1. 公式 IRC タグ（最も確実）
+msg.tags['msg-id'] === 'viewermilestone'
+&& msg.tags['msg-param-category'] === 'watch-streak'
+
+// 2. 英語テキスト
+/(\S+)\s+watched\s+([\d,]+)\s+consecutive\s+streams/i
+
+// 3. 日本語テキスト（全角数字対応）
+/([^\s　！!？?。、,，]+)\s*さんは\s*(?:現在)?\s*[、,]?\s*([0-9０-９,，]+)\s*日?\s*(?:連続視聴|日連続視聴)中/</pre>
+    </section>
+
+    <!-- EDITOR -->
+    <section id="editor">
+      <div class="section-eyebrow">Settings UI</div>
+      <h2 class="section-title">設定エディタ — <code>index.html</code> + <code>script.js</code></h2>
+
+      <ul class="check">
+        <li>3タブ（チャット / 枠 / アラート）、コラプシブルセクション</li>
+        <li><code>persist(form, key, values)</code> 関数で localStorage への自動保存・復元</li>
+        <li>チャンネル名入力で枠・アラートの空フィールドを自動同期（<code>syncChannels()</code>）</li>
+        <li>「URL に反映」ボタンで URL パラメータを生成・コピー</li>
+        <li>iframe プレビューに <code>postMessage</code> でリアルタイム設定反映（リロードなし）</li>
+        <li>プレビュー背景 5 種（チェッカー / 暗 / 明 / 緑 / カスタム）</li>
+        <li>テストボタン：各イベントをプレビューで確認</li>
+        <li>音声ライブラリ：ローカルファイルをアップロードして使い回し可</li>
+        <li>デモモード（<code>demo=1</code> URL パラメータ）：OBS でも架空チャットをループ</li>
+      </ul>
+    </section>
+
+    <hr>
+
+    <!-- SETTINGS FLOW -->
+    <section id="settings-flow">
+      <div class="section-eyebrow">Pattern</div>
+      <h2 class="section-title">設定フロー</h2>
+
+      <pre>エディタ（index.html）
+  ↓ 入力・スライダー操作
+  → localStorage に自動保存
+  → iframe に postMessage { type:'sparkle-settings', settings:{…} }
+    → オーバーレイ側の window.addEventListener('message') で受信
+    → apply() で CSS 変数・クラスを即時更新（リロードなし）
+
+「URL に反映」ボタン
+  → URLSearchParams を構築（音声はデータ URI でなく短縮 ID のみ）
+  → クリップボードにコピー
+
+OBS ブラウザソース
+  → URL パラメータで初期化（localStorage なし）
+  → tmi.js で Twitch IRC に匿名接続</pre>
+
+      <div class="hl" style="margin-top:16px">
+        <strong>重要：</strong>
+        音声データ URI を URL に含めると Vercel で <code>414 URI_TOO_LONG</code> が発生する。
+        音声は必ず <code>/api/sound</code> にアップロードし、返却される短縮 ID（22文字）を URL に使うこと。
+      </div>
+    </section>
+
+    <!-- TMI -->
+    <section id="tmi">
+      <div class="section-eyebrow">Pattern</div>
+      <h2 class="section-title">Twitch IRC 接続（匿名）</h2>
+
+      <pre>import tmi from './vendor/tmi.bundle.mjs';
+const c = new tmi.Client({ channels: [channel] });
+// ↑ username / password なし = 匿名接続
+
+c.on('message', (ch, tags, msg, self) => { … });
+c.on('sub', …);
+c.on('resub', …);
+c.on('submysterygift', …);  // ギフト数まとめ通知
+c.on('subgift', …);          // 個別ギフト（サプレッション処理）
+c.on('cheer', …);
+c.on('raw_message', (_cloned, msg) => {
+  // viewermilestone (連続視聴) はここで検知
+});</pre>
+
+      <p style="font-size:14px;color:var(--muted);margin-top:12px">
+        匿名でもバッジ・エモート・ビッツ・サブ・ギフト・チャンネルポイントが全て動作する。
+        <code>hasBadge(tags, key)</code> でバッジ判定（<code>tags.badges</code> はオブジェクト型）。
+      </p>
+    </section>
+
+    <!-- API -->
+    <section id="api">
+      <div class="section-eyebrow">Pattern</div>
+      <h2 class="section-title">Vercel API エンドポイント</h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>GET /api/badges?channel=xxx</h4>
+          <p>Twitch Helix からグローバル＋チャンネルバッジを取得。Redis に1時間キャッシュ。戻り値: <code>{"subscriber/6": "https://…"}</code></p>
+        </div>
+        <div class="card">
+          <h4>POST /api/sound</h4>
+          <p>音声データ URI を Redis に保存（TTL 1年）。22文字の短縮 ID を返却。最大 700KB。</p>
+        </div>
+        <div class="card">
+          <h4>GET /api/sound?id=xxx</h4>
+          <p>短縮 ID から音声バイトをストリーミング。Immutable キャッシュヘッダー付き。</p>
+        </div>
+      </div>
+
+      <pre style="margin-top:16px">// api/_lib.js — 共通ユーティリティ
+redis()    // Upstash Redis クライアント
+token()    // Twitch app access token (client credentials)
+id()       // nanoid 22文字 ID 生成
+json(req)  // リクエストボディを JSON パース
+base(req)  // レスポンスの CORS ヘッダー付きベース</pre>
+    </section>
+
+    <hr>
+
+    <!-- DEPLOY -->
+    <section id="deploy">
+      <div class="section-eyebrow">Deploy</div>
+      <h2 class="section-title">デプロイ手順</h2>
+
+      <div class="hl">
+        GitHub に push するだけで Vercel が自動デプロイする。<strong>ビルドステップなし</strong>。
+      </div>
+
+      <pre>リポジトリ: github.com/gugu219/sparkle-chat
+本番 URL:   https://sparkle-chat-gamma.vercel.app/
+
+# 更新するファイルをコミット・プッシュ
+git add alert.css alert.js index.html script.js
+git commit -m "add watch streak notification"
+git push</pre>
+
+      <div class="hl" style="margin-top:16px">
+        <strong>注意：</strong> デプロイ後は必ず <strong>Ctrl + Shift + R</strong> でブラウザキャッシュをクリア。
+        CSS（特に <code>alert.css</code>）が古いキャッシュで読まれてアイコンが出ないことがある。
+      </div>
+
+      <h4 style="font-size:14px;font-weight:700;margin:20px 0 8px;color:var(--txt)">環境変数（Vercel ダッシュボードで設定）</h4>
+      <pre>TWITCH_CLIENT_ID=…
+TWITCH_CLIENT_SECRET=…
+UPSTASH_REDIS_REST_URL=…
+UPSTASH_REDIS_REST_TOKEN=…</pre>
+    </section>
+
+    <!-- DONE -->
+    <section id="done">
+      <div class="section-eyebrow">Status</div>
+      <h2 class="section-title">実装済み機能一覧</h2>
+
+      <ul class="check">
+        <li>チャット表示（バッジ・エモート・メッセージマーカー）</li>
+        <li>バッジ：サブスク/VIP/モデ はグラデ丸バッジ、その他は表示切替</li>
+        <li>チャット右寄せ/左寄せ</li>
+        <li>改行文字数スライダー</li>
+        <li>チャンネルポイント強調表示</li>
+        <li>デモループモード（架空の日英チャット）</li>
+        <li>枠オーバーレイ（SVGリング・パーティクル4種）</li>
+        <li>パーティクル色4色選択・カラーパレット保存</li>
+        <li>枠の発光 ON/OFF</li>
+        <li>アラートオーバーレイ（グラスモーフィズム吹き出し）</li>
+        <li>アラート7イベント（sub/resub/gift/follow/bits/points/donate）</li>
+        <li>連続視聴（Watch Streak）通知 🆕</li>
+        <li>サブスクギフトのサプレッション（まとめ1回のみ）</li>
+        <li>8-bit チップチューン音（手続き型 Web Audio API）</li>
+        <li>ユーザー定義音声（ローカルファイル → API → Redis）</li>
+        <li>イベント別 音・音量・表示時間の設定</li>
+        <li>設定エディタ（3タブ・コラプシブル）</li>
+        <li>プレビューリアルタイム反映（postMessage）</li>
+        <li>OBS 用 URL 生成・コピー</li>
+        <li>プレビュー背景5種（OBS用透明の確認に便利）</li>
+      </ul>
+    </section>
+
+    <!-- DESIGN -->
+    <section id="design">
+      <div class="section-eyebrow">Design Direction</div>
+      <h2 class="section-title">デザイン方針・ユーザー要望メモ</h2>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>全体トーン</h4>
+          <p>「チープではなく洗練されたデザイン」。DUOLINGO のようなポップで UI/UX が磨かれたイメージ。</p>
+        </div>
+        <div class="card">
+          <h4>アラート吹き出し</h4>
+          <p>長方形より両端が丸いカプセル型。グラスモーフィズム背景（ぼかし＋彩度）。フォント選択可。</p>
+        </div>
+        <div class="card">
+          <h4>アイコン</h4>
+          <p>白いラインアイコン（Lucide 風）。塗りつぶしではなくストローク。CSS mask-image で着色。</p>
+        </div>
+        <div class="card">
+          <h4>ギフト演出</h4>
+          <p>他より豪華に。グラデーションの縁。マーカーアニメ（shake・milestone）でドラマティックに。</p>
+        </div>
+        <div class="card">
+          <h4>エディタ</h4>
+          <p>シンプルで使いやすく。セクションは折りたためるように。スクロールジャンプバグは修正済み。</p>
+        </div>
+        <div class="card">
+          <h4>注意点</h4>
+          <p>「配信の空気をひとつ上の質感へ」のキャッチコピーは不要。ブランド名は <strong>SPARKLECHAT</strong> のみ。</p>
+        </div>
+      </div>
+
+      <div class="hl" style="margin-top:20px">
+        <strong>エディタの主要バグ（修正済み）：</strong>
+        トグル・セグメントコントロールをクリックすると画面が一番下に飛ぶバグ →
+        <code>.toggle{position:relative}</code> と <code>.segmented label{position:relative}</code> を追加して修正。
+        hidden input の position:absolute がページ底部にアンカースクロールを引き起こしていた。
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+function toggleTheme(){
+  const r=document.documentElement;
+  const cur=r.getAttribute('data-theme');
+  r.setAttribute('data-theme',cur==='dark'?'light':'dark');
+}
+
+// nav active highlight on scroll
+const sections=[...document.querySelectorAll('section[id]')];
+const links=[...document.querySelectorAll('.nav a')];
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      links.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector(`.nav a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{rootMargin:'-20% 0px -70% 0px'});
+sections.forEach(s=>obs.observe(s));
+</script>

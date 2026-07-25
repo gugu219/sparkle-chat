@@ -7,11 +7,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@700;900&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="alert.css">
+  <link rel="stylesheet" href="alert.css?v=2">
 </head>
 <body>
   <div class="stage pos-bc" id="stage">
     <div class="bubble" id="bubble">
+      <span class="bubble__aura" aria-hidden="true"></span>
+      <span class="bubble__ring" aria-hidden="true"></span>
       <div class="bubble__body">
         <span class="bubble__badge"><i class="bubble__icon" id="icon"></i></span>
         <div class="bubble__text">
@@ -20,13 +22,29 @@
           <p class="bubble__detail" id="detail"></p>
         </div>
       </div>
+      <span class="bubble__sparks" id="sparks" aria-hidden="true"></span>
       <span class="bubble__tail"></span>
     </div>
+  </div>
+
+  <!-- hype train: a live, self-updating panel (level + progress% + countdown gauge) -->
+  <div class="hype" id="hype" aria-hidden="true">
+    <div class="hype__row">
+      <span class="hype__badge"><i class="hype__icon"></i></span>
+      <div class="hype__text">
+        <p class="hype__title">HYPE TRAIN</p>
+        <p class="hype__lvl"><span id="hype-lvl">LEVEL 1</span> <span class="hype__pct" id="hype-pct">0%</span></p>
+      </div>
+      <span class="hype__timer" id="hype-timer">5:00</span>
+    </div>
+    <div class="hype__bar"><span class="hype__fill" id="hype-fill"></span></div>
+    <div class="hype__timebar"><span class="hype__timefill" id="hype-timefill"></span></div>
+    <span class="hype__sparks" id="hype-sparks" aria-hidden="true"></span>
   </div>
   <script type="module">
     try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
     catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
-    await import('./alert.js');
+    await import('./alert.js?v=2');
   </script>
 </body>
 </html>

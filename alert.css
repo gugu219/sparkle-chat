@@ -26,6 +26,7 @@
   --i-coin:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.8'/%3E%3Cpath d='M12 6.6v10.8'/%3E%3Cpath d='M14.6 9.4c0-1-1.2-1.7-2.6-1.7s-2.6.7-2.6 1.7 1.1 1.5 2.6 2 2.6 1 2.6 2.1-1.2 1.7-2.6 1.7-2.6-.7-2.6-1.7'/%3E%3C/svg%3E");
   --i-star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.6l2.7 5.6 6.1.9-4.4 4.3 1.1 6.1-5.5-2.9-5.5 2.9 1.1-6.1L3.2 10.1l6.1-.9z'/%3E%3C/svg%3E");
   --i-flame:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z'/%3E%3C/svg%3E");
+  --i-hype:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z'/%3E%3C/svg%3E");
 }
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden;font-family:var(--bfont)}
@@ -56,12 +57,26 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
   border:var(--brW) solid var(--brc);
   -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--glass));
   backdrop-filter:blur(var(--blur)) saturate(var(--glass));
-  box-shadow:var(--shadow);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.18);
   transform-origin:center bottom;will-change:transform,opacity}
 .bubble.is-on{display:block}
 .pos-tl .bubble,.pos-tc .bubble,.pos-tr .bubble{transform-origin:center top}
 
 .bubble__body{display:flex;align-items:center;gap:calc(var(--pad) * .7)}
+
+/* restrained premium sheen and lifetime bar */
+.bubble__shine{position:absolute;inset:0;overflow:hidden;border-radius:inherit;pointer-events:none;opacity:0}
+.bubble__shine::after{content:"";position:absolute;top:-40%;left:-32%;width:24%;height:180%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.26),transparent);
+  transform:translateX(-220%) skewX(-18deg);filter:blur(2px)}
+.bubble.is-in .bubble__shine{opacity:1}
+.bubble.is-in .bubble__shine::after{animation:alert-sheen 1.25s .12s cubic-bezier(.16,1,.3,1) both}
+@keyframes alert-sheen{to{transform:translateX(720%) skewX(-18deg)}}
+.bubble__progress{position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:0 0 var(--radius) var(--radius);
+  background:linear-gradient(90deg,var(--acc),rgba(255,255,255,.85),var(--acc));
+  transform:scaleX(0);transform-origin:left center;box-shadow:0 0 10px var(--acc);pointer-events:none}
+.bubble.is-in .bubble__progress{animation:alert-progress var(--alert-dur,5s) linear both}
+@keyframes alert-progress{from{transform:scaleX(0);opacity:1}92%{opacity:1}to{transform:scaleX(1);opacity:0}}
 
 /* icon badge — flat circle, colour + opacity fully user-controlled */
 .bubble__badge{flex:none;display:grid;place-items:center;
@@ -123,6 +138,51 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
   50%{transform:translate(-6px,1px) rotate(-.6deg)}70%{transform:translate(5px,-1px) rotate(.5deg)}
   86%{transform:translate(-3px,0) rotate(0)}}
 
+/* ================= premium FX: rainbow frame + sparkles ================= */
+/* rainbow glow kept INSIDE the frame — clipped to the bubble, no outward spill, no spinning */
+.bubble__aura{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;
+  opacity:0;pointer-events:none;transition:opacity .4s ease}
+.bubble__aura::before{content:"";position:absolute;inset:-35%;
+  background:conic-gradient(from 0deg,#ff5b7f,#ff9d4d,#ffe14d,#57ff8f,#4dd6ff,#8a6bff,#ff5be1,#ff5b7f);
+  filter:blur(20px) saturate(1.25);
+  -webkit-mask:radial-gradient(125% 125% at 50% 50%,transparent 42%,#000 80%);
+  mask:radial-gradient(125% 125% at 50% 50%,transparent 42%,#000 80%);
+  animation:aura-hue 5s linear infinite}                     /* hue cycles in place — colour shimmer, not rotation */
+.bubble.rainbow .bubble__aura{opacity:.85;animation:aura-breathe 2.6s ease-in-out infinite}
+@keyframes aura-hue{to{filter:blur(20px) saturate(1.25) hue-rotate(360deg)}}
+@keyframes aura-breathe{0%,100%{opacity:.6}50%{opacity:.92}}
+
+/* rainbow ring drawn exactly on the bubble border (stays on the frame, never spills) */
+.bubble__ring{position:absolute;inset:0;z-index:2;border-radius:inherit;
+  padding:2.5px;opacity:0;pointer-events:none;transition:opacity .4s ease;
+  background:conic-gradient(from 0deg,#ff5b7f,#ff9d4d,#ffe14d,#57ff8f,#4dd6ff,#8a6bff,#ff5be1,#ff5b7f);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude}
+.bubble.rainbow .bubble__ring{opacity:1;animation:ring-hue 3.5s linear infinite}
+@keyframes ring-hue{to{filter:hue-rotate(360deg)}}
+
+/* Tier 2 / 3 — a natural emphasis on the tier label as the alert appears */
+.bubble.is-in.tier2 .bubble__detail{animation:tier2-in .9s .32s both cubic-bezier(.2,1.3,.35,1)}
+.bubble.is-in.tier3 .bubble__detail{animation:tier3-in 1s .32s both cubic-bezier(.2,1.45,.35,1)}
+@keyframes tier2-in{0%{transform:scale(1);text-shadow:none}42%{transform:scale(1.16);text-shadow:0 0 12px var(--acc)}100%{transform:scale(1);text-shadow:0 0 4px var(--acc)}}
+@keyframes tier3-in{0%{transform:scale(1);letter-spacing:.1em;text-shadow:none}30%{transform:scale(1.3);letter-spacing:.34em;text-shadow:0 0 18px var(--acc),0 0 6px #fff}100%{transform:scale(1);letter-spacing:.1em;text-shadow:0 0 6px var(--acc)}}
+
+/* sparkle particles burst */
+.bubble__sparks{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:visible}
+.spark{position:absolute;left:50%;top:50%;font-size:var(--sz,14px);line-height:1;
+  color:hsl(var(--hue,320) 95% 72%);
+  text-shadow:0 0 9px hsl(var(--hue,320) 95% 60%),0 0 3px #fff;
+  transform:translate(-50%,-50%);
+  animation:spark-fly 1.6s cubic-bezier(.12,.6,.25,1) both}
+@keyframes spark-fly{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--rot)) scale(.2)}
+  12%{opacity:1;transform:translate(calc(-50% + var(--dx) * .5),calc(-50% + var(--dy) * .5)) rotate(calc(var(--rot) + 60deg)) scale(1.25)}
+  70%{opacity:1;transform:translate(calc(-50% + var(--dx) * .92),calc(-50% + var(--dy) * .92)) rotate(calc(var(--rot) + 160deg)) scale(.95)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(calc(var(--rot) + 220deg)) scale(.5)}}
+
+@media(prefers-reduced-motion:reduce){.bubble__aura,.bubble__ring{animation:none!important}.spark{animation-duration:.6s}}
+
 /* optional tail */
 .bubble__tail{position:absolute;left:calc(var(--size) * 2);bottom:-9px;width:22px;height:22px;
   border-radius:50% 50% 58% 42%;background:var(--bgc);transform:rotate(12deg)}
@@ -148,4 +208,42 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 #diag{position:fixed;left:10px;top:10px;z-index:99;padding:7px 11px;border-radius:8px;
   background:rgba(10,8,20,.82);color:#8affc1;font:12px/1.4 "DM Mono",monospace;pointer-events:none}
 
-@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt,.bubble__body{animation:none!important}}
+/* ================= hype train (live self-updating panel) ================= */
+/* --hb = base centering+offset+size transform, reused by every keyframe so position/size always hold */
+.hype{--hb:translateX(-50%) translate(var(--hype-x,0px),var(--hype-y,0px)) scale(var(--hype-scale,1));
+  position:fixed;top:44px;left:50%;transform:var(--hb);z-index:5;
+  display:none;width:min(86%,560px);transform-origin:center top;
+  padding:calc(var(--pad) * .72) calc(var(--pad) * .95);
+  border-radius:20px;
+  background:var(--bgc);
+  border:var(--brW) solid var(--brc);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(var(--glass));backdrop-filter:blur(var(--blur)) saturate(var(--glass));
+  box-shadow:0 0 44px -8px rgba(145,70,255,.6),var(--shadow);
+  color:var(--txt)}
+.hype.is-on{display:block;animation:hype-in .6s cubic-bezier(.2,1.2,.3,1) both}
+@keyframes hype-in{0%{opacity:0;transform:var(--hb) translateY(-16px) scale(.9)}100%{opacity:1;transform:var(--hb)}}
+.hype.is-out{animation:hype-out .4s ease-in both}
+@keyframes hype-out{to{opacity:0;transform:var(--hb) translateY(-12px) scale(.92)}}
+.hype__row{display:flex;align-items:center;gap:calc(var(--pad) * .6)}
+.hype__badge{flex:none;display:grid;place-items:center;width:calc(var(--size) * 1.9);height:calc(var(--size) * 1.9);
+  border-radius:14px;background:linear-gradient(135deg,#9146ff,#ff6ec7)}
+.hype__icon{display:block;width:calc(var(--size) * 1.1);height:calc(var(--size) * 1.1);background:var(--ico);
+  -webkit-mask:var(--i-hype) center/contain no-repeat;mask:var(--i-hype) center/contain no-repeat}
+.hype__text{flex:1;min-width:0}
+.hype__title{margin:0;font-size:calc(var(--size) * .6);font-weight:900;letter-spacing:.22em;
+  background:linear-gradient(90deg,#c9a2ff,#ff9ad6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hype__lvl{margin:.14em 0 0;font-size:calc(var(--size) * .82);font-weight:900;color:var(--txt)}
+.hype__pct{margin-left:.35em;color:var(--acc);font-size:.85em}
+.hype__timer{flex:none;font-size:calc(var(--size) * .78);font-weight:900;color:var(--txt);font-variant-numeric:tabular-nums;
+  padding:3px 11px;border-radius:999px;background:rgba(255,255,255,.1)}
+.hype__bar{margin-top:calc(var(--pad) * .5);height:calc(var(--size) * .42);border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+.hype__fill{display:block;height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,#9146ff,#ff6ec7,#ffd36e);
+  box-shadow:0 0 14px rgba(255,110,199,.7);transition:width .5s cubic-bezier(.3,1,.4,1)}
+.hype__timebar{margin-top:6px;height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.hype__timefill{display:block;height:100%;width:100%;border-radius:999px;background:rgba(255,255,255,.5);transition:width 1s linear}
+.hype.levelup{animation:hype-pop .6s cubic-bezier(.2,1.5,.35,1)}
+@keyframes hype-pop{0%{transform:var(--hb)}40%{transform:var(--hb) scale(1.07);filter:brightness(1.4)}100%{transform:var(--hb);filter:none}}
+.hype__sparks{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:visible}
+
+@media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt,.bubble__body,.hype{animation:none!important}}

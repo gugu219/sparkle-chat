@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SPARKLECHAT — Frame Overlay</title>
-  <link rel="stylesheet" href="frame.css">
+  <link rel="stylesheet" href="frame.css?v=2">
 </head>
 <body>
   <div class="stage" id="stage">
@@ -20,7 +20,7 @@
   <script type="module">
     try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
     catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
-    await import('./frame.js');
+    await import('./frame.js?v=2');
   </script>
 </body>
 </html>
