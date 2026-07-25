@@ -19,7 +19,7 @@
   };
 
   const DEFAULTS = {
-    fw: '14', fr: '28', fri: '14',
+    fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
@@ -91,6 +91,8 @@
   /* ---- settings -> CSS variables ---- */
   function apply() {
     const cs = palette(), blocks = s.mode === 'blocks';
+    root.style.setProperty('--stage-w', clamp(s.fpw, 10, 100) + '%');   /* free frame ratio */
+    root.style.setProperty('--stage-h', clamp(s.fph, 10, 100) + '%');
     root.style.setProperty('--fw', clamp(s.fw, 0, 300) + 'px');
     root.style.setProperty('--fr', clamp(s.fr, 0, 900) + 'px');
     root.style.setProperty('--grad-conic', conicOf(cs, blocks));

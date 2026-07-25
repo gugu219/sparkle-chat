@@ -490,7 +490,7 @@
   function frameEditor(){
     const form=document.querySelector('#frame-form');if(!form)return;
     const frame=document.querySelector('#frame-preview'),out=document.querySelector('#frame-url'),toast=document.querySelector('#toast');
-    const DEF={fw:'14',fr:'28',fri:'14',mode:'gradient',ccount:'4',
+    const DEF={fw:'14',fr:'28',fri:'14',fpw:'100',fph:'100',mode:'gradient',ccount:'4',
       c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',c5:'#fff3c4',c6:'#ffd9d9',c7:'#d9f2ff',c8:'#f0d9ff',
       glow:'55',flow:'40',shine:'50',sheenOn:'1',spark:'14',
       sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',
@@ -508,8 +508,8 @@
       Object.assign(DEF,{[e+'pShape']:sh,[e+'pMotion']:mo,[e+'pCount']:ct,[e+'pSize']:sz,[e+'pSpeed']:sp,[e+'pOpa']:op,
         [e+'pCMode']:'mix',[e+'pC1']:'#ffd6ec',[e+'pC2']:'#cde7ff',[e+'pC3']:'#e6d9ff',[e+'pC4']:'#fff3c4'});});
     const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P'),'sheenOn'];
-    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%'};
-    const OUTS=['fw','fr','fri','glow','flow','shine','spark'];
+    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%',fpw:'%',fph:'%'};
+    const OUTS=['fw','fr','fri','fpw','fph','glow','flow','shine','spark'];
     const P_OUTS=['pCount','pSize','pSpeed','pOpa'],P_UNITS={pSize:'px',pOpa:'%'};
     const target=location.protocol==='file:'?'*':location.origin;
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};

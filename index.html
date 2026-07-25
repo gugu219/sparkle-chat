@@ -123,6 +123,9 @@
 
         <fieldset>
           <legend>FRAME</legend>
+          <div class="range-row"><label class="field-label" for="fpw">枠の幅（比率・画面に対する％） <output id="fpw-value">100%</output></label><input id="fpw" name="fpw" type="range" min="20" max="100" value="100"></div>
+          <div class="range-row"><label class="field-label" for="fph">枠の高さ（比率・画面に対する％） <output id="fph-value">100%</output></label><input id="fph" name="fph" type="range" min="20" max="100" value="100"></div>
+          <p class="field-hint">幅と高さを別々に調整して、16:9以外の自由な比率（正方形・縦長など）にできます。枠は画面中央に配置されます。</p>
           <div class="range-row"><label class="field-label" for="fw">フレームの太さ <output id="fw-value">14px</output></label><input id="fw" name="fw" type="range" min="2" max="80" value="14"></div>
           <div class="range-row"><label class="field-label" for="fr">外側の丸み <output id="fr-value">28px</output></label><input id="fr" name="fr" type="range" min="0" max="200" value="28"></div>
           <div class="range-row"><label class="field-label" for="fri">内側の丸み <output id="fri-value">14px</output></label><input id="fri" name="fri" type="range" min="0" max="200" value="14"></div>
