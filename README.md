@@ -1,6 +1,6 @@
 # Sparkle Chat 更新版
 
-2026-09-23の https://sparkle-chat-necocream.vercel.app/ の公開HTML/CSS/JSを取得して改修した版です。バックエンドは旧作業フォルダーのAPIを参考に再実装しました。本番サーバー内部のコードとの一致は未確認です。
+2026-09-23の https://sparkle-chat-necocream.vercel.app/ の公開HTML/CSS/JSを取得して改修した版です。公開サイトの主要ファイル（index.html、script.js、all.js）は、このリポジトリの変更前のmainと内容が一致しました。バックエンドは旧作業フォルダーのAPIを参考に再実装しました。
 
 ## 起動
 
@@ -8,7 +8,7 @@ Node.js 22以上でこのフォルダーを開き、`node dev-server.mjs` を実
 
 ## 本番設定（Vercel）
 
-1. このフォルダーを正しい本番リポジトリのルートに配置します。フレームワークは Other、ビルドなし。既存Vercelプロジェクトへの反映先は要確認です。
+1. gugu219/sparkle-chat のこのブランチでVercel Previewを確認します。フレームワークは Other、ビルドなし。necocreamドメインのVercelプロジェクト設定は本番反映前に確認してください。
 2. `.env.example` の全変数をVercelに設定します。Client Secret等の実値をファイルへコミットしないでください。APP_ENCRYPTION_KEYとTWITCH_WEBHOOK_SECRETは独立した32文字以上のランダム値です。
 3. Twitch開発者コンソールのOAuthリダイレクトURLを `https://sparkle-chat-necocream.vercel.app/api/auth/callback` に登録します。APP_BASE_URLとアクセス先のoriginは一致させます。
 4. HTTPS環境へデプロイ後、アラートタブからTwitchを接続します。購読ごとのエラーがあれば権限・Client ID・配信者アカウントを確認し、「購読を再試行」を使用します。
