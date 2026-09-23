@@ -1,0 +1,660 @@
+(() => {
+  'use strict';
+  const page=document.documentElement.dataset.page;
+  const REG={};   /* each editor registers its values() so the combined tab can read every overlay's settings */
+  const defaults={channel:'',theme:'selene',font:'zen',bg:'glass',opacity:'78',textSize:'15',limit:'12',blur:'1',node:'dot',extras:'1',wrap:'40',badgeStyle:'image',align:'left',posX:'0',posY:'0',hlA:'90'};
+  const qs=new URLSearchParams(location.search);
+  const settings=()=>Object.fromEntries(Object.keys(defaults).map(k=>[k,qs.get(k)??defaults[k]]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const color=n=>{let h=0;for(const c of String(n||'viewer'))h=(h*31+c.charCodeAt(0))%360;return `hsl(${h} 82% 77%)`;};
+  const emoteUrl=id=>`https://static-cdn.jtvnw.net/emoticons/v2/${String(id).replace(/[^\w]/g,'')}/default/dark/2.0`;
+  const renderEmotes=(text,emotes)=>{if(!emotes||!Object.keys(emotes).length)return null;const chars=[...String(text)],repl=[];for(const id in emotes)for(const rng of emotes[id]){const p=String(rng).split('-'),a=+p[0],b=+p[1];if(Number.isInteger(a)&&Number.isInteger(b)&&b>=a)repl.push([a,b,id]);}repl.sort((x,y)=>x[0]-y[0]);let html='',cur=0;for(const[a,b,id]of repl){if(a<cur)continue;if(a>cur)html+=esc(chars.slice(cur,a).join(''));const alt=esc(chars.slice(a,b+1).join(''));html+=`<img class="emote" src="${emoteUrl(id)}" alt="${alt}" title="${alt}" loading="lazy">`;cur=b+1;}if(cur<chars.length)html+=esc(chars.slice(cur).join(''));return html;};
+  let badgeMap=null;
+  const BADGE_CORE=new Set(['broadcaster','moderator','vip','subscriber','founder','staff','admin','global_mod','partner']);
+  const loadBadges=async channel=>{if(location.protocol==='file:')return null;try{const r=await fetch(`/api/badges?channel=${encodeURIComponent(channel||'')}`);if(!r.ok)return null;const m=await r.json();return m&&!m.error?m:null;}catch{return null;}};
+  const badgeImgs=(badges,extras,skipCore)=>{if(!badgeMap||!badges||typeof badges!=='object')return null;let html='';for(const set in badges){const core=BADGE_CORE.has(set);if(skipCore&&core)continue;if(!extras&&!core)continue;const url=badgeMap[`${set}/${badges[set]}`];if(url)html+=`<img class="badge-img" src="${esc(url)}" alt="${esc(set)}" title="${esc(set)}" loading="lazy">`;}return html||null;};
+  const hasBadge=(t,k)=>{const b=t.badges;if(b&&typeof b==='object')return k in b;if(typeof b==='string')return b.includes(k);return false;};
+  const apply=s=>{const b=document.body;const base=page==='view'?`widget font-${s.font} node-${s.node||'dot'} align-${s.align||'left'}`:'app-shell';b.className=`${base} theme-${s.theme} bg-${s.bg}${s.blur==='1'?' use-blur':''}`;document.documentElement.style.setProperty('--bubble-opacity',Math.max(.25,Math.min(1,+s.opacity/100)));document.documentElement.style.setProperty('--text-size',`${Math.max(8,Math.min(80,+s.textSize||15))}px`);document.documentElement.style.setProperty('--wrap',Math.max(6,Math.min(90,+s.wrap||40)));document.documentElement.style.setProperty('--chat-x',`${Math.max(-960,Math.min(960,+s.posX||0))}px`);document.documentElement.style.setProperty('--chat-y',`${Math.max(-900,Math.min(400,+s.posY||0))}px`);document.documentElement.style.setProperty('--hl-a',Math.max(0,Math.min(1,(+s.hlA||90)/100)));};
+  const session=async id=>{if(!id||location.protocol==='file:')return null;try{const r=await fetch(`/api/auth/session?widget=${encodeURIComponent(id)}`);return r.ok?r.json():null;}catch{return null;}};
+
+  async function view(){
+    let s=settings();apply(s);const chat=document.querySelector('#chat'),mt=document.querySelector('#message-template'),at=document.querySelector('#alert-template');
+    const trim=()=>{const limit=Math.max(1,+s.limit||12);const live=[];for(const x of chat.children)if(!x.classList.contains('is-leaving'))live.push(x);for(let i=limit;i<live.length;i++){const x=live[i];x.classList.add('is-leaving');setTimeout(()=>{x.remove();},320);}};
+    const role=t=>{if(hasBadge(t,'broadcaster'))return['broadcaster','LIVE'];if(hasBadge(t,'moderator')||t.mod===true||t.mod==='1')return['mod','MOD'];if(hasBadge(t,'vip'))return['vip','VIP'];if(hasBadge(t,'subscriber')||t.subscriber===true||t.subscriber==='1')return['sub','SUB'];return['',''];};
+    const msg=(name,text,tags={})=>{const f=mt.content.cloneNode(true),user=f.querySelector('.chat-message__name');if(tags['msg-id']==='highlighted-message'||tags['custom-reward-id'])f.querySelector('.chat-message').classList.add('is-highlight');const pill=s.badgeStyle==='pill',showExtras=s.extras==='1';const bl=f.querySelector('.badge-list');const imgs=pill?null:(tags.badgeHtml||(badgeMap?badgeImgs(tags.badges,showExtras,pill):null));if(imgs&&bl)bl.innerHTML=imgs;if(pill||!imgs){const[kind,label]=role(tags),badge=f.querySelector('.role-badge');if(kind){badge.classList.add(`badge-${kind}`);badge.textContent=label;}}user.textContent=name||'Viewer';user.style.setProperty('--user-color',tags.color||color(name));if(tags.avatar)f.querySelector('.chat-message').dataset.avatar=tags.avatar;const bubble=f.querySelector('.chat-message__bubble');if(tags.html){bubble.innerHTML=text||'';}else{let em=null;try{em=renderEmotes(text||'',tags.emotes);}catch{}if(em!=null)bubble.innerHTML=em;else bubble.textContent=text||'';}chat.prepend(f);trim();};
+    const alert=(type,label,name,amount='',note='')=>{const f=at.content.cloneNode(true);f.querySelector('.chat-alert__border').classList.add(`alert-${type}`);f.querySelector('.chat-alert__kind').textContent=label;f.querySelector('.chat-alert__line').innerHTML=`<span class="a-name">${esc(name||'Anonymous')}</span>${amount?` <span class="a-amount">${esc(amount)}</span>`:''}`;const n=f.querySelector('.chat-alert__note');n.textContent=note||'';if(!n.textContent)n.remove();chat.prepend(f);trim();};
+    const rnd=a=>a[Math.floor(Math.random()*a.length)];
+    const demoNames=['はると','Mika','tanaka_ch','ゲーマー太郎','xX_Sniper_Xx','ちゃんゆき','kuroneko','ProPlayer99','さくら','viewer_jp','ReiRei','GG_master','ののか','shadow_x','うさぎcat','LunaTV','けんと','pixel_fan','yamada__','streamlover'];
+    const demoJP=['かわいいｗ','うますぎる','ナイスプレイ！','がんばれー！','ここすき','それは草','www','おつかれさま','神回すぎる','いいね','おおおおお','ドンマイ！','惜しい！','応援してます','初見です！','かっこいい','やったー！','うぽつ','最高','今のすごい'];
+    const demoEN=['GG','nice one!','LETS GOOO','so clean','pog','LMAO','clutch!','ez','insane play','o7','first time here','love this stream','KEKW','sheesh','no way lol','well played','hyped','W streamer','that was sick','+1'];
+    const demoColors=['#ff8fc5','#70e4ff','#a997ff','#ffd49b','#8affc1','#ffa6a6','#c9b0ff','#7ceaf7','#ff9d5c'];
+    let demoTimer=null;
+    const demoTick=()=>{
+      const roll=Math.random();
+      if(roll<0.06)alert('cheer','CHEER',rnd(demoNames),`${rnd([100,300,500,1000,5000])} Bits`,rnd(['Nice play!','がんばれ！','pog','ナイス！']));
+      else if(roll<0.11)alert('gift','GIFT SUB',rnd(demoNames),`×${rnd([1,3,5,10])} GIFTED`,rnd(['Enjoy!','よろしく！','']));
+      else if(roll<0.16)alert('sub','NEW SUBSCRIBER',rnd(demoNames),'',rnd(['Welcome!','よろしくお願いします！','']));
+      else{const name=rnd(demoNames);let text=Math.random()<0.5?rnd(demoEN):rnd(demoJP);const tags={color:rnd(demoColors),badges:{}};const b=Math.random();if(b<0.32)tags.badges.subscriber=String(rnd([1,3,6,12]));else if(b<0.40)tags.badges.moderator='1';else if(b<0.47)tags.badges.vip='1';if(Math.random()<0.12)tags.badges.bits=String(rnd([100,1000]));if(Math.random()<0.18){const base=text;text=base+' Kappa';const st=[...base].length+1;tags.emotes={'25':[`${st}-${st+4}`]};}msg(name,text,tags);}
+      demoTimer=setTimeout(demoTick,650+Math.random()*1050);
+    };
+    const toggleDemo=()=>{if(demoTimer){clearTimeout(demoTimer);demoTimer=null;}else demoTick();};
+    window.addEventListener('message',e=>{
+      if(e.data?.source!=='prism-editor')return;const type=e.data.type;
+      if(type==='settings'){Object.assign(s,e.data.settings||{});apply(s);if(qs.has('preview'))document.body.classList.add('is-preview');trim();return;}
+      if(type==='demo'){toggleDemo();return;}
+      ({message:()=>msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','Welcome!'),gift:()=>alert('gift','GIFT SUB','Kaito','×5 GIFTED','Enjoy the ride!'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','Nice play!'),highlight:()=>msg('Rei','これは強調表示メッセージです ✨',{subscriber:'1',badges:{subscriber:'0'},'msg-id':'highlighted-message'})}[type]||(()=>{}))();
+    });
+    badgeMap=null;   /* バッジ画像はわんコメ（OneSDK）から直接受け取るため Twitch API 取得は不要 */
+    if(qs.has('preview')){document.body.classList.add('is-preview');document.querySelector('#preview-channel').textContent=`TWITCH #${s.channel||'your_channel'}`;msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}});}
+    const dbg=qs.has('debug');const status=(t,cls='')=>{console.log('[prism]',t);if(!dbg)return;let el=document.querySelector('#diag');if(!el){el=document.createElement('div');el.id='diag';document.body.appendChild(el);}el.className=cls;el.textContent=t;};
+    /* ===== コメント受信：わんコメ OneSDK（Twitch/tmi.js 直結の置き換え） =====
+       わんコメが集約したコメントを OneSDK から受け取り、下のアダプターで
+       現在のUI（msg()/alert()）が使う形式へ変換する。UI側はほぼ無改修。 */
+    if(typeof OneSDK==='undefined'){status('OneSDK が読み込まれていません。わんコメのテンプレートとして表示してください','diag-err');return;}
+
+    /* --- adapter: OneComme の comment.data -> 既存の tags 形式へ --- */
+    const CORE_BADGE=/broadcaster|owner|moderator|\bmod\b|vip|subscriber|founder|配信者|モデ|サブ/i;
+    const oneName=d=>d.displayName||d.name||d.nickname||'Viewer';
+    const stripHtml=v=>String(v||'').replace(/<[^>]+>/g,'').trim();
+    const oneColor=d=>{if(typeof d.color==='string'&&/^#/.test(d.color))return d.color;const cc=d.colors||{};return cc.nickColor||cc.userNameColor||d.nameColor||d.userColor||null;};
+    const oneBadgesHtml=d=>{if(!Array.isArray(d.badges)||!d.badges.length)return null;let list=d.badges;if(s.extras!=='1')list=list.filter(b=>CORE_BADGE.test(String((b&&(b.label||b.type))||'')));
+      return list.map(b=>`<img class="badge-img" src="${esc((b&&(b.url||b.icon))||'')}" alt="${esc((b&&b.label)||'')}" title="${esc((b&&b.label)||'')}" loading="lazy">`).join('')||null;};
+    const oneBadgesObj=d=>{const o={};if(d.isOwner)o.broadcaster='1';if(d.isModerator)o.moderator='1';if(d.isVip||d.vip)o.vip='1';if(d.isSubscriber||d.isMember||d.isSupporter)o.subscriber='1';return o;};
+    const adaptComment=c=>{const d=c.data||{};const html=String(d.comment||'');return{name:oneName(d),text:html,tags:{
+      color:oneColor(d),badges:oneBadgesObj(d),badgeHtml:oneBadgesHtml(d),avatar:d.profileImage||d.profileImageUrl||'',
+      mod:!!d.isModerator,subscriber:!!(d.isSubscriber||d.isMember||d.isSupporter),html:/<\w+[^>]*>/.test(html),
+      'msg-id':(d.isHighlighted||d.hasReward||d.customReward)?'highlighted-message':undefined}};};
+
+    /* --- Twitch イベント（サブ/ギフト/レイド/Bits）の振り分け（best-effort・?debug=1 で生データ確認）--- */
+    function handleOne(c){
+      const d=c.data||{};if(dbg)console.log('[prism/onesdk]',c);
+      const bits=+(d.bits||d.price||0);
+      const kind=String((d.meta&&d.meta.type)||d.type||d.commentType||d.kind||'');
+      if(/gift/i.test(kind)||(d.hasGift&&c.service==='twitch'&&!bits))return alert('gift','GIFT SUB',oneName(d),'',stripHtml(d.comment));
+      if(/resub/i.test(kind))return alert('sub','RESUBSCRIBED',oneName(d),d.months?`${d.months} months`:'',stripHtml(d.comment));
+      if(/\bsub/i.test(kind))return alert('sub','NEW SUBSCRIBER',oneName(d),'',stripHtml(d.comment));
+      if(/raid/i.test(kind))return alert('sub','RAID',oneName(d),d.viewers?`${d.viewers} raiders`:'',stripHtml(d.comment));
+      if(bits>0)return alert('cheer','CHEER',oneName(d),`${bits} Bits`,stripHtml(d.comment));
+      const a=adaptComment(c);msg(a.name,a.text,a.tags);
+    }
+
+    /* --- OneSDK 接続 --- */
+    const seen=new Set(),order=[];let firstBatch=true;
+    const markSeen=id=>{seen.add(id);order.push(id);if(order.length>4000)order.splice(0,1000).forEach(x=>seen.delete(x));};
+    const commentsOf=res=>Array.isArray(res)?res:(res&&Array.isArray(res.comments)?res.comments:(res&&res.data&&Array.isArray(res.data.comments)?res.data.comments:(res&&res.data?[res.data]:(res&&res.id?[res]:[]))));
+    const pump=res=>{
+      const arr=commentsOf(res);
+      if(dbg)console.log('[prism/onesdk] callback',arr.length,arr);
+      const start=firstBatch?Math.max(0,arr.length-3):0;   /* 初回の履歴は末尾数件だけ表示（残りは既読扱いで再表示しない） */
+      for(let i=0;i<arr.length;i++){const c=arr[i];const id=(c&&(c.id||(c.data&&c.data.id)))||('idx'+i);if(seen.has(id))continue;markSeen(id);if(i<start)continue;try{handleOne(c);}catch(e){console.error('[prism/onesdk] render error',e,c);}}
+      firstBatch=false;
+    };
+    try{
+      OneSDK.setup({permissions:['comments','systemComment'],commentLimit:80});
+      await OneSDK.ready();
+      status('わんコメに接続中…');
+      OneSDK.subscribe({action:'comments',callback:pump});
+      await OneSDK.connect();
+      status('わんコメ接続済み · コメント待機中','diag-ok');
+    }catch(e){status('わんコメ接続エラー: '+((e&&e.message)||e),'diag-err');}
+  }
+  async function editor(){
+    const form=document.querySelector('#widget-form'),frame=document.querySelector('#widget-preview'),out=document.querySelector('#obs-url'),toast=document.querySelector('#toast');
+    const values=()=>({...defaults,...Object.fromEntries(new FormData(form)),blur:form.elements.blur.checked?'1':'0',extras:form.elements.extras.checked?'1':'0'});const url=(preview=false)=>{const p=new URLSearchParams(values());if(preview)p.set('preview','1');return `${new URL('view.html',location.href).href}?${p}`;};let timer,frameLoaded=false,lastChannel=null;const sendLive=s=>frame.contentWindow?.postMessage({source:'prism-editor',type:'settings',settings:s},location.protocol==='file:'?'*':location.origin);const update=()=>{const s=values();apply(s);out.value=url();document.querySelector('#opacity-value').textContent=`${s.opacity}%`;document.querySelector('#wrap-value').textContent=s.wrap;{const q=(id,t)=>{const e=document.querySelector(id);if(e)e.textContent=t;};q('#posX-value',s.posX+'px');q('#posY-value',s.posY+'px');q('#hlA-value',s.hlA+'%');}if(!frameLoaded||s.channel!==lastChannel){lastChannel=s.channel;frameLoaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url(true);},400);}else sendLive(s);};
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    const chatStore=persist(form,'sparklechat-chat',values);chatStore.restore();
+    [...form.elements].forEach(x=>{x.addEventListener('input',()=>chatStore.save());x.addEventListener('change',()=>chatStore.save());});
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};REG.chat=values;update();tabs();frameEditor();alertEditor();extrasEditor();combinedEditor();collapsibles();syncChannels();previewBg();
+  }
+
+  /* ---------- editor: carry the channel name into the other tabs while they are empty ---------- */
+  function syncChannels(){
+    const chat=document.querySelector('#channel');if(!chat)return;
+    chat.addEventListener('input',()=>{
+      ['#frame-channel','#alert-channel','#combined-channel'].forEach(sel=>{
+        const el=document.querySelector(sel);
+        if(el&&!el.value.trim()){el.value=chat.value;el.dispatchEvent(new Event('input',{bubbles:true}));}
+      });
+    });
+  }
+
+  /* ---------- editor: alert overlay ---------- */
+  function alertEditor(){
+    const form=document.querySelector('#alert-form');if(!form)return;
+    const frame=document.querySelector('#alert-preview'),out=document.querySelector('#alert-url'),toast=document.querySelector('#toast');
+    const EVENTS=['sub','resub','gift','follow','bits','points','donate','streak','hype'];
+    const DEF={pos:'bc',font:'maru',anim:'poyon',dur:'5',tail:'0',
+      size:'26',radius:'100',pad:'22',txt:'#ffffff',acc:'#ff8fc5',ico:'#ffffff',icoBg:'#ff8fc5',icoBgA:'100',
+      vol:'70',
+      bg:'#181226',bgA:'62',blur:'14',glass:'140',
+      brOn:'0',brC:'#ffffff',brW:'2',brA:'45',
+      glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
+      sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',streak:'1',hype:'1',
+      hypeX:'0',hypeY:'0',hypeScale:'100',demo:'0',channel:'',widget:''};
+    EVENTS.forEach(e=>{DEF[e+'Snd']='';DEF[e+'Vol']='80';DEF[e+'Dur']='5';});
+    const EV_LABEL={sub:'サブスク',resub:'継続',gift:'ギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ',streak:'連続視聴',hype:'ハイプ'};
+    const CHECKS=[...EVENTS,'tail','brOn','glOn','demo'];
+    const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],
+      abgA:['bgA','%'],ablur:['blur','px'],aglass:['glass','%'],aicoBgA:['icoBgA','%'],avol:['vol','%'],
+      abrW:['brW','px'],abrA:['brA','%'],aglS:['glS',''],aglB:['glB','px'],
+      ahypeX:['hypeX','px'],ahypeY:['hypeY','px'],ahypeScale:['hypeScale','%']};
+    const target=location.protocol==='file:'?'*':location.origin;
+    const NAMES=['mikan_tea','はると','Kaito','ちゃんゆき','LunaTV','pixel_fan'];
+    /* [detail, number, numberLabel] used by the test buttons */
+    /* [detail, num, numLabel, numPrefix?] */
+    const SAMPLE={sub:['Tier 1',0,''],resub:['',12,'MONTHS'],gift:['×1',5,'GIFTS'],follow:['',0,''],
+      bits:['500 BITS',0,''],points:['',0,''],donate:['¥1,000',0,''],streak:['',25,'回','']};
+    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
+    REG.alert=values;
+    /* a data: URI must never reach the URL — it would blow the length limit (414) */
+    const url=()=>{const v=values();if(/^data:/i.test(String(v.snd||'')))v.snd='';
+      return `${new URL('alert.html',location.href).href}?${new URLSearchParams(v)}`;};
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    let timer,loaded=false,lastCh=null;
+    const update=()=>{
+      const v=values();out.value=url();
+      for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=(k==='radius'&&+v[k]>=100)?'まる':v[k]+u;}
+      EVENTS.forEach(e=>{const vl=document.querySelector(`#${e}Vol-value`);if(vl)vl.textContent=v[e+'Vol']+'%';
+        const dl=document.querySelector(`#${e}Dur-value`);if(dl)dl.textContent=v[e+'Dur']+'秒';});
+      store.save();
+      if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
+      else frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-settings',settings:v},target);
+    };
+
+    /* ---- reusable sound library (kept in the browser, so nothing has to be re-uploaded) ---- */
+    const SLIB='sparklechat-sounds';
+    const libRead=()=>{try{return JSON.parse(localStorage.getItem(SLIB))||[];}catch{return[];}};
+    const libWrite=a=>{try{localStorage.setItem(SLIB,JSON.stringify(a));}catch{}};
+    const sndInfo=document.querySelector('#snd-info');
+    const setSndInfo=t=>{if(sndInfo)sndInfo.textContent=t;};
+    const activeSev=()=>document.querySelector('#snd-tabs .pev.is-active')?.dataset.sev||'sub';
+    function refreshLib(){
+      const lib=libRead();
+      EVENTS.forEach(e=>{
+        const sel=document.querySelector(`#${e}Snd`);if(!sel)return;
+        const cur=sel.value;sel.textContent='';
+        const none=document.createElement('option');none.value='';none.textContent='なし';sel.appendChild(none);
+        lib.forEach(x=>{const o=document.createElement('option');o.value=x.src;o.textContent=x.name;sel.appendChild(o);});
+        sel.value=cur;
+      });
+    }
+    const libAdd=(name,src)=>{const lib=libRead();
+      if(!lib.some(x=>x.src===src))lib.push({name:String(name).slice(0,48),src});
+      libWrite(lib);refreshLib();
+      const sel=form.elements[activeSev()+'Snd'];if(sel){sel.value=src;}
+      update();};
+
+    /* per-event sound panels, switched by the tabs above */
+    (()=>{
+      const tabs=document.querySelector('#snd-tabs'),host=document.querySelector('#snd-panels');
+      if(!tabs||!host)return;
+      tabs.textContent='';host.textContent='';
+      EVENTS.forEach((e,i)=>{
+        const b=document.createElement('button');b.type='button';b.className='pev'+(i?'':' is-active');b.dataset.sev=e;b.textContent=EV_LABEL[e];tabs.appendChild(b);
+        const p=document.createElement('div');p.className='pblock';p.dataset.sev=e;if(i)p.hidden=true;
+        p.innerHTML=`<div class="field"><label class="field-label" for="${e}Snd">効果音</label>`
+          +`<div class="preset-row"><select id="${e}Snd" name="${e}Snd"></select><button type="button" data-sndtest="${e}">▶ 試聴</button></div></div>`
+          +`<div class="range-row"><label class="field-label" for="${e}Vol">音量 <output id="${e}Vol-value">80%</output></label>`
+          +`<input id="${e}Vol" name="${e}Vol" type="range" min="0" max="100" value="80"></div>`
+          +`<div class="range-row"><label class="field-label" for="${e}Dur">表示時間 <output id="${e}Dur-value">5秒</output></label>`
+          +`<input id="${e}Dur" name="${e}Dur" type="range" min="1" max="20" value="5"></div>`;
+        host.appendChild(p);
+      });
+      tabs.addEventListener('click',ev=>{const b=ev.target.closest('[data-sev]');if(!b)return;
+        tabs.querySelectorAll('.pev').forEach(x=>x.classList.toggle('is-active',x===b));
+        host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.sev!==b.dataset.sev;});});
+      host.addEventListener('click',ev=>{const k=ev.target.dataset.sndtest;if(!k)return;
+        frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-sound',event:k},target);});
+    })();
+    refreshLib();
+    const store=persist(form,'sparklechat-alert',values);
+    store.restore();
+
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+
+    const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
+      const sc=Math.min(r.width/1920,r.height/1080);
+      Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
+    window.addEventListener('resize',fit);
+    window.addEventListener('panelchange',e=>{if(e.detail==='alert')fit();});
+
+    document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
+      const ev=e.target.dataset.alertEvent;if(!ev)return;
+      const[detail,num,numLabel,numPrefix]=SAMPLE[ev]||['',0,''];
+      frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,
+        name:NAMES[Math.floor(Math.random()*NAMES.length)],detail:e.target.dataset.alertDetail||detail,
+        num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'},target);});
+
+    document.querySelector('#snd-file')?.addEventListener('change',async e=>{
+      const f=e.target.files&&e.target.files[0];if(!f)return;
+      if(f.size>700000){flash('音声が大きすぎます（700KBまで）。長い曲は「音声URLを貼り付け」をご利用ください');e.target.value='';return;}
+      let dataUri='';
+      try{dataUri=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(String(rd.result||''));rd.onerror=rej;rd.readAsDataURL(f);});}
+      catch{flash('音声の読み込みに失敗しました');return;}
+      if(location.protocol==='file:'){libAdd(f.name+'（ローカル試聴のみ）',dataUri);return;}
+      setSndInfo(`${f.name} をアップロード中…`);
+      try{
+        const r=await fetch('/api/sound',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:dataUri})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok||!j.id)throw new Error(j.error||`保存に失敗しました (${r.status})`);
+        libAdd(f.name,j.id);
+        setSndInfo(`「${f.name}」を一覧に追加しました。次回からは選ぶだけで使えます。`);
+        flash('効果音を一覧に追加しました');
+      }catch(err){setSndInfo('アップロードに失敗しました');flash('効果音の保存に失敗: '+err.message);}
+      e.target.value='';
+    });
+    document.querySelector('#snd-url-add')?.addEventListener('click',()=>{
+      const el=document.querySelector('#snd-url'),u=el.value.trim();if(!u)return;
+      libAdd(u.split('/').pop()||u,u);el.value='';flash('サウンドを一覧に追加しました');});
+    document.querySelector('#snd-lib-del')?.addEventListener('click',()=>{
+      const sel=form.elements[activeSev()+'Snd'],cur=sel&&sel.value;if(!cur)return;
+      libWrite(libRead().filter(x=>x.src!==cur));
+      EVENTS.forEach(e=>{const s2=form.elements[e+'Snd'];if(s2&&s2.value===cur)s2.value='';});
+      refreshLib();update();flash('サウンドを一覧から削除しました');});
+    document.querySelector('#alert-copy').onclick=async()=>{update();
+      try{await navigator.clipboard.writeText(out.value);flash('アラートのURLをコピーしました');}
+      catch{out.select();document.execCommand('copy');flash('アラートのURLをコピーしました');}};
+
+    /* hype train: test button + Twitch account link (needed for level/%/timer) */
+    document.querySelector('#test-hype')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-hype-test'},target));
+    const WKEY='sparklechat-widget';
+    let wid=new URLSearchParams(location.search).get('widget')||localStorage.getItem(WKEY)||'';
+    if(wid){try{localStorage.setItem(WKEY,wid);}catch{}}
+    if(form.elements.widget)form.elements.widget.value=wid;
+    async function hypeAuth(){
+      const box=document.querySelector('#hype-auth');if(!box)return;
+      if(!wid){box.innerHTML='<button type="button" id="hype-connect" class="apply-btn">Twitchを連携（ハイプトレイン用）</button>';}
+      else{let login='';try{const r=await fetch('/api/auth/session?widget='+encodeURIComponent(wid));if(r.ok){const j=await r.json();login=j.login||'';}}catch{}
+        box.innerHTML=login?`<div class="auth-card"><div><strong>連携済み: ${login}</strong><p>ハイプトレインのレベル / ％ / タイマーを表示できます</p></div><button type="button" id="hype-disconnect">解除</button></div>`
+          :`<div class="auth-card"><div><strong>連携の確認ができません</strong><p>本番サイト上で連携してください</p></div><button type="button" id="hype-connect">再連携</button></div>`;}
+      const c=document.querySelector('#hype-connect');if(c)c.onclick=()=>{location.href='/api/auth/login';};
+      const d=document.querySelector('#hype-disconnect');if(d)d.onclick=async()=>{try{await fetch('/api/auth/session?widget='+encodeURIComponent(wid),{method:'DELETE'});}catch{}localStorage.removeItem(WKEY);wid='';if(form.elements.widget)form.elements.widget.value='';update();hypeAuth();};
+    }
+    hypeAuth();
+
+    update();fit();
+  }
+
+  /* ---------- editor: telop / slideshow / hourly chime ---------- */
+  function extrasEditor(){
+    const form=document.querySelector('#extras-form');if(!form)return;
+    const frame=document.querySelector('#extras-preview'),out=document.querySelector('#extras-url'),toast=document.querySelector('#toast');
+    const target=location.protocol==='file:'?'*':location.origin;
+    const DEF={tOn:'1',tFont:'maru',tBg:'#181226',tBgA:'72',tAnchor:'bot',tX:'0',tY:'0',tSize:'26',tSpeed:'90',
+      sOn:'0',sPos:'br',sW:'420',sShadow:'1',sShd:'24',sFade:'0.6',sCool:'30',
+      chOn:'0',chSnd:'',chVol:'80',vol:'90'};
+    const CHECKS=['tOn','sOn','sShadow','chOn'];
+    const OUTS={tBgA:'%',tSize:'px',tX:'px',tY:'px',tSpeed:'',sW:'px',sFade:'秒',sCool:'分',sShd:'px',chVol:'%'};
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+
+    /* shared sound library (same store the alert editor uses) */
+    const SLIB='sparklechat-sounds';
+    const libRead=()=>{try{return JSON.parse(localStorage.getItem(SLIB))||[];}catch{return[];}};
+    const libWrite=a=>{try{localStorage.setItem(SLIB,JSON.stringify(a));}catch{}};
+    const fillSnd=(sel,val)=>{sel.textContent='';const none=document.createElement('option');none.value='';none.textContent='なし';sel.appendChild(none);
+      libRead().forEach(x=>{const o=document.createElement('option');o.value=x.src;o.textContent=x.name;sel.appendChild(o);});sel.value=val||'';};
+    const refreshSnd=()=>{fillSnd(form.elements.chSnd,form.elements.chSnd.value);document.querySelectorAll('#slide-rows .ex-ssnd').forEach(s=>fillSnd(s,s.value));};
+    const libAdd=(name,src)=>{const lib=libRead();if(!lib.some(x=>x.src===src))lib.push({name:String(name).slice(0,48),src});libWrite(lib);refreshSnd();};
+
+    /* repeating telop / slide state (kept out of FormData, serialised as JSON) */
+    let telops=[],slides=[];
+    try{telops=JSON.parse(localStorage.getItem('sparklechat-telops'))||[];}catch{}
+    try{slides=JSON.parse(localStorage.getItem('sparklechat-slides'))||[];}catch{}
+    if(!Array.isArray(telops)||!telops.length)telops=[{n:'NEWS',c:'#ff8fc5',t:'SPARKLECHAT のテロップ － 好きな文字を右から左へ流せます',d:8}];
+    if(!Array.isArray(slides))slides=[];
+    const saveState=()=>{try{localStorage.setItem('sparklechat-telops',JSON.stringify(telops));localStorage.setItem('sparklechat-slides',JSON.stringify(slides));}catch{}};
+
+    const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result||''));r.onerror=rej;r.readAsDataURL(f);});
+    async function uploadMedia(dataUri,endpoint){
+      if(location.protocol==='file:')return dataUri;
+      try{const r=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:dataUri})});
+        const j=await r.json().catch(()=>({}));if(r.ok&&j.id)return j.id;}catch{}
+      return dataUri;                     /* no API here (local preview): keep the data URI so it still previews */
+    }
+    const thumb=v=>{v=String(v||'');return /^(https?:|data:)/i.test(v)?v:(v?'/api/image?id='+encodeURIComponent(v):'');};
+
+    function renderTelops(){
+      const host=document.querySelector('#telop-rows');host.textContent='';
+      telops.forEach((t,idx)=>{
+        const row=document.createElement('div');row.className='ex-row';
+        row.innerHTML=`<input class="ex-tname" placeholder="ラベル" maxlength="18">`
+          +`<input type="color" class="ex-tcolor" aria-label="ラベル色">`
+          +`<input class="ex-ttext" placeholder="流す文字（右から左へ）">`
+          +`<label class="ex-dur">表示<input type="number" class="ex-tdur" min="2" max="120">秒</label>`
+          +`<button type="button" class="ex-del" title="削除">✕</button>`;
+        row.querySelector('.ex-tname').value=t.n||'';
+        row.querySelector('.ex-tcolor').value=t.c||'#ff8fc5';
+        row.querySelector('.ex-ttext').value=t.t||'';
+        row.querySelector('.ex-tdur').value=t.d||8;
+        row.querySelector('.ex-del').onclick=()=>{telops.splice(idx,1);if(!telops.length)telops.push({n:'',c:'#ff8fc5',t:'',d:8});renderTelops();update();};
+        ['input','change'].forEach(ev=>row.addEventListener(ev,()=>{readTelops();update();}));
+        host.appendChild(row);
+      });
+      const add=document.querySelector('#telop-add');if(add)add.disabled=telops.length>=5;
+    }
+    function readTelops(){
+      telops=[...document.querySelectorAll('#telop-rows .ex-row')].map(r=>({
+        n:r.querySelector('.ex-tname').value,c:r.querySelector('.ex-tcolor').value,
+        t:r.querySelector('.ex-ttext').value,d:+r.querySelector('.ex-tdur').value||8}));
+    }
+    function renderSlides(){
+      const host=document.querySelector('#slide-rows');host.textContent='';
+      slides.forEach((sl,idx)=>{
+        const row=document.createElement('div');row.className='ex-row ex-slide';
+        row.innerHTML=`<img class="ex-thumb" alt="">`
+          +`<span class="ex-name"></span>`
+          +`<label class="ex-dur">表示<input type="number" class="ex-sdur" min="1" max="120">秒</label>`
+          +`<label class="ex-dur">音<select class="ex-ssnd"></select></label>`
+          +`<button type="button" class="ex-del" title="削除">✕</button>`;
+        row.querySelector('.ex-thumb').src=thumb(sl.i);
+        row.querySelector('.ex-name').textContent=sl.name||'画像';
+        row.querySelector('.ex-sdur').value=sl.d||6;
+        fillSnd(row.querySelector('.ex-ssnd'),sl.s);
+        row.querySelector('.ex-del').onclick=()=>{slides.splice(idx,1);renderSlides();update();};
+        ['input','change'].forEach(ev=>row.addEventListener(ev,()=>{readSlides();update();}));
+        host.appendChild(row);
+      });
+    }
+    function readSlides(){
+      const rows=[...document.querySelectorAll('#slide-rows .ex-row')];
+      slides=slides.map((sl,i)=>{const r=rows[i];return r?{...sl,d:+r.querySelector('.ex-sdur').value||6,s:r.querySelector('.ex-ssnd').value}:sl;});
+    }
+
+    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});
+      v.telops=JSON.stringify(telops);v.slides=JSON.stringify(slides);return v;};
+    REG.extras=values;
+    const stripData=v=>/^data:/i.test(String(v||''))?'':v;
+    const url=()=>{const v=values();
+      v.slides=JSON.stringify(slides.map(x=>({i:stripData(x.i),d:x.d,s:stripData(x.s)})));
+      v.chSnd=stripData(v.chSnd);
+      return `${new URL('extras.html',location.href).href}?${new URLSearchParams(v)}`;};
+
+    let timer,loaded=false;
+    const update=()=>{
+      const v=values();out.value=url();
+      for(const k in OUTS){const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+OUTS[k];}
+      const ev=document.querySelector('#exvol-value');if(ev)ev.textContent=v.vol+'%';
+      store.save();saveState();
+      if(!loaded){loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},350);}
+      else frame.contentWindow?.postMessage({source:'prism-editor',type:'extras-settings',settings:v},target);
+    };
+
+    const store=persist(form,'sparklechat-extras',values);store.restore();
+    fillSnd(form.elements.chSnd,form.elements.chSnd.value);
+    renderTelops();renderSlides();
+
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+    document.querySelector('#telop-add')?.addEventListener('click',()=>{if(telops.length>=5)return;telops.push({n:'',c:'#ff8fc5',t:'',d:8});renderTelops();update();});
+
+    document.querySelector('#slide-file')?.addEventListener('change',async e=>{
+      const f=e.target.files&&e.target.files[0];if(!f)return;
+      if(f.size>2000000){flash('画像が大きすぎます（1.9MBまで）');e.target.value='';return;}
+      let dataUri='';try{dataUri=await readFile(f);}catch{flash('画像の読み込みに失敗しました');return;}
+      const idOrData=await uploadMedia(dataUri,'/api/image');
+      slides.push({i:idOrData,name:f.name,d:6,s:''});renderSlides();update();flash('画像を追加しました');e.target.value='';
+    });
+    document.querySelector('#ex-snd-file')?.addEventListener('change',async e=>{
+      const f=e.target.files&&e.target.files[0];if(!f)return;
+      if(f.size>700000){flash('音声が大きすぎます（700KBまで）。長い曲はURL貼り付けをご利用ください');e.target.value='';return;}
+      let dataUri='';try{dataUri=await readFile(f);}catch{flash('音声の読み込みに失敗しました');return;}
+      const idOrData=await uploadMedia(dataUri,'/api/sound');
+      libAdd(f.name,idOrData);flash('音を一覧に追加しました');e.target.value='';update();
+    });
+    document.querySelector('#ex-snd-url-add')?.addEventListener('click',()=>{
+      const el=document.querySelector('#ex-snd-url'),u=el.value.trim();if(!u)return;libAdd(u.split('/').pop()||u,u);el.value='';flash('音を一覧に追加しました');});
+
+    const send=(type,extra={})=>frame.contentWindow?.postMessage({source:'prism-editor',type,...extra},target);
+    document.querySelector('#ch-test')?.addEventListener('click',()=>send('extras-sound',{snd:form.elements.chSnd.value,vol:+form.elements.chVol.value}));
+    document.querySelector('#test-telop-next')?.addEventListener('click',()=>send('extras-telop-next'));
+    document.querySelector('#test-slide-next')?.addEventListener('click',()=>send('extras-slide-next'));
+    document.querySelector('#test-chime')?.addEventListener('click',()=>send('extras-chime'));
+
+    const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
+      const sc=Math.min(r.width/1920,r.height/1080);
+      Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
+    window.addEventListener('resize',fit);
+    window.addEventListener('panelchange',e=>{if(e.detail==='extras')fit();});
+
+    update();fit();
+  }
+
+  /* ---------- editor: combine all four overlays into one browser source ---------- */
+  function combinedEditor(){
+    const form=document.querySelector('#combined-form');if(!form)return;
+    const frame=document.querySelector('#combined-preview'),out=document.querySelector('#combined-url'),toast=document.querySelector('#toast');
+    const target=location.protocol==='file:'?'*':location.origin;
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    const inc=name=>{const el=form.elements['inc_'+name];return !el||el.checked;};
+    const buildConfig=()=>{
+      const ch=form.elements.channel.value.trim();
+      const cfg={channel:ch};
+      const isData=v=>/^data:/i.test(String(v||''));
+      ['chat','frame','alert','extras'].forEach(name=>{
+        if(!inc(name))return;
+        const v=REG[name]?REG[name]():null;if(!v)return;
+        const params={...v};
+        if(name!=='extras'&&ch)params.channel=ch;
+        if(name==='alert'&&isData(params.snd))params.snd='';
+        if(name==='extras'){                          /* data: URIs can't ride in a shared link — keep only ids/URLs */
+          try{params.slides=JSON.stringify(JSON.parse(params.slides||'[]').map(x=>({i:isData(x.i)?'':x.i,d:x.d,s:isData(x.s)?'':x.s})).filter(x=>x.i));}catch{params.slides='[]';}
+          if(isData(params.chSnd))params.chSnd='';
+        }
+        cfg[name]=params;
+      });
+      return cfg;
+    };
+    const inlineUrl=cfg=>`${new URL('all.html',location.href).href}?c=${encodeURIComponent(JSON.stringify(cfg))}`;
+    let t=null;
+    const refreshPreview=()=>{clearTimeout(t);t=setTimeout(()=>{try{frame.src=inlineUrl(buildConfig());}catch{}},350);};
+
+    const store=persist(form,'sparklechat-combined',()=>({channel:form.elements.channel.value,
+      inc_chat:form.elements.inc_chat.checked?'1':'0',inc_frame:form.elements.inc_frame.checked?'1':'0',
+      inc_alert:form.elements.inc_alert.checked?'1':'0',inc_extras:form.elements.inc_extras.checked?'1':'0'}));
+    store.restore();
+    [...form.elements].forEach(x=>{x.addEventListener('input',()=>{store.save();refreshPreview();});x.addEventListener('change',()=>{store.save();refreshPreview();});});
+
+    document.querySelector('#combined-copy').onclick=async()=>{
+      const cfg=buildConfig();let link='';
+      if(location.protocol!=='file:'){
+        try{const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({config:cfg})});
+          const j=await r.json().catch(()=>({}));if(r.ok&&j.id)link=`${new URL('all.html',location.href).href}?id=${j.id}`;}catch{}
+      }
+      if(!link)link=inlineUrl(cfg);
+      out.value=link;refreshPreview();
+      try{await navigator.clipboard.writeText(link);flash('まとめURLを発行してコピーしました');}
+      catch{out.select();document.execCommand('copy');flash('まとめURLを発行してコピーしました');}
+    };
+
+    const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
+      const sc=Math.min(r.width/1920,r.height/1080);
+      Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
+    window.addEventListener('resize',fit);
+    window.addEventListener('panelchange',e=>{if(e.detail==='combined'){fit();refreshPreview();}});
+  }
+
+  /* ---------- editor: remember every setting between visits ---------- */
+  function persist(form,key,values){
+    return {
+      save(){try{localStorage.setItem(key,JSON.stringify(values()));}catch{}},
+      restore(){
+        let v=null;try{v=JSON.parse(localStorage.getItem(key)||'null');}catch{}
+        if(!v||typeof v!=='object')return false;
+        for(const k in v){
+          const el=form.elements[k];if(!el)continue;
+          if(el.type==='checkbox')el.checked=v[k]==='1';
+          else{try{el.value=v[k];}catch{}}
+        }
+        return true;
+      }
+    };
+  }
+
+  /* ---------- editor: preview backdrop (helps when judging opacity) ---------- */
+  function previewBg(){
+    const pick=document.querySelector('#bg-picker'),stage=document.querySelector('.preview-stage');
+    if(!pick||!stage)return;
+    const KEY='sparklechat-preview-bg';
+    const set=(mode,custom)=>{
+      stage.className='preview-stage bg-'+mode;
+      stage.style.background=mode==='custom'?custom:'';
+      pick.querySelectorAll('button').forEach(b=>b.classList.toggle('is-active',b.dataset.bg===mode));
+      try{localStorage.setItem(KEY,JSON.stringify({mode,custom}));}catch{}
+    };
+    pick.addEventListener('click',e=>{const b=e.target.closest('[data-bg]');if(b)set(b.dataset.bg,'');});
+    const col=document.querySelector('#bg-custom');
+    col?.addEventListener('input',()=>set('custom',col.value));
+    let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}
+    if(saved&&saved.mode){if(saved.mode==='custom'&&saved.custom)col.value=saved.custom;set(saved.mode,saved.custom||col.value);}
+    else set('checker','');
+  }
+
+  /* ---------- editor: collapsible sections ---------- */
+  function collapsibles(){
+    document.querySelectorAll('.settings-form legend').forEach(lg=>{
+      lg.addEventListener('click',()=>lg.parentElement.classList.toggle('is-collapsed'));
+    });
+  }
+
+  /* ---------- editor: overlay type tabs (chat / frame) ---------- */
+  function tabs(){
+    const bar=document.querySelector('.tab-bar');if(!bar)return;
+    bar.addEventListener('click',e=>{
+      const btn=e.target.closest('[data-tab]');if(!btn)return;
+      const name=btn.dataset.tab;
+      bar.querySelectorAll('[data-tab]').forEach(b=>{const on=b===btn;b.classList.toggle('is-active',on);b.setAttribute('aria-selected',String(on));});
+      document.querySelectorAll('[data-panel]').forEach(el=>{el.hidden=el.dataset.panel!==name;});
+      window.dispatchEvent(new CustomEvent('panelchange',{detail:name}));
+    });
+  }
+
+  /* ---------- editor: frame overlay settings ---------- */
+  function frameEditor(){
+    const form=document.querySelector('#frame-form');if(!form)return;
+    const frame=document.querySelector('#frame-preview'),out=document.querySelector('#frame-url'),toast=document.querySelector('#toast');
+    const DEF={fw:'14',fr:'28',fri:'14',fpw:'100',fph:'100',mode:'gradient',ccount:'4',
+      c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',c5:'#fff3c4',c6:'#ffd9d9',c7:'#d9f2ff',c8:'#f0d9ff',
+      glow:'55',flow:'40',shine:'50',sheenOn:'1',spark:'14',
+      sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',
+      subA:'burst',giftA:'burst',followA:'pulse',bitsA:'shine',pointsA:'rainbow',donateA:'burst',
+      subP:'1',giftP:'1',followP:'0',bitsP:'1',pointsP:'0',donateP:'1',channel:''};
+    const EVENTS=['sub','gift','follow','bits','points','donate'];
+    const EV_LABEL={sub:'サブスク',gift:'サブギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ'};
+    /* per-event particle defaults: shape, motion, count, size, speed, opacity */
+    const P_DEF={sub:['heart','pile','5','38','50','90'],gift:['heart','fall','14','30','55','85'],
+      follow:['shine','float','10','24','40','80'],bits:['coin','rise','14','26','60','85'],
+      points:['shine','rise','12','26','50','80'],donate:['mix','fall','16','32','50','85']};
+    const SHAPE_OPTS=[['heart','♥︎'],['coin','●'],['shine','✦'],['mix','ミックス']];
+    const MOTION_OPTS=[['rise','下から'],['fall','上から'],['float','ふわふわ'],['pile','積もる']];
+    EVENTS.forEach(e=>{const[sh,mo,ct,sz,sp,op]=P_DEF[e];
+      Object.assign(DEF,{[e+'pShape']:sh,[e+'pMotion']:mo,[e+'pCount']:ct,[e+'pSize']:sz,[e+'pSpeed']:sp,[e+'pOpa']:op,
+        [e+'pCMode']:'mix',[e+'pC1']:'#ffd6ec',[e+'pC2']:'#cde7ff',[e+'pC3']:'#e6d9ff',[e+'pC4']:'#fff3c4'});});
+    const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P'),'sheenOn'];
+    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%',fpw:'%',fph:'%'};
+    const OUTS=['fw','fr','fri','fpw','fph','glow','flow','shine','spark'];
+    const P_OUTS=['pCount','pSize','pSpeed','pOpa'],P_UNITS={pSize:'px',pOpa:'%'};
+    const target=location.protocol==='file:'?'*':location.origin;
+    const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});return v;};
+    REG.frame=values;
+    const url=()=>`${new URL('frame.html',location.href).href}?${new URLSearchParams(values())}`;
+    const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
+    let timer,loaded=false,lastCh=null;
+    const update=()=>{
+      const v=values();out.value=url();
+      OUTS.forEach(k=>{const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+(UNITS[k]||'');});
+      EVENTS.forEach(e=>P_OUTS.forEach(k=>{const el=document.querySelector(`#${e}${k}-value`);if(el)el.textContent=v[e+k]+(P_UNITS[k]||'');}));
+      if(!loaded||v.channel!==lastCh){lastCh=v.channel;loaded=true;clearTimeout(timer);timer=setTimeout(()=>{frame.src=url();},400);}
+      else frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-settings',settings:v},target);
+    };
+    /* per-event particle panels (one block per event, switched by the tabs above) */
+    (()=>{
+      const tabs=document.querySelector('#pev-tabs'),host=document.querySelector('#particle-panels');
+      if(!tabs||!host)return;
+      tabs.textContent='';host.textContent='';
+      EVENTS.forEach((e,i)=>{
+        const b=document.createElement('button');b.type='button';b.className='pev'+(i?'':' is-active');b.dataset.pev=e;b.textContent=EV_LABEL[e];tabs.appendChild(b);
+        const[sh,mo,ct,sz,sp,op]=P_DEF[e];
+        const panel=document.createElement('div');panel.className='pblock';panel.dataset.pev=e;if(i)panel.hidden=true;
+        const range=(key,label,min,max,val,unit)=>`<div class="range-row"><label class="field-label" for="${e}${key}">${label} <output id="${e}${key}-value">${val}${unit}</output></label><input id="${e}${key}" name="${e}${key}" type="range" min="${min}" max="${max}" value="${val}"></div>`;
+        panel.innerHTML=
+          `<div class="field"><span class="field-label">形</span><div class="segmented">`
+          +SHAPE_OPTS.map(([v,l])=>`<label><input type="radio" name="${e}pShape" value="${v}"${v===sh?' checked':''}><span>${l}</span></label>`).join('')
+          +`</div></div><div class="field"><span class="field-label">動き</span><div class="segmented">`
+          +MOTION_OPTS.map(([v,l])=>`<label><input type="radio" name="${e}pMotion" value="${v}"${v===mo?' checked':''}><span>${l}</span></label>`).join('')
+          +`</div></div>`
+          +range('pCount','量',0,60,ct,'')+range('pSize','大きさ',8,90,sz,'px')
+          +range('pSpeed','速さ',0,100,sp,'')+range('pOpa','濃さ',10,100,op,'%')
+          +`<div class="field"><span class="field-label">カラー</span>`
+          +`<select name="${e}pCMode"><option value="mix">枠カラーをミックス</option><option value="custom">選んだ4色から</option></select>`
+          +`<div class="color-row">`
+          +[['pC1','#ffd6ec'],['pC2','#cde7ff'],['pC3','#e6d9ff'],['pC4','#fff3c4']]
+            .map(([k,v],i)=>`<input type="color" name="${e}${k}" value="${v}" aria-label="パーティクル色${i+1}">`).join('')
+          +`</div></div>`;
+        host.appendChild(panel);
+      });
+      tabs.addEventListener('click',ev=>{const b=ev.target.closest('[data-pev]');if(!b)return;
+        tabs.querySelectorAll('.pev').forEach(x=>x.classList.toggle('is-active',x===b));
+        host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.pev!==b.dataset.pev;});});
+    })();
+
+    const frameStore=persist(form,'sparklechat-frame',values);frameStore.restore();
+    [...form.elements].forEach(x=>{x.addEventListener('input',()=>frameStore.save());x.addEventListener('change',()=>frameStore.save());});
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+    document.querySelector('#frame-clear')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-clear'},target));
+
+    /* colour count: show only the swatches in use (2-8) */
+    const syncColors=()=>{const n=Math.max(2,Math.min(8,Math.round(+form.elements.ccount.value)||4));
+      form.elements.ccount.value=String(n);
+      form.querySelectorAll('#color-row input[type=color]').forEach((el,i)=>{el.hidden=i>=n;});
+      const cv=document.querySelector('#ccount-value');if(cv)cv.textContent=n+'色';};
+    const bumpColors=d=>{form.elements.ccount.value=String((+form.elements.ccount.value||4)+d);syncColors();update();};
+    document.querySelector('#color-add').onclick=()=>bumpColors(1);
+    document.querySelector('#color-del').onclick=()=>bumpColors(-1);
+
+    /* saved colour palettes (localStorage) */
+    const PKEY='sparklechat-palettes';
+    const palRead=()=>{try{return JSON.parse(localStorage.getItem(PKEY))||{};}catch{return{};}};
+    const palWrite=p=>{try{localStorage.setItem(PKEY,JSON.stringify(p));}catch{}};
+    const palList=document.querySelector('#pal-list');
+    const palRefresh=()=>{const p=palRead();palList.textContent='';
+      const o=document.createElement('option');o.value='';o.textContent='保存済みカラー…';palList.appendChild(o);
+      Object.keys(p).forEach(n=>{const x=document.createElement('option');x.value=n;x.textContent=n;palList.appendChild(x);});};
+    document.querySelector('#pal-save').onclick=()=>{const el=document.querySelector('#pal-name'),n=el.value.trim();if(!n)return;
+      const v=values(),pal={ccount:v.ccount};for(let i=1;i<=8;i++)pal['c'+i]=v['c'+i];
+      const p=palRead();p[n]=pal;palWrite(p);palRefresh();palList.value=n;el.value='';flash(`カラー「${n}」を保存しました`);};
+    document.querySelector('#pal-load').onclick=()=>{const v=palRead()[palList.value];if(!v)return;
+      for(const k in v){const el=form.elements[k];if(el)el.value=v[k];}
+      syncColors();update();flash('カラーを読み込みました');};
+    document.querySelector('#pal-del').onclick=()=>{const p=palRead();if(!palList.value||!p[palList.value])return;
+      delete p[palList.value];palWrite(p);palRefresh();flash('カラーを削除しました');};
+    palRefresh();
+
+    /* render the preview at true 1920x1080 and scale it down, so it matches OBS exactly */
+    const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
+      const sc=Math.min(r.width/1920,r.height/1080);
+      Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
+    window.addEventListener('resize',fit);
+    window.addEventListener('panelchange',e=>{if(e.detail==='frame')fit();});
+
+    document.querySelector('[data-panel=frame].test-controls')?.addEventListener('click',e=>{
+      const ev=e.target.dataset.frameEvent;if(ev)frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-event',event:ev},target);});
+    document.querySelector('#frame-copy').onclick=async()=>{update();
+      try{await navigator.clipboard.writeText(out.value);flash('枠のURLをコピーしました');}
+      catch{out.select();document.execCommand('copy');flash('枠のURLをコピーしました');}};
+
+    /* presets (localStorage) */
+    const KEY='sparklechat-frame-presets';
+    const read=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{};}catch{return{};}};
+    const write=p=>{try{localStorage.setItem(KEY,JSON.stringify(p));}catch{}};
+    const list=document.querySelector('#preset-list');
+    const refresh=()=>{const p=read();list.textContent='';const o=document.createElement('option');o.value='';o.textContent='保存済みプリセット…';list.appendChild(o);
+      Object.keys(p).forEach(n=>{const x=document.createElement('option');x.value=n;x.textContent=n;list.appendChild(x);});};
+    document.querySelector('#preset-save').onclick=()=>{const el=document.querySelector('#preset-name'),n=el.value.trim();if(!n)return;const p=read();p[n]=values();write(p);refresh();list.value=n;el.value='';flash(`プリセット「${n}」を保存しました`);};
+    document.querySelector('#preset-load').onclick=()=>{const v=read()[list.value];if(!v)return;
+      for(const k in v){const el=form.elements[k];if(!el)continue;if(el.type==='checkbox')el.checked=v[k]==='1';else el.value=v[k];}
+      syncColors();update();flash('プリセットを読み込みました');};
+    document.querySelector('#preset-del').onclick=()=>{const p=read();if(!list.value||!p[list.value])return;delete p[list.value];write(p);refresh();flash('プリセットを削除しました');};
+    refresh();syncColors();update();fit();
+  }
+
+  if(page==='view')view();if(page==='editor')editor();
+})();
