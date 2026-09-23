@@ -8,7 +8,7 @@ Node.js 22以上でこのフォルダーを開き、`node dev-server.mjs` を実
 
 ## 本番設定（Vercel）
 
-1. gugu219/sparkle-chat のこのブランチでVercel Previewを確認します。フレームワークは Other、ビルドなし。接続先はVercelの `necocream/sparkle-chat` プロジェクトで、公開ドメインは `sparkle-chat-gamma.vercel.app` です。旧資料に記載された `sparkle-chat-necocream.vercel.app` は現在このプロジェクトのドメイン一覧にありません。
+1. gugu219/sparkle-chat のこのブランチでVercel Previewを確認します。フレームワークは Other、ビルドなし。接続先はVercelの `necocream/sparkle-chat` プロジェクトです。`sparkle-chat-gamma.vercel.app` が本番ドメインで、`sparkle-chat-necocream.vercel.app` もVercelのデフォルトドメインとして表示できます。Twitch認証時はAPP_BASE_URLに設定したgammaドメインからアクセスします。
 2. `.env.example` の全変数をVercelに設定します。Client Secret等の実値をファイルへコミットしないでください。APP_ENCRYPTION_KEYとTWITCH_WEBHOOK_SECRETは独立した32文字以上のランダム値です。
 3. Twitch開発者コンソールのOAuthリダイレクトURLを `https://sparkle-chat-gamma.vercel.app/api/auth/callback` に登録します。APP_BASE_URLとアクセス先のoriginは一致させます。
 4. HTTPS環境へデプロイ後、アラートタブからTwitchを接続します。購読ごとのエラーがあれば権限・Client ID・配信者アカウントを確認し、「購読を再試行」を使用します。
@@ -42,6 +42,6 @@ OBS URLは読み取り用の推測困難なIDです。OAuthトークンやWidget
 
 `node --test tests/server.test.mjs`：12テスト成功（認証、秘密情報非露出、署名・時刻検証、重複通知、配信終了、Streamlabsページング）。JavaScript全ファイルの構文チェック成功。
 
-ブラウザーで設定画面の起動、論理1920×1080、透過枠の読み込み、12連続視聴サンプル、サンプルログを確認しました。実Twitch OAuth、購読受付後の有効化、Doneru/Streamlabs公式テスト通知、OBS実機表示、本番デプロイは未検証です。
+ブラウザーで設定画面の起動、論理1920×1080、透過枠の読み込みと「まとめ」表示、12連続視聴サンプル、サンプルログを確認しました。Vercel本番デプロイと両ドメインでの新画面表示を確認しました。実Twitch OAuth、購読受付後の有効化、Doneru/Streamlabs公式テスト通知、OBS実機表示は未検証です。
 
 連携の設計根拠と残作業は IMPLEMENTATION.md を参照してください。

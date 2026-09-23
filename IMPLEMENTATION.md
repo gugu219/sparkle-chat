@@ -2,7 +2,7 @@
 
 ## 現行調査
 
-公開サイトはチャット／枠／アラート／テロップ／まとめの5画面。チャットプレビューは従来幅440px設計、他は1920×1080。旧資料の本番URLはsparkle-chat-gamma.vercel.appですが、今回のnecocreamドメインのindex.html、script.js、all.jsはgugu219/sparkle-chatの変更前mainとSHA-256が一致しました。Vercelの `necocream/sparkle-chat` プロジェクトはこのGitHubリポジトリに接続されており、公開ドメインは `sparkle-chat-gamma.vercel.app` です。旧necocreamドメインはこのプロジェクトの一覧にありません。
+公開サイトはチャット／枠／アラート／テロップ／まとめの5画面。チャットプレビューは従来幅440px設計、他は1920×1080。旧資料の本番URLはsparkle-chat-gamma.vercel.appですが、今回のnecocreamドメインのindex.html、script.js、all.jsはgugu219/sparkle-chatの変更前mainとSHA-256が一致しました。Vercelの `necocream/sparkle-chat` プロジェクトはこのGitHubリポジトリに接続されており、本番ドメイン `sparkle-chat-gamma.vercel.app` とデフォルトドメイン `sparkle-chat-necocream.vercel.app` の双方で更新画面を確認できました。APP_BASE_URLはgammaドメインです。
 
 「OAuth Status Click Failed」そのものは実アカウントで再現していません。確認できた不具合は、Hype Train v1購読、購読HTTPエラーの無視、セッションAPIが公開widget IDだけでアクセストークンを返すこと、APP_BASE_URL依存の認証リダイレクト、再接続時の複数ソケット発生の可能性です。v2 Webhookへ置き換え、実環境に依存する認証失敗は画面とAPIで区別できるようにしました。
 
@@ -21,7 +21,7 @@ Socket APIは公式に確認できましたが、Vercelで常時動作するサ�
 
 ## 本番前の受け入れ確認
 
-- Vercelプロジェクトの公開ドメインとAPP_BASE_URLを一致させる。旧necocreamドメインを使う場合は別途ドメイン所有権と接続先を確認する。
+- Twitch認証はAPP_BASE_URLと一致するgammaドメインから開始する。necocreamドメインは表示用の別名として利用できる。
 - 必須環境変数を設定し、Twitchで許可→コールバック→所有者Cookie→購読受付・Webhook challenge→実イベントの流れを確認する。
 - Twitch権限を拒否した場合、Cookie/stateが切れた場合、アクセストークンが失効した場合、フォロー権限が不足した場合の画面を確認する。
 - 保存した枠画像IDとまとめURLを別端末のOBSで開き、1920×1080、透過、位置、前後関係を確認する。
