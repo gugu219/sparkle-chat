@@ -1,4 +1,4 @@
-import { json, redis, token } from './_lib.js';
+import { json, redis, token } from '../lib/legacy.js';
 
 const H=tok=>({'Client-Id':process.env.TWITCH_CLIENT_ID,'Authorization':`Bearer ${tok}`});
 
@@ -14,7 +14,8 @@ async function appToken(){
 // Flatten Helix badge sets into { "set_id/version_id": image_url }
 function flatten(data,map){for(const set of data||[])for(const v of set.versions||[])map[`${set.set_id}/${v.id}`]=v.image_url_2x||v.image_url_1x||v.image_url_4x;}
 
-export default {async fetch(req){
+export const config={runtime:'edge'};
+export default async function(req){
   try{
     const u=new URL(req.url),channel=(u.searchParams.get('channel')||'').trim().toLowerCase();
     const key=channel?`prism:badges:${channel}`:'prism:badges:_global';
@@ -36,4 +37,4 @@ export default {async fetch(req){
     try{await r.set(key,map,{ex:3600});}catch{}
     return json(map);
   }catch(e){return json({error:e.message},500);}
-}};
+};

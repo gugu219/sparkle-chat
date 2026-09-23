@@ -19,7 +19,7 @@
   };
 
   const DEFAULTS = {
-    fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
+    customImage:'',customX:'0',customY:'0',customScale:'100',customOpacity:'100',customLayer:'back',fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
@@ -90,6 +90,10 @@
 
   /* ---- settings -> CSS variables ---- */
   function apply() {
+    let custom=document.querySelector('#custom-frame');if(!custom){custom=document.createElement('img');custom.id='custom-frame';custom.alt='';document.body.appendChild(custom);}
+    const path=String(s.customImage||'');custom.hidden=!path;stage.style.display=path?'none':'';
+    if(path && (/^data:image\/(png|jpeg|webp);base64,/.test(path)||/^\/api\/image\?id=[a-f0-9]+$/.test(path))){custom.src=path;Object.assign(custom.style,{position:'fixed',width:'1920px',height:'1080px',objectFit:'contain',left:clamp(s.customX,-1920,1920)+'px',top:clamp(s.customY,-1080,1080)+'px',opacity:clamp(s.customOpacity,0,100)/100,transform:'scale('+clamp(s.customScale,10,200)/100+')',transformOrigin:'top left'});}else custom.hidden=true;
+
     const cs = palette(), blocks = s.mode === 'blocks';
     root.style.setProperty('--stage-w', clamp(s.fpw, 10, 100) + '%');   /* free frame ratio */
     root.style.setProperty('--stage-h', clamp(s.fph, 10, 100) + '%');
@@ -227,6 +231,7 @@
 
   /* ---- live settings + test events from the editor ---- */
   window.addEventListener('message', e => {
+    if (e.origin!==location.origin||e.source!==parent)return;
     if (e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'frame-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
     if (e.data.type === 'frame-clear') { pileClear(); particles.textContent = ''; return; }
@@ -234,6 +239,7 @@
   });
 
   apply();
+  parent.postMessage({source:'sparkle-frame-ready'},location.origin);
   if (window.ResizeObserver) new ResizeObserver(buildMask).observe(stage);
   else window.addEventListener('resize', buildMask);
 
@@ -241,7 +247,7 @@
      subs / resubs / gift subs / bits, plus channel-point redemptions carrying a message.
      Follows and donations are not exposed on IRC, so those stay test-only. */
   const channel = String(s.channel || '').trim().toLowerCase();
-  if (channel && window.tmi) {
+  if (channel && window.tmi && !qs.has('preview') && !qs.has('overlay')) {
     const c = new window.tmi.Client({
       connection: { secure: true, reconnect: true },
       options: { skipMembership: true },
@@ -267,4 +273,5 @@
     c.on('message', (_ch, t) => { if (t && t['custom-reward-id']) fire('points', 1); });
     c.connect().catch(err => console.warn('[sparklechat] frame connect failed', err));
   }
+window.addEventListener('sparkle-events',e=>{for(const v of e.detail.events||[]){const k=v.type==='donation'?'donate':v.type==='resub'?'sub':v.type;if(EVENTS.includes(k))fire(k);}});
 })();

@@ -1,2 +1,15 @@
-import { json,load,save,token } from '../_lib.js';
-export default {async fetch(req){try{const u=new URL(req.url),widget=u.searchParams.get('widget');if(!widget)return json({error:'Missing widget'},400);if(req.method==='DELETE'){await (await import('../_lib.js')).redis().del(`prism:${widget}`);return json({ok:true});}const s=await load(widget);if(!s)return json({error:'Not found'},404);if(s.expiresAt-Date.now()<120000){const t=await token({client_id:process.env.TWITCH_CLIENT_ID,client_secret:process.env.TWITCH_CLIENT_SECRET,refresh_token:s.refreshToken,grant_type:'refresh_token'});Object.assign(s,{accessToken:t.access_token,refreshToken:t.refresh_token||s.refreshToken,expiresAt:Date.now()+t.expires_in*1000});await save(widget,s);}return json({accessToken:s.accessToken,login:s.login,userId:s.userId,clientId:process.env.TWITCH_CLIENT_ID});}catch(e){return json({error:e.message},500);}}};
+import {handle,json,owner,get,remove,cookie,sameOrigin,unseal} from '../../lib/store.js';
+import {credentials,subscribe} from '../../lib/twitch.js';
+export const config={runtime:'edge'};
+export default handle(async req=>{
+ const account=await owner(req);
+ if(req.method==='DELETE'){
+  sameOrigin(req);const raw=await get('twitch:'+account);if(raw){const c=await unseal(raw);await fetch('https://id.twitch.tv/oauth2/revoke',{method:'POST',body:new URLSearchParams({client_id:process.env.TWITCH_CLIENT_ID,token:c.accessToken})});}
+  await remove('twitch:'+account);await remove('owner:'+cookie(req,'sparkle_owner'));const p=await get('profile:'+account);if(p)await remove('overlay:'+p.overlay);
+  return json({ok:true});
+ }
+ if(req.method==='POST'){sameOrigin(req);await subscribe(account);await remove('connection-error:'+account);}
+ else if(req.method!=='GET')return json({error:'Method not allowed'},405);
+ const c=await credentials(account),p=await get('profile:'+account);
+ return json({login:c.login,overlay:p.overlay,subscriptions:await get('subscriptions:'+account)||[],error:await get('connection-error:'+account)});
+});

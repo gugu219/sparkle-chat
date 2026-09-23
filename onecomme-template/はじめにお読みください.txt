@@ -1,0 +1,44 @@
+SPARKLECHAT — わんコメ テンプレート（チャット表示）
+=====================================================
+
+【入っているファイル】
+  index.html      … テンプレート本体
+  script.js       … 動作ロジック
+  style.css       … デザイン
+  template.json   … わんコメにテンプレートとして認識させる情報（重要）
+
+この4つで動きます。OneSDK 本体（onesdk.js）はわんコメが用意するので同梱不要です。
+
+
+【重要：ファイルパスでは動きません】
+「file:///C:/... 」や「C:\Users\... 」のようなパスを直接OBSに貼っても
+真っ白になります。かならず わんコメ経由（http://localhost:11180/...）で
+表示させてください。理由：コメントはわんコメのサーバー（localhost:11180）から
+受信するため、同じ場所（http）から開く必要があります。
+
+
+【入れ方】
+1. わんコメを起動する
+2. 「設定 → テンプレート → テンプレートフォルダを開く」を押す
+3. 開いたフォルダの中の「custom」フォルダを開く
+   （custom が無ければ作る）
+4. この「onecomme-template」フォルダごと custom の中にコピーする
+   → 名前を「sparklechat」などに変えてOK
+   例）...\templates\custom\sparklechat\index.html となる形
+5. わんコメを再起動（またはテンプレート一覧を再読み込み）
+6. テンプレート一覧に「SPARKLECHAT」が出るので選ぶ
+   → OBSにドラッグすると index.html のブラウザソースが追加されます
+   → 手動なら http://localhost:11180/templates/custom/sparklechat/index.html
+
+
+【うまく出ない時】
+・URLの末尾に ?debug=1 を付けると受信データがコンソールに出ます
+  例 http://localhost:11180/templates/custom/sparklechat/index.html?debug=1
+・「OneSDK が読み込まれていません」と出る＝わんコメ経由で開けていません
+  → file:// で開いていないか、custom フォルダに入っているか確認
+
+
+【デザイン設定】
+SPARKLECHAT の設定エディタでデザインを決めて出てくる ?theme=... などの
+パラメータを、上のURLの末尾に付ければ反映できます。
+例 http://localhost:11180/templates/custom/sparklechat/index.html?theme=rose&align=right

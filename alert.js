@@ -505,7 +505,7 @@
 
   /* ---- live settings + test events from the editor ---- */
   window.addEventListener('message', e => {
-    if (e.data?.source !== 'prism-editor') return;
+    if(e.origin!==location.origin||e.source!==parent||e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'alert-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
     if (e.data.type === 'alert-hype-test') { hypeTestRun(); return; }
     if (e.data.type === 'alert-sound') {
@@ -548,7 +548,7 @@
   const tier = p => p === 'Prime' ? 'PRIME' : p === '2000' ? 'Tier 2' : p === '3000' ? 'Tier 3' : 'Tier 1';
   const channel = String(s.channel || '').trim().toLowerCase();
   if (!channel) status('チャンネル名が未設定です（実際のイベントは受信しません）');
-  if (channel && window.tmi) {
+  if (channel && window.tmi && !qs.has('preview') && !qs.has('overlay')) {
     status(`接続中… #${channel}`);
     const c = new window.tmi.Client({
       connection: { secure: true, reconnect: true },
@@ -586,9 +586,6 @@
     };
     c.on('message', (_ch, t, text) => {
       if (t && t['custom-reward-id']) show('points', t['display-name'] || t.username, '', 0);
-      if (!text) return;
-      let m = text.match(reEN); if (m) return streakShow(m[1], m[2]);
-      m = text.match(reJP);     if (m) return streakShow(m[1], toHalf(m[2]));
     });
     c.on('raw_message', (_cloned, msg) => {
       const tg = msg && msg.tags;
@@ -602,44 +599,15 @@
     c.connect().catch(err => status(`接続エラー: ${err}`));
   }
 
-  /* ---- hype train over EventSub (needs a connected Twitch account via ?widget=<id>) ---- */
-  function connectHype(url, sess) {
-    let ws;
-    try { ws = new WebSocket(url); } catch { return; }
-    ws.onmessage = async ev => {
-      let m; try { m = JSON.parse(ev.data); } catch { return; }
-      const type = m.metadata && m.metadata.message_type;
-      if (type === 'session_welcome') {
-        const sid = m.payload.session.id;
-        for (const t of ['channel.hype_train.begin', 'channel.hype_train.progress', 'channel.hype_train.end']) {
-          try {
-            await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
-              method: 'POST',
-              headers: { 'Client-Id': sess.clientId, 'Authorization': 'Bearer ' + sess.accessToken, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ type: t, version: '1', condition: { broadcaster_user_id: String(sess.userId) }, transport: { method: 'websocket', session_id: sid } })
-            });
-          } catch {}
-        }
-        status(`ハイプトレイン待機中（${sess.login || ''}）`);
-      } else if (type === 'session_reconnect') {
-        const nu = m.payload.session.reconnect_url; try { ws.close(); } catch {} connectHype(nu, sess);
-      } else if (type === 'notification') {
-        const st = m.metadata.subscription_type, e = m.payload.event;
-        if (st === 'channel.hype_train.begin') hypeBegin(e);
-        else if (st === 'channel.hype_train.progress') hypeProgress(e);
-        else if (st === 'channel.hype_train.end') hypeEnd(e);
-      }
-    };
-    ws.onclose = () => { setTimeout(initHype, 8000); };
-  }
-  async function initHype() {
-    if (s.hype !== '1') return;
-    const widget = String(s.widget || '').trim();
-    if (!widget) { status('ハイプトレイン: Twitch未連携（アラートタブで連携するとレベル/％/タイマーを表示）'); return; }
-    let sess = null;
-    try { const r = await fetch('/api/auth/session?widget=' + encodeURIComponent(widget)); if (r.ok) sess = await r.json(); } catch {}
-    if (!sess || !sess.accessToken || !sess.userId) { status('ハイプトレイン: 連携が無効です（再連携してください）'); return; }
-    connectHype('wss://eventsub.wss.twitch.tv/ws', sess);
-  }
-  initHype();
+  window.addEventListener('sparkle-events',event=>{
+    const p=event.detail;
+    for(const e of p.events||[]){
+      if(e.type==='hype'){if(s.hype==='1'){if(e.phase==='end')hypeEnd(e.hype);else hypeUpdate(e.hype);}continue;}
+      const k=e.type==='donation'?'donate':e.type;if(!EVENTS.includes(k))continue;
+      let detail=e.message||'';if(k==='donate')detail=[e.amount,e.currency,e.message].filter(x=>x!==null&&x!==undefined).join(' ');
+      if(k==='bits')detail=(e.amount||0)+' BITS';if(e.tier)detail='Tier '+({'1000':1,'2000':2,'3000':3}[e.tier]||e.tier);
+      show(k,e.name,detail,k==='streak'||k==='gift'?e.count:k==='resub'?e.months:0,k==='streak'?'連続視聴':k==='resub'?'MONTHS':'GIFTS',k==='streak'?'':'×');
+    }
+    if(p.hype&&s.hype==='1'&&!hypeState&&p.hype.phase!=='end'&&Date.parse(p.hype.hype.expires_at)>Date.now())hypeUpdate(p.hype.hype);
+  });
 })();
