@@ -8,9 +8,9 @@ Node.js 22以上でこのフォルダーを開き、`node dev-server.mjs` を実
 
 ## 本番設定（Vercel）
 
-1. gugu219/sparkle-chat のこのブランチでVercel Previewを確認します。フレームワークは Other、ビルドなし。necocreamドメインのVercelプロジェクト設定は本番反映前に確認してください。
+1. gugu219/sparkle-chat のこのブランチでVercel Previewを確認します。フレームワークは Other、ビルドなし。接続先はVercelの `necocream/sparkle-chat` プロジェクトで、公開ドメインは `sparkle-chat-gamma.vercel.app` です。旧資料に記載された `sparkle-chat-necocream.vercel.app` は現在このプロジェクトのドメイン一覧にありません。
 2. `.env.example` の全変数をVercelに設定します。Client Secret等の実値をファイルへコミットしないでください。APP_ENCRYPTION_KEYとTWITCH_WEBHOOK_SECRETは独立した32文字以上のランダム値です。
-3. Twitch開発者コンソールのOAuthリダイレクトURLを `https://sparkle-chat-necocream.vercel.app/api/auth/callback` に登録します。APP_BASE_URLとアクセス先のoriginは一致させます。
+3. Twitch開発者コンソールのOAuthリダイレクトURLを `https://sparkle-chat-gamma.vercel.app/api/auth/callback` に登録します。APP_BASE_URLとアクセス先のoriginは一致させます。
 4. HTTPS環境へデプロイ後、アラートタブからTwitchを接続します。購読ごとのエラーがあれば権限・Client ID・配信者アカウントを確認し、「購読を再試行」を使用します。
 5. 自作枠を選び「枠画像を保存する」を押します。設定を調整後、「まとめ」でURLを発行し、OBSのブラウザソースを1920×1080にします。
 6. 各サービスの公式管理画面から実通知テストを実施してください。Sparkle Chatの「サンプル」は描画テストであり、外部サービスの接続テストではありません。
