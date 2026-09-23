@@ -3,7 +3,9 @@
  const qs=new URLSearchParams(location.search),id=qs.get('overlay');
  window.SparkleRelay={dispatch(payload){window.dispatchEvent(new CustomEvent('sparkle-events',{detail:payload}));}};
  window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.source!=='sparkle-relay')return;window.SparkleRelay.dispatch(e.data.payload);});
- if(!id||qs.has('managed')||qs.has('preview'))return;
+ // The combined editor preview must poll too: external widgets arrive with
+ // the overlay response, while child frames marked managed still skip polling.
+ if(!id||qs.has('managed'))return;
  let cursor=Date.now(),delay=2000;const seen=new Set();
  async function poll(){try{
   const r=await fetch('/api/overlay?id='+encodeURIComponent(id)+'&after='+cursor+(document.documentElement.dataset.page==='all'?'&widgets=1':''));const p=await r.json();if(!r.ok)throw Error(p.error||'接続エラー');

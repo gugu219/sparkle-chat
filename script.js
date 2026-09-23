@@ -417,6 +417,7 @@
       const sc=Math.min(r.width/1920,r.height/1080);
       Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
     window.addEventListener('resize',fit);
+    window.addEventListener('sparkle-auth',()=>{if(!frame.hidden)refreshPreview();});
     window.addEventListener('panelchange',e=>{if(e.detail==='combined'){fit();refreshPreview();}});
   }
 
