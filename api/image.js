@@ -1,18 +1,21 @@
-import { json, redis, id } from './_lib.js';
+import {owner,sameOrigin} from '../lib/store.js';
+import { json, redis, id } from '../lib/legacy.js';
 
 /* Stores a slideshow image and serves it back by id, so the OBS URL only has to
    carry a short id instead of a huge data URI (which would blow the length limit). */
 const MAX = 2600000;                      /* base64 characters (~1.9MB file) */
 const TTL = 60 * 60 * 24 * 365;           /* keep for a year */
 
-export default {async fetch(req){
+export const config={runtime:'edge'};
+export default async function(req){
   try{
-    const u = new URL(req.url);
+    const u = new URL(req.url);if(!['GET','POST'].includes(req.method))return json({error:'Method not allowed'},405);
 
     if(req.method === 'POST'){
+      sameOrigin(req);await owner(req);
       const body = await req.json().catch(() => null);
       const data = String((body && body.data) || '');
-      if(!/^data:image\/[\w.+-]+;base64,/.test(data)) return json({error:'画像ファイルではありません'}, 400);
+      if(!/^data:image\/(png|jpeg|webp);base64,/.test(data)) return json({error:'画像ファイルではありません'}, 400);
       if(data.length > MAX) return json({error:'ファイルが大きすぎます'}, 413);
       const key = id().slice(0, 22);
       await redis().set(`img:${key}`, data, {ex: TTL});
@@ -31,4 +34,4 @@ export default {async fetch(req){
       'Cache-Control': 'public, max-age=31536000, immutable'
     }});
   }catch(e){ return json({error: e.message}, 500); }
-}};
+};

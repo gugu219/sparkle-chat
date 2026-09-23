@@ -1,15 +1,18 @@
-import { json, redis, id } from './_lib.js';
+import {owner,sameOrigin} from '../lib/store.js';
+import { json, redis, id } from '../lib/legacy.js';
 
 /* Stores a short alert sound and serves it back by id, so the OBS URL only
    has to carry the id (embedding the audio in the URL blows the length limit). */
 const MAX = 1000000;                      /* base64 characters (~730KB file) */
 const TTL = 60 * 60 * 24 * 365;           /* keep for a year */
 
-export default {async fetch(req){
+export const config={runtime:'edge'};
+export default async function(req){
   try{
-    const u = new URL(req.url);
+    const u = new URL(req.url);if(!['GET','POST'].includes(req.method))return json({error:'Method not allowed'},405);
 
     if(req.method === 'POST'){
+      sameOrigin(req);await owner(req);
       const body = await req.json().catch(() => null);
       const data = String((body && body.data) || '');
       if(!/^data:audio\/[\w.+-]+;base64,/.test(data)) return json({error:'音声ファイルではありません'}, 400);
@@ -31,4 +34,4 @@ export default {async fetch(req){
       'Cache-Control': 'public, max-age=31536000, immutable'
     }});
   }catch(e){ return json({error: e.message}, 500); }
-}};
+};
