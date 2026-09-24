@@ -3,7 +3,7 @@ export const config={runtime:'edge'};
 export function validWidget(value,provider){if(!value)return '';const u=new URL(value);const hosts=provider==='doneru'?['doneru.jp','www.doneru.jp']:['streamlabs.com','www.streamlabs.com'];if(u.protocol!=='https:'||!hosts.includes(u.hostname)||u.username||u.password||u.port)throw Error('公式サービスのHTTPS Widget URLを入力してください。');return u.href;}
 export default handle(async req=>{
  const account=await owner(req),stored=await get('integrations:'+account),data=stored?await unseal(stored):{};
- if(req.method==='GET')return json({doneru:!!data.doneru,streamlabs:!!data.streamlabs,streamlabsApi:!!data.streamlabsToken,mode:data.mode||'widget'});
+ if(req.method==='GET')return json({doneru:!!data.doneru,streamlabs:!!data.streamlabs,doneruUrl:data.doneru||'',streamlabsUrl:data.streamlabs||'',streamlabsApi:!!data.streamlabsToken,mode:data.mode||'widget'});
  if(req.method!=='POST')return json({error:'Method not allowed'},405);sameOrigin(req);const b=await body(req,16000);
  for(const k of ['doneru','streamlabs']){if(b[k]!==undefined)data[k]=validWidget(b[k],k);}
  if(b.streamlabsToken!==undefined){data.streamlabsToken=String(b.streamlabsToken).trim();if(b.resetHistory)await remove('sl-cursor:'+account);}
