@@ -108,7 +108,7 @@
   }
   const audioCache = {};
   /* plays a user-supplied sound if one is set; returns true when it did */
-  function playCustom(kind) {
+  function playCustom(kind, onFailure = () => {}) {
     const src = soundSrc(kind);
     if (!src) return false;
     try {
@@ -116,8 +116,8 @@
       if (!a) { a = new Audio(src); audioCache[src] = a; }
       a.volume = (clamp(s[kind + 'Vol'], 0, 100) / 100) * (clamp(s.vol, 0, 100) / 100);
       a.currentTime = 0;
-      a.play().catch(() => {});
-    } catch {}
+      a.play().catch(error => { console.warn('[sparklechat] custom alert sound failed', error); onFailure(); });
+    } catch (error) { console.warn('[sparklechat] custom alert sound failed', error); return false; }
     return true;
   }
 
@@ -409,7 +409,7 @@
     void bubble.offsetWidth;
     bubble.classList.add('is-in');
 
-    sfxOn = !playCustom(item.kind);                          /* custom file wins; otherwise use the built-in sound */
+    sfxOn = !playCustom(item.kind, () => procSound(item.kind, mag, hiTier));
     if (sfxOn) procSound(item.kind, mag, hiTier);
     flourish(item.kind, mag, hiTier);
 
@@ -475,11 +475,11 @@
     if (!prev) {                                                     /* begin */
       hypeDone = false; hype.classList.add('is-on');
       spawnSparks(8, hypeSparks);
-      if (!playCustom('hype')) { chipVol('hype'); sndHype(level); }
+      if (!playCustom('hype', () => { chipVol('hype'); sndHype(level); })) { chipVol('hype'); sndHype(level); }
     } else if (level > prev.level) {                                 /* level up — more sparkles the higher it goes */
       hype.classList.remove('levelup'); void hype.offsetWidth; hype.classList.add('levelup');
       spawnSparks(hypeSparkN(level), hypeSparks);
-      if (!playCustom('hype')) { chipVol('hype'); sndHype(level); }
+      if (!playCustom('hype', () => { chipVol('hype'); sndHype(level); })) { chipVol('hype'); sndHype(level); }
     }
     hypeRender();
     if (!hypeTick) hypeTick = setInterval(hypeTickFn, 500);
@@ -510,7 +510,8 @@
     if (e.data.type === 'alert-hype-test') { hypeTestRun(); return; }
     if (e.data.type === 'alert-sound') {
       const k = e.data.event || 'sub';
-      if (!playCustom(k)) { const pm = { sub: 12, resub: 12, bits: 1000, gift: 10, streak: 50 }[k] || 1; procSound(k, pm, k === 'sub' || k === 'resub'); }
+      const pm = { sub: 12, resub: 12, bits: 1000, gift: 10, streak: 50 }[k] || 1;
+      if (!playCustom(k, () => procSound(k, pm, k === 'sub' || k === 'resub'))) procSound(k, pm, k === 'sub' || k === 'resub');
       return;
     }
     if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel, e.data.numPrefix);
