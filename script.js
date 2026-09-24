@@ -405,7 +405,7 @@
       const cfg=buildConfig();if(cfg.frame?.customImage?.startsWith('data:')){flash('自作枠を保存してからURLを発行してください。');return;}let link='';
       if(location.protocol!=='file:'){
         try{const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({config:cfg})});
-          const j=await r.json().catch(()=>({}));if(r.ok&&j.id)link=`${new URL('all.html',location.href).href}?id=${j.id}`;}catch{}
+          const j=await r.json().catch(()=>({}));if(!r.ok){flash(j.error||'URLを保存できませんでした');return;}if(j.id)link=`${new URL('all.html',location.href).href}?id=${j.id}`;}catch{flash('通信できません。接続を確認して再試行してください。');return;}
       }
       if(!link){flash('保存に失敗しました。連携と保存先を確認してください。');return;}
       out.value=link;refreshPreview();
@@ -418,7 +418,7 @@
       Object.assign(frame.style,{width:'1920px',height:'1080px',right:'auto',bottom:'auto',transformOrigin:'top left',transform:`scale(${sc})`,left:((r.width-1920*sc)/2)+'px',top:((r.height-1080*sc)/2)+'px'});};
     window.addEventListener('resize',fit);
     window.addEventListener('sparkle-auth',()=>{if(!frame.hidden)refreshPreview();});
-    window.addEventListener('panelchange',e=>{if(e.detail==='combined'){fit();refreshPreview();}});
+    window.addEventListener('panelchange',e=>{if(e.detail==='combined'){fit();refreshPreview();}else{clearTimeout(t);frame.src='about:blank';}});
   }
 
   /* ---------- editor: remember every setting between visits ---------- */
@@ -504,7 +504,8 @@
     const target=location.protocol==='file:'?'*':location.origin;
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});delete v.widget;if(window.sparkleOverlay)v.overlay=window.sparkleOverlay;return v;};
     REG.frame=()=>({...values(),customImage:window.sparkleCustomFrame||values().customImage});
-    const url=()=>`${new URL('frame.html',location.href).href}?${new URLSearchParams(REG.frame())}`;
+    const url=()=>{const v=REG.frame();if(v.customImage?.startsWith('data:'))delete v.customImage;return `${new URL('frame.html',location.href).href}?${new URLSearchParams(v)}`;};
+    window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===frame.contentWindow&&e.data?.source==='sparkle-frame-ready')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-settings',settings:REG.frame()},location.origin);});
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     let timer,loaded=false,lastCh=null;
     const update=()=>{
