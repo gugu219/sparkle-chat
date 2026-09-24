@@ -10,6 +10,9 @@ export default handle(async req=>{
  }
  if(req.method==='POST'){sameOrigin(req);await subscribe(account);await remove('connection-error:'+account);}
  else if(req.method!=='GET')return json({error:'Method not allowed'},405);
- const c=await credentials(account),p=await get('profile:'+account);
- return json({login:c.login,overlay:p.overlay,subscriptions:await get('subscriptions:'+account)||[],error:await get('connection-error:'+account)});
+ const p=await get('profile:'+account);
+ if(!p?.overlay)return json({error:'Twitchに再接続してください。'},401);
+ let c,error=await get('connection-error:'+account);
+ try{c=await credentials(account);}catch(e){error='Twitchは再認証が必要です。保存済みの外部通知は利用できます。';}
+ return json({login:c?.login||p.login||account,overlay:p.overlay,subscriptions:await get('subscriptions:'+account)||[],error});
 });
