@@ -33,5 +33,5 @@ export default async function(req){
       'Content-Type': m[1],
       'Cache-Control': 'public, max-age=31536000, immutable'
     }});
-  }catch(e){ return json({error: e.message}, 500); }
+  }catch(e){ return json({error: e.message}, e.message?.includes('再接続')?401:500); }
 };
