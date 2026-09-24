@@ -64,8 +64,9 @@ test('external widgets remain available when Twitch credentials expire',async()=
 test('widget settings persist across partial saves and can be removed without disclosure',async()=>{
  await set('owner:owner','account');await integrations(request('/api/integrations','POST',{doneru:'https://doneru.jp/widget/private',mode:'widget'},true));
  await integrations(request('/api/integrations','POST',{streamlabs:'https://streamlabs.com/widgets/alert-box/private',mode:'widget'},true));
- let r=await (await integrations(request('/api/integrations','GET',null,true))).json();assert.equal(r.doneru,true);assert.equal(r.streamlabs,true);assert.equal(JSON.stringify(r).includes('private'),false);
- await integrations(request('/api/integrations','POST',{doneru:'',mode:'widget'},true));r=await (await integrations(request('/api/integrations','GET',null,true))).json();assert.equal(r.doneru,false);assert.equal(r.streamlabs,true);
+ let r=await (await integrations(request('/api/integrations','GET',null,true))).json();assert.equal(r.doneru,true);assert.equal(r.streamlabs,true);assert.equal(r.doneruUrl,'https://doneru.jp/widget/private');assert.equal(r.streamlabsUrl,'https://streamlabs.com/widgets/alert-box/private');assert.equal(r.streamlabsToken,undefined);
+ assert.equal((await integrations(request('/api/integrations'))).status,401);
+ await integrations(request('/api/integrations','POST',{doneru:'',mode:'widget'},true));r=await (await integrations(request('/api/integrations','GET',null,true))).json();assert.equal(r.doneru,false);assert.equal(r.doneruUrl,'');assert.equal(r.streamlabs,true);
 });
 test('authenticated editor retains overlay access when Twitch needs reauthentication',async()=>{
  await set('owner:owner','account');await set('profile:account',{overlay:'read-only'});
