@@ -4,31 +4,39 @@
  const integration=$('#connection-summary').closest('section');integration.id='connections';
  const logCard=$('#event-log').closest('section');logCard.id='activity';
  const status=$('#integration-status');let saved=null;
+ const DRAFT_KEY='sparklechat-integration-drafts';
+ const readDraft=()=>{try{const value=JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}');return value&&typeof value==='object'?value:{};}catch{return {};}};
+ const writeDraft=value=>{try{if(Object.keys(value).length)localStorage.setItem(DRAFT_KEY,JSON.stringify(value));else localStorage.removeItem(DRAFT_KEY);}catch{status.textContent='このブラウザーに下書きを保存できません。URLを控えてから更新してください。';}};
+ const persistDraft=()=>{const next={};for(const key of ['doneru','streamlabs']){const value=$('#'+key+'-url').value.trim();if(value&&value!==saved?.[key+'Url'])next[key]=value;}writeDraft(next);};
  const request=async(path,options={})=>{const r=await fetch(path,{...options,headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(15000)});const j=await r.json();if(!r.ok)throw Error(j.error||'処理に失敗しました');return j;};
  const nav=document.createElement('nav');nav.className='workflow-nav';nav.setAttribute('aria-label','設定の手順');
  for(const [label,action]of [['1. 接続・通知',()=>integration.scrollIntoView({behavior:'smooth',block:'start'})],['2. レイアウト',()=>$('.control-panel').scrollIntoView({behavior:'smooth',block:'start'})],['3. OBSへ出力',()=>{document.querySelector('[data-tab="combined"]').click();$('.control-panel').scrollIntoView({behavior:'smooth',block:'start'});}]] ){
   const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=action;nav.append(b);
  }
  $('.welcome').append(nav);
- const guidance=document.createElement('p');guidance.className='field-hint';guidance.textContent='通知URLは保存後に非表示になります。「保存済み」なら再入力は不要です。実通知は「まとめ」タブで、各サービスの管理画面からテストしてください。';$('.integration-grid').before(guidance);
+ const guidance=document.createElement('p');guidance.className='field-hint';guidance.textContent='保存したURLは更新後も入力欄に戻ります。目のボタンで表示を切り替えられます。未接続の間はこの端末に下書きとして残ります。実通知は「まとめ」で確認してください。';$('.integration-grid').before(guidance);
  const states={};
  for(const [key,name]of [['doneru','Doneru'],['streamlabs','Streamlabs']]){
   const input=$('#'+key+'-url'),label=input.parentElement;
   const card=document.createElement('div');card.className='service-card';label.before(card);card.append(label);
   const state=document.createElement('span');state.className='service-state';state.id=key+'-saved';state.textContent='保存状態を確認中';state.setAttribute('role','status');card.append(state);states[key]=state;
-  input.setAttribute('aria-describedby',state.id);input.addEventListener('input',()=>{state.textContent=input.value.trim()?'未保存の変更があります':saved?.[key]?'保存済み（URLは非表示）':'未設定';});
+  input.setAttribute('aria-describedby',state.id);
+  input.value=readDraft()[key]||'';
+  input.addEventListener('input',()=>{persistDraft();state.textContent=input.value.trim()&&input.value.trim()!==saved?.[key+'Url']?'この端末の下書き（サーバーには未保存）':saved?.[key]?'サーバーに保存済み':'未設定';});
+  const reveal=document.createElement('button');reveal.type='button';reveal.className='service-reveal';reveal.textContent=name+'のURLを表示';reveal.setAttribute('aria-pressed','false');card.append(reveal);
+  reveal.onclick=()=>{const visible=input.type==='text';input.type=visible?'password':'text';reveal.textContent=name+'のURLを'+(visible?'表示':'隠す');reveal.setAttribute('aria-pressed',String(!visible));};
   const remove=document.createElement('button');remove.type='button';remove.className='service-remove';remove.textContent=name+'の通知設定を解除';remove.disabled=true;card.append(remove);states[key+'Remove']=remove;
-  remove.onclick=async()=>{remove.disabled=true;try{await request('/api/integrations',{method:'POST',body:JSON.stringify({[key]:'',...(key==='streamlabs'?{mode:'widget',streamlabsToken:''}:{mode:saved?.mode||'widget'})})});input.value='';await refresh();status.textContent=name+'の通知設定を解除しました。';}catch(e){status.textContent=e.message;remove.disabled=false;}};
+  remove.onclick=async()=>{remove.disabled=true;try{await request('/api/integrations',{method:'POST',body:JSON.stringify({[key]:'',...(key==='streamlabs'?{mode:'widget',streamlabsToken:''}:{mode:saved?.mode||'widget'})})});input.value='';const draft=readDraft();delete draft[key];writeDraft(draft);await refresh();status.textContent=name+'の通知設定を解除しました。';}catch(e){status.textContent=e.message;remove.disabled=false;}};
  }
  async function refresh(){
-  try{saved=await request('/api/integrations');for(const key of ['doneru','streamlabs']){const on=!!saved[key];states[key].textContent=on?'保存済み（URLは非表示）':'未設定';states[key+'Remove'].disabled=!(on||(key==='streamlabs'&&saved.streamlabsApi));$('#'+key+'-url').placeholder=on?'変更するときだけ新しいURLを入力':'OBS用のAlert Box URLを貼り付け';}$('#streamlabs-mode').value=saved.mode;$('#streamlabs-mode').onchange();return true;}
-  catch(e){for(const key of ['doneru','streamlabs'])states[key].textContent='確認できません：'+e.message;return false;}
+  try{saved=await request('/api/integrations');const draft=readDraft();for(const key of ['doneru','streamlabs']){const on=!!saved[key],input=$('#'+key+'-url');input.value=draft[key]||saved[key+'Url']||'';states[key].textContent=draft[key]?'この端末の下書き（サーバーには未保存）':on?'サーバーに保存済み':'未設定';states[key+'Remove'].disabled=!(on||(key==='streamlabs'&&saved.streamlabsApi));input.placeholder='OBS用のAlert Box URLを貼り付け';}$('#streamlabs-mode').value=saved.mode;$('#streamlabs-mode').onchange();return true;}
+  catch(e){for(const key of ['doneru','streamlabs'])states[key].textContent=readDraft()[key]?'この端末の下書き（サーバーには未保存）':'保存状態を確認できません';status.textContent='保存状態を確認できません：'+e.message+' 入力したURLはこの端末に下書きとして残ります。';return false;}
  }
  $('#save-integrations').onclick=async()=>{
   const button=$('#save-integrations');button.disabled=true;button.textContent='保存中…';
   const data={mode:$('#streamlabs-mode').value};for(const key of ['doneru','streamlabs']){const value=$('#'+key+'-url').value.trim();if(value)data[key]=value;}const token=$('#streamlabs-token').value.trim();if(token)data.streamlabsToken=token;
-  try{await request('/api/integrations',{method:'POST',body:JSON.stringify(data)});for(const key of ['doneru','streamlabs'])$('#'+key+'-url').value='';$('#streamlabs-token').value='';const verified=await refresh();status.textContent=verified?'保存済みです。「まとめ」を開き、数秒待ってから公式管理画面のテスト通知を送ってください。':'保存処理は完了しましたが、保存状態の確認に失敗しました。再読み込みして確認してください。';}
-  catch(e){status.textContent='保存できませんでした：'+e.message;}
+  try{await request('/api/integrations',{method:'POST',body:JSON.stringify(data)});writeDraft({});$('#streamlabs-token').value='';const verified=await refresh();status.textContent=verified?'サーバーに保存し、URLを再読み込みできました。「まとめ」で公式管理画面のテスト通知を確認してください。':'保存処理は完了しましたが、保存状態の確認に失敗しました。再読み込みして確認してください。';}
+  catch(e){persistDraft();status.textContent='サーバーには保存できませんでした：'+e.message+'。入力したURLはこの端末に下書きとして残ります。';}
   finally{button.disabled=false;button.textContent='連携設定を保存';}
  };
  // Widget mode is the normal path; API mode remains available for existing users.
