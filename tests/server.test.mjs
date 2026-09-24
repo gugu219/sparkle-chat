@@ -72,3 +72,10 @@ test('authenticated editor retains overlay access when Twitch needs reauthentica
  await set('owner:owner','account');await set('profile:account',{overlay:'read-only'});
  const r=await session(request('/api/auth/session','GET',null,true));assert.equal(r.status,200);const data=await r.json();assert.equal(data.overlay,'read-only');assert.match(data.error,/再認証/);
 });
+test('unreadable old integration settings can be replaced with new URLs',async()=>{
+ await set('owner:owner','account');await set('integrations:account',{iv:[],data:[]});
+ assert.equal((await integrations(request('/api/integrations','GET',null,true))).status,409);
+ const empty=await integrations(request('/api/integrations','POST',{mode:'widget'},true));assert.equal(empty.status,409);
+ const response=await integrations(request('/api/integrations','POST',{doneru:'https://doneru.jp/widget/new',mode:'widget'},true));assert.equal(response.status,200);assert.equal((await response.json()).replacedUnreadable,true);
+ const saved=await (await integrations(request('/api/integrations','GET',null,true))).json();assert.equal(saved.doneruUrl,'https://doneru.jp/widget/new');
+});
