@@ -35,7 +35,7 @@
  $('#save-integrations').onclick=async()=>{
   const button=$('#save-integrations');button.disabled=true;button.textContent='保存中…';
   const data={mode:$('#streamlabs-mode').value};for(const key of ['doneru','streamlabs']){const value=$('#'+key+'-url').value.trim();if(value)data[key]=value;}const token=$('#streamlabs-token').value.trim();if(token)data.streamlabsToken=token;
-  try{await request('/api/integrations',{method:'POST',body:JSON.stringify(data)});writeDraft({});$('#streamlabs-token').value='';const verified=await refresh();status.textContent=verified?'サーバーに保存し、URLを再読み込みできました。「まとめ」で公式管理画面のテスト通知を確認してください。':'保存処理は完了しましたが、保存状態の確認に失敗しました。再読み込みして確認してください。';}
+  try{const result=await request('/api/integrations',{method:'POST',body:JSON.stringify(data)});writeDraft({});$('#streamlabs-token').value='';const verified=await refresh();status.textContent=verified?result.replacedUnreadable?'以前の設定は読み出せなかったため、入力されたURLで保存し直しました。両方のURLが表示されているか確認してください。':'サーバーに保存し、URLを再読み込みできました。「まとめ」で公式管理画面のテスト通知を確認してください。':'保存処理は完了しましたが、保存状態の確認に失敗しました。再読み込みして確認してください。';}
   catch(e){persistDraft();status.textContent='サーバーには保存できませんでした：'+e.message+'。入力したURLはこの端末に下書きとして残ります。';}
   finally{button.disabled=false;button.textContent='連携設定を保存';}
  };
