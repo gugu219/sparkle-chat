@@ -18,14 +18,13 @@
   const session=async id=>{if(!id||location.protocol==='file:')return null;try{const r=await fetch(`/api/auth/session?widget=${encodeURIComponent(id)}`);return r.ok?r.json():null;}catch{return null;}};
 
   async function view(){
-    let s=settings();apply(s);const chat=document.querySelector('#chat'),mt=document.querySelector('#message-template'),at=document.querySelector('#alert-template');
+    let s=settings();apply(s);const chat=document.querySelector('#chat'),mt=document.querySelector('#message-template');
     let streaks={};
     function paintStreak(user){user.parentElement.querySelector('.watch-streak')?.remove();const value=streaks[user.dataset.userId];if(value?.count>0){const badge=document.createElement('span');badge.className='watch-streak';badge.textContent='✦ '+value.count+'連続視聴';user.after(badge);}}
     window.addEventListener('sparkle-events',e=>{streaks=e.detail.stream?.live?e.detail.stream.streaks||{}:{};document.querySelectorAll('.chat-message__name').forEach(paintStreak);});
     const trim=()=>{const limit=Math.max(1,+s.limit||12);const live=[];for(const x of chat.children)if(!x.classList.contains('is-leaving'))live.push(x);for(let i=limit;i<live.length;i++){const x=live[i];x.classList.add('is-leaving');setTimeout(()=>{x.remove();},320);}};
     const role=t=>{if(hasBadge(t,'broadcaster'))return['broadcaster','LIVE'];if(hasBadge(t,'moderator')||t.mod===true||t.mod==='1')return['mod','MOD'];if(hasBadge(t,'vip'))return['vip','VIP'];if(hasBadge(t,'subscriber')||t.subscriber===true||t.subscriber==='1')return['sub','SUB'];return['',''];};
     const msg=(name,text,tags={})=>{const f=mt.content.cloneNode(true),user=f.querySelector('.chat-message__name');if(tags['msg-id']==='highlighted-message'||tags['custom-reward-id'])f.querySelector('.chat-message').classList.add('is-highlight');const pill=s.badgeStyle==='pill',showExtras=s.extras==='1';const imgs=badgeMap?badgeImgs(tags.badges,showExtras,pill):null,bl=f.querySelector('.badge-list');if(imgs&&bl)bl.innerHTML=imgs;if(pill||!badgeMap){const[kind,label]=role(tags),badge=f.querySelector('.role-badge');if(kind){badge.classList.add(`badge-${kind}`);badge.textContent=label;}}user.textContent=name||'Viewer';user.dataset.userId=tags['user-id']||'';user.dataset.login=String(tags.username||name||'').toLowerCase();paintStreak(user);user.style.setProperty('--user-color',tags.color||color(name));const bubble=f.querySelector('.chat-message__bubble');let em=null;try{em=renderEmotes(text||'',tags.emotes);}catch{}if(em!=null)bubble.innerHTML=em;else bubble.textContent=text||'';chat.prepend(f);trim();};
-    const alert=(type,label,name,amount='',note='')=>{const f=at.content.cloneNode(true);f.querySelector('.chat-alert__border').classList.add(`alert-${type}`);f.querySelector('.chat-alert__kind').textContent=label;f.querySelector('.chat-alert__line').innerHTML=`<span class="a-name">${esc(name||'Anonymous')}</span>${amount?` <span class="a-amount">${esc(amount)}</span>`:''}`;const n=f.querySelector('.chat-alert__note');n.textContent=note||'';if(!n.textContent)n.remove();chat.prepend(f);trim();if(!qs.has('managed')&&!qs.has('preview'))window.playChatAlertSound?.(type,Number.parseInt(String(amount).replace(/[^\d]/g,''),10)||1);};
     const rnd=a=>a[Math.floor(Math.random()*a.length)];
     const demoNames=['はると','Mika','tanaka_ch','ゲーマー太郎','xX_Sniper_Xx','ちゃんゆき','kuroneko','ProPlayer99','さくら','viewer_jp','ReiRei','GG_master','ののか','shadow_x','うさぎcat','LunaTV','けんと','pixel_fan','yamada__','streamlover'];
     const demoJP=['かわいいｗ','うますぎる','ナイスプレイ！','がんばれー！','ここすき','それは草','www','おつかれさま','神回すぎる','いいね','おおおおお','ドンマイ！','惜しい！','応援してます','初見です！','かっこいい','やったー！','うぽつ','最高','今のすごい'];
@@ -33,11 +32,7 @@
     const demoColors=['#ff8fc5','#70e4ff','#a997ff','#ffd49b','#8affc1','#ffa6a6','#c9b0ff','#7ceaf7','#ff9d5c'];
     let demoTimer=null;
     const demoTick=()=>{
-      const roll=Math.random();
-      if(roll<0.06)alert('cheer','CHEER',rnd(demoNames),`${rnd([100,300,500,1000,5000])} Bits`,rnd(['Nice play!','がんばれ！','pog','ナイス！']));
-      else if(roll<0.11)alert('gift','GIFT SUB',rnd(demoNames),`×${rnd([1,3,5,10])} GIFTED`,rnd(['Enjoy!','よろしく！','']));
-      else if(roll<0.16)alert('sub','NEW SUBSCRIBER',rnd(demoNames),'',rnd(['Welcome!','よろしくお願いします！','']));
-      else{const name=rnd(demoNames);let text=Math.random()<0.5?rnd(demoEN):rnd(demoJP);const tags={color:rnd(demoColors),badges:{}};const b=Math.random();if(b<0.32)tags.badges.subscriber=String(rnd([1,3,6,12]));else if(b<0.40)tags.badges.moderator='1';else if(b<0.47)tags.badges.vip='1';if(Math.random()<0.12)tags.badges.bits=String(rnd([100,1000]));if(Math.random()<0.18){const base=text;text=base+' Kappa';const st=[...base].length+1;tags.emotes={'25':[`${st}-${st+4}`]};}msg(name,text,tags);}
+      {const name=rnd(demoNames);let text=Math.random()<0.5?rnd(demoEN):rnd(demoJP);const tags={color:rnd(demoColors),badges:{}};const b=Math.random();if(b<0.32)tags.badges.subscriber=String(rnd([1,3,6,12]));else if(b<0.40)tags.badges.moderator='1';else if(b<0.47)tags.badges.vip='1';if(Math.random()<0.12)tags.badges.bits=String(rnd([100,1000]));if(Math.random()<0.18){const base=text;text=base+' Kappa';const st=[...base].length+1;tags.emotes={'25':[`${st}-${st+4}`]};}msg(name,text,tags);}
       demoTimer=setTimeout(demoTick,650+Math.random()*1050);
     };
     const toggleDemo=()=>{if(demoTimer){clearTimeout(demoTimer);demoTimer=null;}else demoTick();};
@@ -45,7 +40,7 @@
       if(e.origin!==location.origin||e.source!==parent||e.data?.source!=='prism-editor')return;const type=e.data.type;
       if(type==='settings'){Object.assign(s,e.data.settings||{});apply(s);if(qs.has('preview'))document.body.classList.add('is-preview');trim();return;}
       if(type==='streak-demo'){msg('Mika','今日も会えてうれしい！',{'user-id':'demo-mika'});return;}if(type==='demo'){toggleDemo();return;}
-      ({message:()=>msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','Welcome!'),gift:()=>alert('gift','GIFT SUB','Kaito','×5 GIFTED','Enjoy the ride!'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','Nice play!'),highlight:()=>msg('Rei','これは強調表示メッセージです ✨',{subscriber:'1',badges:{subscriber:'0'},'msg-id':'highlighted-message'})}[type]||(()=>{}))();
+      ({message:()=>msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}}),highlight:()=>msg('Rei','これは強調表示メッセージです ✨',{subscriber:'1',badges:{subscriber:'0'},'msg-id':'highlighted-message'})}[type]||(()=>{}))();
     });
     badgeMap=await loadBadges(String(s.channel||'').trim().toLowerCase());
     if(qs.has('preview')){document.body.classList.add('is-preview');document.querySelector('#preview-channel').textContent=`TWITCH #${s.channel||'your_channel'}`;msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}});}
@@ -57,7 +52,7 @@
     status(`接続中… #${channel}${auth?` (認証: ${auth.login})`:' (匿名)'}`);
     const c=new window.tmi.Client(opts);
     c.on('connected',()=>status(`接続済み #${channel}${auth?` · ${auth.login}`:' · 匿名'}`,'diag-ok'));c.on('disconnected',r=>status(`切断: ${r||'不明'}`,'diag-err'));c.on('notice',(_,id,m)=>{if(id==='msg_channel_suspended'||id==='no_permission')status(`Twitch: ${m}`,'diag-err');});
-    c.on('message',(_,t,text,self)=>{if(!self)msg(t['display-name']||t.username,text,t);});c.on('cheer',(_,t,text)=>alert('cheer','CHEER',t['display-name']||t.username,`${t.bits||''} Bits`,text));c.on('subscription',(_,u,_m,n)=>alert('sub','NEW SUBSCRIBER',u,'',n));c.on('resub',(_,u,m,n)=>alert('sub','RESUBSCRIBED',u,m?`${m} months`:'',n));c.on('subgift',(_,u,_m,r)=>alert('gift','GIFT SUB',u,`for ${r}`));
+    c.on('message',(_,t,text,self)=>{if(!self)msg(t['display-name']||t.username,text,t);});
     c.connect().catch(e=>status(`接続エラー: ${e}`,'diag-err'));
   }
   async function editor(){
@@ -66,7 +61,7 @@
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     const chatStore=persist(form,'sparklechat-chat',values);chatStore.restore();
     [...form.elements].forEach(x=>{x.addEventListener('input',()=>chatStore.save());x.addEventListener('change',()=>chatStore.save());});
-    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t){if(['sub','gift','cheer'].includes(t))window.playChatAlertSound?.(t,t==='cheer'?500:t==='gift'?5:1);frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);}};REG.chat=values;update();tabs();frameEditor();alertEditor();extrasEditor();combinedEditor();collapsibles();syncChannels();previewBg();window.SparkleEditor={values:REG};
+    [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});document.querySelector('#copy-url').onclick=async()=>{update();try{await navigator.clipboard.writeText(out.value);flash('URLに反映してコピーしました');}catch{out.select();document.execCommand('copy');flash('URLに反映してコピーしました');}};document.querySelector('.test-controls').onclick=e=>{const t=e.target.dataset.test;if(t)frame.contentWindow?.postMessage({source:'prism-editor',type:t},location.protocol==='file:'?'*':location.origin);};REG.chat=values;update();tabs();frameEditor();alertEditor();extrasEditor();combinedEditor();collapsibles();syncChannels();previewBg();window.SparkleEditor={values:REG};
   }
 
   /* ---------- editor: carry the channel name into the other tabs while they are empty ---------- */
