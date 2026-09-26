@@ -1,4 +1,4 @@
-// Small versions of the original procedural alert motifs for chat-only overlays.
+// The original procedural alert motifs, with the same envelope and gain as alert.js.
 (() => {
 let context;
 
@@ -15,12 +15,13 @@ function playChatAlertSound(kind, magnitude = 1) {
       oscillator.type = type;
       oscillator.frequency.setValueAtTime(frequency, start + delay);
       gain.gain.setValueAtTime(0, start + delay);
-      gain.gain.linearRampToValueAtTime(volume * .16, start + delay + .008);
+      // alert.js: note gain .5 × master .6 × event 80% × overall 70%.
+      gain.gain.linearRampToValueAtTime(volume * .168, start + delay + .008);
       gain.gain.exponentialRampToValueAtTime(.001, start + delay + duration);
       oscillator.connect(gain);
       gain.connect(context.destination);
       oscillator.start(start + delay);
-      oscillator.stop(start + delay + duration + .02);
+      oscillator.stop(start + delay + duration + .05);
     };
     const chord = (frequencies, delay, duration, volume, type) => frequencies.forEach(f => note(f, delay, duration, volume, type));
     const N = {C5:523,E5:659,G5:784,B5:988,C6:1046,D6:1175,E6:1318,F6:1397,G6:1568,A6:1760,C7:2093,E7:2637};
