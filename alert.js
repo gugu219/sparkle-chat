@@ -180,22 +180,13 @@
   }
   function sndGift(count) {
     const lvl = giftRank(count);
-    [NT.G5, NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .13, { delay: i * .07, vol: .58 }));   /* rising fanfare intro */
-    let t = .34;
-    chord([NT.C6, NT.E6, NT.G6], .34, { delay: t, vol: .5 });
-    if (lvl >= 2) {                                            /* 5+ : already grand — a long, flashy flourish */
-      [NT.E6, NT.G6, NT.C7, NT.E7].forEach((f, i) => tone(f, .1, { delay: t + .16 + i * .075, vol: .3, type: 'triangle' }));
-      chord([NT.G5, NT.B5, NT.D6, NT.G6], .4, { delay: t + .5, vol: .5 });
-      chord([NT.C6, NT.E6, NT.G6, NT.C7], .55, { delay: t + .82, vol: .52 });
-      t += .9;
-    }
-    if (lvl >= 3) { chord([NT.F6, NT.A6, NT.C7], .4, { delay: t + .2, vol: .45 }); t += .32; }
-    if (lvl >= 4) {                                            /* 20+ : big finish */
-      [NT.C7, NT.E7, NT.G6, NT.C7, NT.E7].forEach((f, i) => tone(f, .09, { delay: t + .25 + i * .09, vol: .28, type: 'triangle' }));
-      chord([NT.C6, NT.E6, NT.G6, NT.C7], .6, { delay: t + .5, vol: .55 });
-      t += .7;
-    }
-    if (lvl >= 5) chord([NT.G6, NT.C7, NT.E7], .7, { delay: t + .3, vol: .5 });
+    /* Short square-wave notes keep gifts recognizably electronic, even at 50+. */
+    [NT.G5, NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .09, { delay: i * .075, vol: .68 }));
+    [NT.C7, NT.E7].forEach((f, i) => tone(f, .1, { delay: .34 + i * .09, vol: .4, type: 'triangle' }));
+    if (lvl >= 2) [NT.G6, NT.C7, NT.E7, NT.C7].forEach((f, i) => tone(f, .075, { delay: .55 + i * .07, vol: .5 }));
+    if (lvl >= 3) [NT.E7, NT.C7, NT.G6].forEach((f, i) => tone(f, .07, { delay: .9 + i * .065, vol: .42 }));
+    if (lvl >= 4) [NT.C7, NT.E7, NT.C7, NT.E7].forEach((f, i) => tone(f, .065, { delay: 1.15 + i * .06, vol: .36 }));
+    if (lvl >= 5) tone(NT.E7, .22, { delay: 1.46, vol: .5, type: 'triangle' });
   }
   function sndHype(level) {
     [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .12, { delay: i * .06, vol: .6 }));

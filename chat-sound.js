@@ -1,4 +1,4 @@
-// The original procedural alert motifs, with the same envelope and gain as alert.js.
+// Built-in alert motifs, with the same envelope and gain as alert.js.
 (() => {
 let context;
 
@@ -39,12 +39,12 @@ function playChatAlertSound(kind, magnitude = 1) {
       if(level>=5)[N.G6,N.C7,N.E7].forEach((f,i)=>note(f,end+.48+i*.08,.12,.24,'triangle'));
     } else if (kind === 'gift') {
       const level=magnitude>=50?5:magnitude>=20?4:magnitude>=10?3:magnitude>=5?2:1;
-      [N.G5,N.C6,N.E6,N.G6].forEach((f,i)=>note(f,i*.07,.13,.58));
-      let t=.34;chord([N.C6,N.E6,N.G6],t,.34,.5);
-      if(level>=2){[N.E6,N.G6,N.C7,N.E7].forEach((f,i)=>note(f,t+.16+i*.075,.1,.3,'triangle'));chord([N.G5,N.B5,N.D6,N.G6],t+.5,.4,.5);chord([N.C6,N.E6,N.G6,N.C7],t+.82,.55,.52);t+=.9;}
-      if(level>=3){chord([N.F6,N.A6,N.C7],t+.2,.4,.45);t+=.32;}
-      if(level>=4){[N.C7,N.E7,N.G6,N.C7,N.E7].forEach((f,i)=>note(f,t+.25+i*.09,.09,.28,'triangle'));chord([N.C6,N.E6,N.G6,N.C7],t+.5,.6,.55);t+=.7;}
-      if(level>=5)chord([N.G6,N.C7,N.E7],t+.3,.7,.5);
+      [N.G5,N.C6,N.E6,N.G6].forEach((f,i)=>note(f,i*.075,.09,.68));
+      [N.C7,N.E7].forEach((f,i)=>note(f,.34+i*.09,.1,.4,'triangle'));
+      if(level>=2)[N.G6,N.C7,N.E7,N.C7].forEach((f,i)=>note(f,.55+i*.07,.075,.5));
+      if(level>=3)[N.E7,N.C7,N.G6].forEach((f,i)=>note(f,.9+i*.065,.07,.42));
+      if(level>=4)[N.C7,N.E7,N.C7,N.E7].forEach((f,i)=>note(f,1.15+i*.06,.065,.36));
+      if(level>=5)note(N.E7,1.46,.22,.5,'triangle');
     } else if (kind === 'sub') {
       const level=magnitude>=24?5:magnitude>=12?4:magnitude>=6?3:magnitude>=3?2:1;
       [N.C5,N.E5,N.G5,N.C6].forEach((f,i)=>note(f,i*.065,.13,.6));
