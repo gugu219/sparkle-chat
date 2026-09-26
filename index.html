@@ -289,7 +289,7 @@
               <option value="zoom">ズーム</option>
             </select></label>
           </div>
-          <p class="field-hint">効果音・音量・<strong>表示時間</strong>はイベントごとに下の SOUND / TIME で設定します。</p>
+          <p class="field-hint">効果音はイベントの種類や数に合わせて自動で変わります。音量と<strong>表示時間</strong>は下の SOUND / TIME で調整できます。</p>
         </fieldset>
 
         <fieldset>
@@ -318,22 +318,12 @@
         <fieldset>
           <legend>SOUND / TIME</legend>
           <div class="field">
-            <span class="field-label">イベントごとの効果音・音量・表示時間</span>
+            <span class="field-label">イベントごとの音量・表示時間</span>
             <div class="pev-tabs" id="snd-tabs"></div>
           </div>
           <div id="snd-panels"></div>
           <div class="range-row"><label class="field-label" for="avol">全体音量 <output id="avol-value">70%</output></label><input id="avol" name="vol" type="range" min="0" max="100" value="70"></div>
-          <div class="field">
-            <span class="field-label">サウンドを追加（一覧に保存されます）</span>
-            <div class="preset-row"><input type="file" id="snd-file" accept="audio/*" aria-label="効果音ファイル"></div>
-            <div class="preset-row">
-              <input id="snd-url" placeholder="または音声URLを貼り付け">
-              <button type="button" id="snd-url-add">追加</button>
-            </div>
-            <div class="preset-row"><button type="button" id="snd-lib-del">選択中のサウンドを一覧から削除</button></div>
-          </div>
-          <p class="field-hint">ファイルは<strong>700KBまで</strong>。もっと長い曲は、どこかにアップした<strong>音声URLを貼り付け</strong>ればサイズ無制限で使えます。</p>
-          <p class="field-hint" id="snd-info">「内蔵の効果音」を選ぶと、もとの音が鳴ります。追加した音も次回から選べます。</p>
+          <p class="field-hint">ギフト数・サブスクのTierと継続期間・Bits額・ハイプトレインのレベルと進捗に合わせて電子音が変わります。</p>
         </fieldset>
 
         <fieldset>
@@ -544,6 +534,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="chat-sound.js?v=3"></script><script src="script.js?v=4"></script><script src="studio.js"></script><script src="workspace.js"></script>
+  <script src="chat-sound.js?v=3"></script><script src="script.js?v=5"></script><script src="studio.js"></script><script src="workspace.js"></script>
 </body>
 </html>

@@ -31,8 +31,8 @@
     hypeX: '0', hypeY: '0', hypeScale: '100',
     demo: '0', channel: '', widget: ''
   };
-  /* each event carries its own sound + volume + display time */
-  EVENTS.forEach(e => { DEFAULTS[e + 'Snd'] = ''; DEFAULTS[e + 'Vol'] = '80'; DEFAULTS[e + 'Dur'] = '5'; });
+  /* each event has a volume and display time; its sound is generated from the event */
+  EVENTS.forEach(e => { DEFAULTS[e + 'Vol'] = '80'; DEFAULTS[e + 'Dur'] = '5'; });
 
   const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins'];
   const ANIMS = ['poyon', 'slide', 'drop', 'zoom'];
@@ -98,30 +98,7 @@
       : depth);
   }
 
-  /* ---- sound ----
-     s[kind+'Snd'] may be a stored id, a direct URL, or a data URI (local preview). */
-  function soundSrc(kind) {
-    const v = String(s[kind + 'Snd'] || '').trim();
-    if (!v) return '';
-    if (/^(https?:|data:|blob:)/i.test(v)) return v;
-    return '/api/sound?id=' + encodeURIComponent(v);
-  }
-  const audioCache = {};
-  /* plays a user-supplied sound if one is set; returns true when it did */
-  function playCustom(kind, onFailure = () => {}) {
-    const src = soundSrc(kind);
-    if (!src) return false;
-    try {
-      let a = audioCache[src];
-      if (!a) { a = new Audio(src); audioCache[src] = a; }
-      a.volume = (clamp(s[kind + 'Vol'], 0, 100) / 100) * (clamp(s.vol, 0, 100) / 100);
-      a.currentTime = 0;
-      a.play().catch(error => { console.warn('[sparklechat] custom alert sound failed', error); onFailure(); });
-    } catch (error) { console.warn('[sparklechat] custom alert sound failed', error); return false; }
-    return true;
-  }
-
-  /* ---- 8-bit chiptune for watch streaks (procedural, no files) ---- */
+  /* ---- generated electronic sounds, shared by the preview and OBS ---- */
   const AC = { ctx: null, master: null };
   function ac() {
     if (AC.ctx === null) {
@@ -151,17 +128,17 @@
   const bitsRank = b => b >= 10000 ? 5 : b >= 5000 ? 4 : b >= 1000 ? 3 : b >= 100 ? 2 : 1;
   const giftRank = n => n >= 50 ? 5 : n >= 20 ? 4 : n >= 10 ? 3 : n >= 5 ? 2 : 1;
 
-  /* ---- original procedural sounds (no audio files) — escalate with the tier ---- */
-  function sndSub(months, hiTier) {
+  /* Each threshold adds a short musical phrase instead of simply increasing loudness. */
+  function sndSub(months, tier = 1) {
     const lvl = subRank(months);
-    [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .13, { delay: i * .065, vol: .6 }));
-    const t = .28;
-    chord([NT.C5, NT.E5, NT.G5], .3, { delay: t, vol: .55 });
-    if (lvl >= 2) chord([NT.C6, NT.E6, NT.G6], .3, { delay: t, vol: .28, type: 'triangle' });
-    if (lvl >= 3) [NT.E6, NT.G6, NT.C7].forEach((f, i) => tone(f, .1, { delay: t + .18 + i * .07, vol: .3, type: 'triangle' }));
-    if (lvl >= 4) chord([NT.G5, NT.B5, NT.D6, NT.G6], .4, { delay: t + .32, vol: .5 });
-    if (lvl >= 5) chord([NT.C6, NT.E6, NT.G6, NT.C7], .6, { delay: t + .58, vol: .55 });
-    if (hiTier) [NT.C7, NT.E7, NT.G6, NT.C7, NT.E7].forEach((f, i) => tone(f, .08, { delay: .12 + i * .09, vol: .18, type: 'triangle' }));
+    [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .105, { delay: i * .075, vol: .46 }));
+    tone(NT.E6, .18, { delay: .32, vol: .38, type: 'triangle' });
+    if (lvl >= 2) [NT.G5, NT.C6].forEach((f, i) => tone(f, .08, { delay: .48 + i * .08, vol: .33 }));
+    if (lvl >= 3) [NT.E6, NT.G6].forEach((f, i) => tone(f, .09, { delay: .69 + i * .085, vol: .31 }));
+    if (lvl >= 4) [NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .085, { delay: .9 + i * .08, vol: .29 }));
+    if (lvl >= 5) tone(NT.C7, .2, { delay: 1.2, vol: .36, type: 'triangle' });
+    if (tier >= 2) [NT.G6, NT.C7].forEach((f, i) => tone(f, .09, { delay: .35 + i * .09, vol: .32, type: 'triangle' }));
+    if (tier >= 3) [NT.E7, NT.C7, NT.E7].forEach((f, i) => tone(f, .07, { delay: .61 + i * .075, vol: .27 }));
   }
   /* a single bright metallic coin "chari-n" */
   function coin(delay, vol) {
@@ -172,11 +149,11 @@
   }
   function sndBits(bits) {
     const lvl = bitsRank(bits), n = [1, 2, 4, 6, 9][lvl - 1];
-    for (let i = 0; i < n; i++) coin(i * .09, .78 - i * .03);  /* coins raining, more as the amount climbs */
+    for (let i = 0; i < n; i++) coin(i * .09, .62 - i * .025);
     const end = n * .09;
-    if (lvl >= 3) { coin(end + .04, .9); coin(end + .17, 1); } /* cash-register cha-ching */
-    if (lvl >= 4) chord([NT.C6, NT.E6, NT.G6], .3, { delay: end + .34, vol: .26, type: 'triangle' });
-    if (lvl >= 5) [NT.G6, NT.C7, NT.E7].forEach((f, i) => tone(f, .12, { delay: end + .48 + i * .08, vol: .24, type: 'triangle' }));
+    if (lvl >= 3) { coin(end + .04, .7); coin(end + .17, .76); }
+    if (lvl >= 4) [NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .09, { delay: end + .31 + i * .07, vol: .29 }));
+    if (lvl >= 5) [NT.G6, NT.C7, NT.E7].forEach((f, i) => tone(f, .11, { delay: end + .59 + i * .08, vol: .28, type: 'triangle' }));
   }
   function sndGift(count) {
     const lvl = giftRank(count);
@@ -189,20 +166,25 @@
     if (lvl >= 5) tone(NT.E7, .22, { delay: 1.46, vol: .5, type: 'triangle' });
   }
   function sndHype(level) {
-    [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .12, { delay: i * .06, vol: .6 }));
-    chord([NT.C6, NT.E6, NT.G6], .3, { delay: .28, vol: .5 });
-    if (level >= 2) [NT.E6, NT.G6, NT.C7].forEach((f, i) => tone(f, .1, { delay: .42 + i * .07, vol: .32, type: 'triangle' }));
-    if (level >= 3) chord([NT.G5, NT.B5, NT.D6, NT.G6], .4, { delay: .62, vol: .5 });
-    if (level >= 5) chord([NT.C6, NT.E6, NT.G6, NT.C7], .6, { delay: .92, vol: .55 });
+    const rank = Math.min(10, Math.max(1, +level || 1));
+    [NT.C5, NT.G5, NT.C6].forEach((f, i) => tone(f, .1, { delay: i * .09, vol: .42 }));
+    for (let i = 1; i < rank; i++) tone([NT.E6, NT.G6, NT.C7, NT.E7, NT.G6][(i - 1) % 5], .085,
+      { delay: .31 + (i - 1) * .105, vol: .31, type: i % 2 ? 'triangle' : 'square' });
+    tone(rank >= 4 ? NT.C7 : NT.G6, .22, { delay: .34 + (rank - 1) * .105, vol: .39, type: 'triangle' });
+  }
+  function sndHypeProgress(level, pct) {
+    const steps = Math.min(4, Math.max(1, Math.ceil(pct / 25)));
+    for (let i = 0; i < steps; i++) tone([NT.C6, NT.E6, NT.G6, NT.C7][i] * (level >= 5 ? 1.25 : 1), .07,
+      { delay: i * .07, vol: .19 + Math.min(level, 5) * .025, type: 'triangle' });
   }
   function sndFollow() { [NT.E5, NT.A5, NT.Cs6].forEach((f, i) => tone(f, .12, { delay: i * .07, vol: .5 })); }
   function sndPoints() { [NT.G5, NT.C6].forEach((f, i) => tone(f, .1, { delay: i * .06, vol: .45 })); tone(NT.E6, .12, { delay: .16, vol: .3, type: 'triangle' }); }
   function sndDonate() { [NT.C6, NT.G5, NT.C6, NT.E6].forEach((f, i) => tone(f, .12, { delay: i * .07, vol: .5 })); }
 
   /* route an event to its procedural sound (used when no custom sound is set) */
-  function procSound(kind, mag, hiTier) {
+  function procSound(kind, mag, tier = 1) {
     chipVol(kind);
-    if (kind === 'sub' || kind === 'resub') sndSub(mag, hiTier);
+    if (kind === 'sub' || kind === 'resub') sndSub(mag, tier);
     else if (kind === 'bits') sndBits(mag);
     else if (kind === 'gift') sndGift(mag);
     else if (kind === 'streak') chipAppear(streakRank(mag || 1));
@@ -354,7 +336,7 @@
   /* ---- queue so alerts never overlap ---- */
   const queue = [];
   let busy = false;
-  let sfxOn = true;                                          /* true when procedural sound is in use (no custom file) */
+  let sfxOn = true;
   const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star', flame: '--i-flame', hype: '--i-hype' };
 
   function show(kind, name, detail, num, numLabel, numPrefix, mag, silent = false) {
@@ -388,7 +370,7 @@
       if (item.kind === 'bits') { const mm = String(item.detail || '').match(/[\d,]+/); mag = mm ? +mm[0].replace(/,/g, '') : 1; }
       else mag = num > 1 ? num : 1;
     }
-    const hiTier = /tier\s*[23]/i.test(String(item.detail || ''));
+    const tier = /tier\s*3/i.test(String(item.detail || '')) ? 3 : /tier\s*2/i.test(String(item.detail || '')) ? 2 : 1;
 
     bubble.classList.remove('is-out', 'is-in', 'rainbow', 'tier2', 'tier3');
     /* new-sub tier badge gets a natural emphasis (resub shows a counter instead) */
@@ -400,9 +382,9 @@
     void bubble.offsetWidth;
     bubble.classList.add('is-in');
 
-    sfxOn = !item.silent && !playCustom(item.kind, () => procSound(item.kind, mag, hiTier));
-    if (sfxOn) procSound(item.kind, mag, hiTier);
-    flourish(item.kind, mag, hiTier);
+    sfxOn = !item.silent;
+    if (sfxOn) procSound(item.kind, mag, tier);
+    flourish(item.kind, mag, tier >= 2);
 
     if (num > 1) setTimeout(() => {
       const c = elDetail.querySelector('.cnt'); if (!c) return;
@@ -466,11 +448,13 @@
     if (!prev) {                                                     /* begin */
       hypeDone = false; hype.classList.add('is-on');
       spawnSparks(8, hypeSparks);
-      if (!playCustom('hype', () => { chipVol('hype'); sndHype(level); })) { chipVol('hype'); sndHype(level); }
+      chipVol('hype'); sndHype(level);
     } else if (level > prev.level) {                                 /* level up — more sparkles the higher it goes */
       hype.classList.remove('levelup'); void hype.offsetWidth; hype.classList.add('levelup');
       spawnSparks(hypeSparkN(level), hypeSparks);
-      if (!playCustom('hype', () => { chipVol('hype'); sndHype(level); })) { chipVol('hype'); sndHype(level); }
+      chipVol('hype'); sndHype(level);
+    } else if (Math.floor(pct / 25) > Math.floor(prev.pct / 25)) {
+      chipVol('hype'); sndHypeProgress(level, pct);
     }
     hypeRender();
     if (!hypeTick) hypeTick = setInterval(hypeTickFn, 500);
@@ -478,11 +462,12 @@
   const hypeBegin = e => hypeUpdate(e);
   const hypeProgress = e => hypeUpdate(e);
   function hypeEnd(e) {                                              /* mark complete but keep it visible until the timer hits 0 */
-    if (!hypeState) return;
+    if (!hypeState || hypeDone) return;
     hypeDone = true;
     hypeState.pct = 100; hypeRender();
     hypeLvl.textContent = 'LEVEL ' + (+(e && e.level) || hypeState.level) + ' 完走!';
     spawnSparks(hypeSparkN(hypeState.level), hypeSparks);
+    chipVol('hype'); sndHype(Math.max(5, hypeState.level));
     if (!hypeTick) hypeTick = setInterval(hypeTickFn, 500);
   }
   function hypeTestRun() {
@@ -495,11 +480,12 @@
   }
 
   /* ---- live settings + test events from the editor ---- */
-  window.sparkleAlertPreviewSound = (kind, mag, hiTier) => {
+  window.sparkleAlertPreviewSound = (kind, mag, tier = 1) => {
     if (!EVENTS.includes(kind)) return false;
-    if (!playCustom(kind, () => procSound(kind, mag, hiTier))) procSound(kind, mag, hiTier);
+    procSound(kind, mag, tier);
     return true;
   };
+  window.sparkleAlertPreviewHype = () => { hypeTestRun(); return true; };
   window.addEventListener('message', e => {
     if(e.origin!==location.origin||e.source!==parent||e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'alert-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
@@ -507,7 +493,7 @@
     if (e.data.type === 'alert-sound') {
       const k = e.data.event || 'sub';
       const pm = { sub: 12, resub: 12, bits: 1000, gift: 10, streak: 50 }[k] || 1;
-      if (!playCustom(k, () => procSound(k, pm, k === 'sub' || k === 'resub'))) procSound(k, pm, k === 'sub' || k === 'resub');
+      procSound(k, pm, 1);
       return;
     }
     if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel, e.data.numPrefix, undefined, !!e.data.soundPlayed);

@@ -93,7 +93,7 @@
       glOn:'0',glC:'#ff8fc5',glS:'40',glB:'40',
       sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',streak:'1',hype:'1',
       hypeX:'0',hypeY:'0',hypeScale:'100',demo:'0',channel:'',widget:''};
-    EVENTS.forEach(e=>{DEF[e+'Snd']='';DEF[e+'Vol']='80';DEF[e+'Dur']='5';});
+    EVENTS.forEach(e=>{DEF[e+'Vol']='80';DEF[e+'Dur']='5';});
     const EV_LABEL={sub:'サブスク',resub:'継続',gift:'ギフト',follow:'フォロー',bits:'Bits',points:'ポイント',donate:'ドネ',streak:'連続視聴',hype:'ハイプ'};
     const CHECKS=[...EVENTS,'tail','brOn','glOn','demo'];
     const OUTS={asize:['size','px'],aradius:['radius','px'],apad:['pad','px'],
@@ -108,9 +108,7 @@
       bits:['500 BITS',0,''],points:['',0,''],donate:['¥1,000',0,''],streak:['',25,'回','']};
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});delete v.widget;if(window.sparkleOverlay)v.overlay=window.sparkleOverlay;return v;};
     REG.alert=values;
-    /* a data: URI must never reach the URL — it would blow the length limit (414) */
-    const url=()=>{const v=values();if(/^data:/i.test(String(v.snd||'')))v.snd='';
-      return `${new URL('alert.html',location.href).href}?${new URLSearchParams(v)}`;};
+    const url=()=>`${new URL('alert.html',location.href).href}?${new URLSearchParams(values())}`;
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     let timer,loaded=false,lastCh=null;
     const update=()=>{
@@ -123,30 +121,7 @@
       else frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-settings',settings:v},target);
     };
 
-    /* ---- reusable sound library (kept in the browser, so nothing has to be re-uploaded) ---- */
-    const SLIB='sparklechat-sounds';
-    const libRead=()=>{try{return JSON.parse(localStorage.getItem(SLIB))||[];}catch{return[];}};
-    const libWrite=a=>{try{localStorage.setItem(SLIB,JSON.stringify(a));}catch{}};
-    const sndInfo=document.querySelector('#snd-info');
-    const setSndInfo=t=>{if(sndInfo)sndInfo.textContent=t;};
-    const activeSev=()=>document.querySelector('#snd-tabs .pev.is-active')?.dataset.sev||'sub';
-    function refreshLib(){
-      const lib=libRead();
-      EVENTS.forEach(e=>{
-        const sel=document.querySelector(`#${e}Snd`);if(!sel)return;
-        const cur=sel.value;sel.textContent='';
-        const none=document.createElement('option');none.value='';none.textContent='内蔵の効果音';sel.appendChild(none);
-        lib.forEach(x=>{const o=document.createElement('option');o.value=x.src;o.textContent=x.name;sel.appendChild(o);});
-        sel.value=cur;
-      });
-    }
-    const libAdd=(name,src)=>{const lib=libRead();
-      if(!lib.some(x=>x.src===src))lib.push({name:String(name).slice(0,48),src});
-      libWrite(lib);refreshLib();
-      const sel=form.elements[activeSev()+'Snd'];if(sel){sel.value=src;}
-      update();};
-
-    /* per-event sound panels, switched by the tabs above */
+    /* per-event volume and duration, switched by the tabs above */
     (()=>{
       const tabs=document.querySelector('#snd-tabs'),host=document.querySelector('#snd-panels');
       if(!tabs||!host)return;
@@ -154,8 +129,7 @@
       EVENTS.forEach((e,i)=>{
         const b=document.createElement('button');b.type='button';b.className='pev'+(i?'':' is-active');b.dataset.sev=e;b.textContent=EV_LABEL[e];tabs.appendChild(b);
         const p=document.createElement('div');p.className='pblock';p.dataset.sev=e;if(i)p.hidden=true;
-        p.innerHTML=`<div class="field"><label class="field-label" for="${e}Snd">効果音</label>`
-          +`<div class="preset-row"><select id="${e}Snd" name="${e}Snd"></select><button type="button" data-sndtest="${e}">▶ 試聴</button></div></div>`
+        p.innerHTML=`<div class="preset-row"><button type="button" data-sndtest="${e}">▶ 試聴</button></div>`
           +`<div class="range-row"><label class="field-label" for="${e}Vol">音量 <output id="${e}Vol-value">80%</output></label>`
           +`<input id="${e}Vol" name="${e}Vol" type="range" min="0" max="100" value="80"></div>`
           +`<div class="range-row"><label class="field-label" for="${e}Dur">表示時間 <output id="${e}Dur-value">5秒</output></label>`
@@ -167,10 +141,9 @@
         host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.sev!==b.dataset.sev;});});
       host.addEventListener('click',ev=>{const k=ev.target.dataset.sndtest;if(!k)return;
         const pm={sub:12,resub:12,bits:1000,gift:10,streak:50}[k]||1;
-        if(!frame.contentWindow?.sparkleAlertPreviewSound?.(k,pm,k==='sub'||k==='resub'))
+        if(!frame.contentWindow?.sparkleAlertPreviewSound?.(k,pm,1))
           frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-sound',event:k},target);});
     })();
-    refreshLib();
     const store=persist(form,'sparklechat-alert',values);
     store.restore();
 
@@ -184,45 +157,26 @@
 
     document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
       const ev=e.target.dataset.alertEvent;if(!ev)return;
-      const[detail,num,numLabel,numPrefix]=SAMPLE[ev]||['',0,''];
+      const[sampleDetail,num,numLabel,numPrefix]=SAMPLE[ev]||['',0,''];
       const magnitude=+(e.target.dataset.alertNum||num)||1;
-      const soundPlayed=ev==='gift'&&!!frame.contentWindow?.sparkleAlertPreviewSound?.(ev,magnitude,false);
+      const detail=e.target.dataset.alertDetail||sampleDetail;
+      const tier=/tier\s*3/i.test(detail)?3:/tier\s*2/i.test(detail)?2:1;
+      const soundMag=ev==='bits'?(Number((detail.match(/[\d,]+/)||[])[0]?.replace(/,/g,'')||0)||magnitude):magnitude;
+      const soundPlayed=['sub','resub','gift','bits'].includes(ev)
+        &&!!frame.contentWindow?.sparkleAlertPreviewSound?.(ev,soundMag,tier);
       frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,soundPlayed,
-        name:NAMES[Math.floor(Math.random()*NAMES.length)],detail:e.target.dataset.alertDetail||detail,
+        name:NAMES[Math.floor(Math.random()*NAMES.length)],detail,
         num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'},target);});
 
-    document.querySelector('#snd-file')?.addEventListener('change',async e=>{
-      const f=e.target.files&&e.target.files[0];if(!f)return;
-      if(f.size>700000){flash('音声が大きすぎます（700KBまで）。長い曲は「音声URLを貼り付け」をご利用ください');e.target.value='';return;}
-      let dataUri='';
-      try{dataUri=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(String(rd.result||''));rd.onerror=rej;rd.readAsDataURL(f);});}
-      catch{flash('音声の読み込みに失敗しました');return;}
-      if(location.protocol==='file:'){libAdd(f.name+'（ローカル試聴のみ）',dataUri);return;}
-      setSndInfo(`${f.name} をアップロード中…`);
-      try{
-        const r=await fetch('/api/sound',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({data:dataUri})});
-        const j=await r.json().catch(()=>({}));
-        if(!r.ok||!j.id)throw new Error(j.error||`保存に失敗しました (${r.status})`);
-        libAdd(f.name,j.id);
-        setSndInfo(`「${f.name}」を一覧に追加しました。次回からは選ぶだけで使えます。`);
-        flash('効果音を一覧に追加しました');
-      }catch(err){setSndInfo('アップロードに失敗しました');flash('効果音の保存に失敗: '+err.message);}
-      e.target.value='';
-    });
-    document.querySelector('#snd-url-add')?.addEventListener('click',()=>{
-      const el=document.querySelector('#snd-url'),u=el.value.trim();if(!u)return;
-      libAdd(u.split('/').pop()||u,u);el.value='';flash('サウンドを一覧に追加しました');});
-    document.querySelector('#snd-lib-del')?.addEventListener('click',()=>{
-      const sel=form.elements[activeSev()+'Snd'],cur=sel&&sel.value;if(!cur)return;
-      libWrite(libRead().filter(x=>x.src!==cur));
-      EVENTS.forEach(e=>{const s2=form.elements[e+'Snd'];if(s2&&s2.value===cur)s2.value='';});
-      refreshLib();update();flash('サウンドを一覧から削除しました');});
     document.querySelector('#alert-copy').onclick=async()=>{update();
       try{await navigator.clipboard.writeText(out.value);flash('アラートのURLをコピーしました');}
       catch{out.select();document.execCommand('copy');flash('アラートのURLをコピーしました');}};
 
     /* hype train: test button + Twitch account link (needed for level/%/timer) */
-    document.querySelector('#test-hype')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-hype-test'},target));
+    document.querySelector('#test-hype')?.addEventListener('click',()=>{
+      if(!frame.contentWindow?.sparkleAlertPreviewHype?.())
+        frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-hype-test'},target);
+    });
     window.addEventListener('sparkle-auth',update);
     update();fit();
   }
