@@ -102,7 +102,14 @@
   const AC = { ctx: null, master: null };
   function ac() {
     if (AC.ctx === null) {
-      try { AC.ctx = new (window.AudioContext || window.webkitAudioContext)(); AC.master = AC.ctx.createGain(); AC.master.connect(AC.ctx.destination); }
+      try {
+        AC.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        AC.master = AC.ctx.createGain();
+        const limiter = AC.ctx.createDynamicsCompressor();
+        limiter.threshold.value = -18; limiter.knee.value = 8; limiter.ratio.value = 4;
+        limiter.attack.value = .003; limiter.release.value = .18;
+        AC.master.connect(limiter); limiter.connect(AC.ctx.destination);
+      }
       catch { AC.ctx = false; }
     }
     if (AC.ctx && AC.ctx.state === 'suspended') AC.ctx.resume();
@@ -114,12 +121,32 @@
     const a = ac(); if (!a) return;
     const t0 = a.currentTime + (o.delay || 0), osc = a.createOscillator(), g = a.createGain();
     osc.type = o.type || 'square'; osc.frequency.setValueAtTime(freq, t0);
-    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime((o.vol || 1) * .5, t0 + .008);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime((o.vol ?? 1) * .42, t0 + .008);
     g.gain.exponentialRampToValueAtTime(.001, t0 + dur);
     osc.connect(g); g.connect(AC.master); osc.start(t0); osc.stop(t0 + dur + .05);
   }
   const chord = (fs, dur, o) => fs.forEach(f => tone(f, dur, o));
   const NT = { C5:523,D5:587,E5:659,F5:698,G5:784,A5:880,B5:988,Cs6:1109,C6:1046,D6:1175,E6:1318,F6:1397,G6:1568,A6:1760,C7:2093,E7:2637 };
+  function sparkle(freq, delay, vol = .3) {
+    tone(freq, .14, { delay, vol, type: 'triangle' });
+    tone(freq * 2, .09, { delay: delay + .025, vol: vol * .36, type: 'sine' });
+  }
+  function fanfare(notes, delay = 0, step = .09, vol = .38) {
+    notes.forEach((f, i) => {
+      const at = delay + i * step;
+      tone(f, .11, { delay: at, vol });
+      tone(f / 2, .15, { delay: at + .018, vol: vol * .26, type: 'triangle' });
+    });
+  }
+  function sweep(from, to, delay = 0, dur = .18, vol = .24) {
+    const a = ac(); if (!a) return;
+    const at = a.currentTime + delay, osc = a.createOscillator(), gain = a.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(from, at); osc.frequency.exponentialRampToValueAtTime(to, at + dur);
+    gain.gain.setValueAtTime(0, at); gain.gain.linearRampToValueAtTime(vol * .22, at + .018);
+    gain.gain.exponentialRampToValueAtTime(.001, at + dur);
+    osc.connect(gain); gain.connect(AC.master); osc.start(at); osc.stop(at + dur + .02);
+  }
   const chipVol = (kind = 'streak') => { if (ac()) AC.master.gain.value = (clamp(s[kind + 'Vol'], 0, 100) / 100) * (clamp(s.vol, 0, 100) / 100) * .6; };
   const streakRank = d => d >= 400 ? 11 : d >= 300 ? 10 : d >= 250 ? 9 : d >= 200 ? 8 : d >= 150 ? 7 : d >= 100 ? 6 : d >= 75 ? 5 : d >= 50 ? 4 : d >= 25 ? 3 : d >= 10 ? 2 : 1;
 
@@ -131,14 +158,16 @@
   /* Each threshold adds a short musical phrase instead of simply increasing loudness. */
   function sndSub(months, tier = 1) {
     const lvl = subRank(months);
-    [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .105, { delay: i * .075, vol: .46 }));
-    tone(NT.E6, .18, { delay: .32, vol: .38, type: 'triangle' });
-    if (lvl >= 2) [NT.G5, NT.C6].forEach((f, i) => tone(f, .08, { delay: .48 + i * .08, vol: .33 }));
-    if (lvl >= 3) [NT.E6, NT.G6].forEach((f, i) => tone(f, .09, { delay: .69 + i * .085, vol: .31 }));
-    if (lvl >= 4) [NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .085, { delay: .9 + i * .08, vol: .29 }));
-    if (lvl >= 5) tone(NT.C7, .2, { delay: 1.2, vol: .36, type: 'triangle' });
-    if (tier >= 2) [NT.G6, NT.C7].forEach((f, i) => tone(f, .09, { delay: .35 + i * .09, vol: .32, type: 'triangle' }));
-    if (tier >= 3) [NT.E7, NT.C7, NT.E7].forEach((f, i) => tone(f, .07, { delay: .61 + i * .075, vol: .27 }));
+    sweep(NT.C5 / 2, NT.C6, 0, .19, .2);
+    fanfare([NT.C5, NT.E5, NT.G5, NT.C6, NT.E6], .02, .09, .42);
+    chord([NT.C5, NT.E5, NT.G5], .28, { delay: .48, vol: .25, type: 'triangle' });
+    sparkle(NT.C7, .52, .3);
+    if (lvl >= 2) fanfare([NT.G5, NT.C6, NT.E6], .7, .09, .32);
+    if (lvl >= 3) { sparkle(NT.G6, .96, .3); fanfare([NT.E6, NT.G6, NT.C7], 1.04, .08, .3); }
+    if (lvl >= 4) chord([NT.C6, NT.E6, NT.G6], .27, { delay: 1.35, vol: .26, type: 'triangle' });
+    if (lvl >= 5) { fanfare([NT.G6, NT.C7, NT.E7], 1.52, .09, .28); sparkle(NT.C7, 1.85, .38); }
+    if (tier >= 2) { sweep(NT.G5, NT.G6, .32, .2, .17); sparkle(NT.E7, .69, .27); }
+    if (tier >= 3) { fanfare([NT.G6, NT.C7, NT.E7, NT.C7], .83, .085, .28); sparkle(NT.E7, 1.25, .34); }
   }
   /* a single bright metallic coin "chari-n" */
   function coin(delay, vol) {
@@ -149,37 +178,45 @@
   }
   function sndBits(bits) {
     const lvl = bitsRank(bits), n = [1, 2, 4, 6, 9][lvl - 1];
-    for (let i = 0; i < n; i++) coin(i * .09, .62 - i * .025);
+    sweep(NT.C5, NT.C6, 0, .12, .18);
+    for (let i = 0; i < n; i++) coin(i * .085, .62 - i * .025);
     const end = n * .09;
-    if (lvl >= 3) { coin(end + .04, .7); coin(end + .17, .76); }
-    if (lvl >= 4) [NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .09, { delay: end + .31 + i * .07, vol: .29 }));
-    if (lvl >= 5) [NT.G6, NT.C7, NT.E7].forEach((f, i) => tone(f, .11, { delay: end + .59 + i * .08, vol: .28, type: 'triangle' }));
+    fanfare([NT.E5, NT.G5, NT.C6], end + .04, .085, .34);
+    sparkle(NT.E6, end + .31, .31);
+    if (lvl >= 2) { fanfare([NT.G5, NT.C6], end + .48, .09, .3); coin(end + .57, .5); }
+    if (lvl >= 3) { fanfare([NT.C6, NT.E6, NT.G6], end + .75, .075, .31); sparkle(NT.C7, end + 1, .32); }
+    if (lvl >= 4) { coin(end + 1.14, .64); fanfare([NT.G6, NT.C7, NT.E7], end + 1.2, .08, .28); }
+    if (lvl >= 5) { chord([NT.C6, NT.E6, NT.G6], .3, { delay: end + 1.53, vol: .25, type: 'triangle' }); sparkle(NT.E7, end + 1.7, .4); }
   }
   function sndGift(count) {
     const lvl = giftRank(count);
-    /* Short square-wave notes keep gifts recognizably electronic, even at 50+. */
-    [NT.G5, NT.C6, NT.E6, NT.G6].forEach((f, i) => tone(f, .09, { delay: i * .075, vol: .68 }));
-    [NT.C7, NT.E7].forEach((f, i) => tone(f, .1, { delay: .34 + i * .09, vol: .4, type: 'triangle' }));
-    if (lvl >= 2) [NT.G6, NT.C7, NT.E7, NT.C7].forEach((f, i) => tone(f, .075, { delay: .55 + i * .07, vol: .5 }));
-    if (lvl >= 3) [NT.E7, NT.C7, NT.G6].forEach((f, i) => tone(f, .07, { delay: .9 + i * .065, vol: .42 }));
-    if (lvl >= 4) [NT.C7, NT.E7, NT.C7, NT.E7].forEach((f, i) => tone(f, .065, { delay: 1.15 + i * .06, vol: .36 }));
-    if (lvl >= 5) tone(NT.E7, .22, { delay: 1.46, vol: .5, type: 'triangle' });
+    sweep(NT.G5 / 2, NT.G6, 0, .24, .25);
+    fanfare([NT.G5, NT.C6, NT.E6, NT.G6, NT.C7], 0, .075, .47);
+    chord([NT.C6, NT.E6, NT.G6], .25, { delay: .41, vol: .28, type: 'triangle' });
+    sparkle(NT.E7, .49, .36);
+    if (lvl >= 2) { fanfare([NT.E6, NT.G6, NT.C7, NT.E7], .67, .075, .38); sparkle(NT.C7, 1.01, .34); }
+    if (lvl >= 3) { sweep(NT.C6, NT.E7, 1.11, .17, .17); fanfare([NT.G6, NT.C7, NT.E7], 1.24, .08, .34); }
+    if (lvl >= 4) { fanfare([NT.C7, NT.E7, NT.C7, NT.E7], 1.56, .07, .32); sparkle(NT.E7, 1.88, .38); }
+    if (lvl >= 5) { chord([NT.C6, NT.E6, NT.G6, NT.C7], .36, { delay: 2.06, vol: .3, type: 'triangle' }); sparkle(NT.E7, 2.18, .43); }
   }
   function sndHype(level) {
     const rank = Math.min(10, Math.max(1, +level || 1));
-    [NT.C5, NT.G5, NT.C6].forEach((f, i) => tone(f, .1, { delay: i * .09, vol: .42 }));
-    for (let i = 1; i < rank; i++) tone([NT.E6, NT.G6, NT.C7, NT.E7, NT.G6][(i - 1) % 5], .085,
-      { delay: .31 + (i - 1) * .105, vol: .31, type: i % 2 ? 'triangle' : 'square' });
-    tone(rank >= 4 ? NT.C7 : NT.G6, .22, { delay: .34 + (rank - 1) * .105, vol: .39, type: 'triangle' });
+    sweep(NT.C5 / 2, NT.C6, 0, .26, .24);
+    fanfare([NT.C5, NT.G5, NT.C6, NT.E6], 0, .085, .43);
+    for (let i = 1; i < rank; i++) sparkle([NT.G6, NT.C7, NT.E7, NT.G6][(i - 1) % 4], .38 + (i - 1) * .12, .27);
+    const end = .42 + (rank - 1) * .12;
+    chord([NT.C6, NT.E6, NT.G6], .3, { delay: end, vol: .26, type: 'triangle' });
+    fanfare(rank >= 4 ? [NT.G6, NT.C7, NT.E7] : [NT.E6, NT.G6], end + .14, .09, .3);
   }
   function sndHypeProgress(level, pct) {
     const steps = Math.min(4, Math.max(1, Math.ceil(pct / 25)));
-    for (let i = 0; i < steps; i++) tone([NT.C6, NT.E6, NT.G6, NT.C7][i] * (level >= 5 ? 1.25 : 1), .07,
-      { delay: i * .07, vol: .19 + Math.min(level, 5) * .025, type: 'triangle' });
+    sweep(NT.G5, NT.E6, 0, .11, .12);
+    fanfare([NT.C6, NT.E6, NT.G6, NT.C7].slice(0, steps).map(f => f * (level >= 5 ? 1.25 : 1)), .035, .075, .22 + Math.min(level, 5) * .02);
+    sparkle(NT.C7, .1 + steps * .075, .2 + Math.min(level, 5) * .02);
   }
-  function sndFollow() { [NT.E5, NT.A5, NT.Cs6].forEach((f, i) => tone(f, .12, { delay: i * .07, vol: .5 })); }
-  function sndPoints() { [NT.G5, NT.C6].forEach((f, i) => tone(f, .1, { delay: i * .06, vol: .45 })); tone(NT.E6, .12, { delay: .16, vol: .3, type: 'triangle' }); }
-  function sndDonate() { [NT.C6, NT.G5, NT.C6, NT.E6].forEach((f, i) => tone(f, .12, { delay: i * .07, vol: .5 })); }
+  function sndFollow() { sweep(NT.E5, NT.Cs6, 0, .15, .17); fanfare([NT.E5, NT.A5, NT.Cs6, NT.E6], 0, .095, .36); sparkle(NT.Cs6, .38, .27); }
+  function sndPoints() { sweep(NT.G5 / 2, NT.E6, 0, .17, .15); fanfare([NT.G5, NT.C6, NT.E6, NT.G6], 0, .085, .36); sparkle(NT.E7, .36, .28); }
+  function sndDonate() { sweep(NT.C5, NT.C6, 0, .2, .18); fanfare([NT.C6, NT.G5, NT.C6, NT.E6, NT.G6], 0, .085, .38); chord([NT.C6, NT.E6, NT.G6], .26, { delay: .47, vol: .25, type: 'triangle' }); sparkle(NT.C7, .58, .3); }
 
   /* route an event to its procedural sound (used when no custom sound is set) */
   function procSound(kind, mag, tier = 1) {
@@ -238,9 +275,11 @@
   }
   function chipAppear(r) {
     chipVol();
-    if (r <= 1) [NT.C5, NT.G5].forEach((f, i) => tone(f, .11, { delay: i * .08, vol: .6 }));
-    else if (r <= 3) [NT.C5, NT.E5, NT.G5].forEach((f, i) => tone(f, .12, { delay: i * .07, vol: .7 }));
-    else [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone(f, .12, { delay: i * .06, vol: .7 }));
+    sweep(NT.C5 / 2, NT.C6, 0, .18, .17);
+    if (r <= 1) fanfare([NT.C5, NT.G5, NT.C6], 0, .085, .4);
+    else if (r <= 3) fanfare([NT.C5, NT.E5, NT.G5, NT.C6], 0, .08, .42);
+    else fanfare([NT.C5, NT.E5, NT.G5, NT.C6, NT.E6], 0, .075, .43);
+    if (r >= 4) sparkle(NT.C7, .42, .28);
   }
   function chipTick(big, r) {
     chipVol();
