@@ -44,9 +44,9 @@
       ({message:()=>msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}}),sub:()=>alert('sub','NEW SUBSCRIBER','mikan_tea','','Welcome!'),gift:()=>alert('gift','GIFT SUB','Kaito','×5 GIFTED','Enjoy the ride!'),cheer:()=>alert('cheer','CHEER','Kenta','500 Bits','Nice play!'),highlight:()=>msg('Rei','これは強調表示メッセージです ✨',{subscriber:'1',badges:{subscriber:'0'},'msg-id':'highlighted-message'})}[type]||(()=>{}))();
     });
     badgeMap=await loadBadges(String(s.channel||'').trim().toLowerCase());
-    if(qs.has('preview')){document.body.classList.add('is-preview');document.querySelector('#preview-channel').textContent=`TWITCH #${s.channel||'your_channel'}`;msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}});}
-    const dbg=qs.has('debug');const status=(t,cls='')=>{console.log('[prism]',t);if(!dbg)return;let el=document.querySelector('#diag');if(!el){el=document.createElement('div');el.id='diag';document.body.appendChild(el);}el.className=cls;el.textContent=t;};
-    if(qs.has('preview'))return;const auth=null;const channel=String(s.channel||'').trim().toLowerCase();
+    if(qs.has('preview')){document.body.classList.add('is-preview');document.querySelector('#preview-channel').textContent=`TWITCH #${s.channel||'your_channel'}`;if(!String(s.channel||'').trim())msg('Mika','Great stream! Kappa',{subscriber:'1',badges:{subscriber:'0'},emotes:{'25':['14-18']}});}
+    const dbg=qs.has('debug');const status=(t,cls='')=>{console.log('[prism]',t);if(qs.has('preview')){const p=document.querySelector('#preview-channel');if(p)p.textContent=t;}if(!dbg)return;let el=document.querySelector('#diag');if(!el){el=document.createElement('div');el.id='diag';document.body.appendChild(el);}el.className=cls;el.textContent=t;};
+    const auth=null;const channel=String(s.channel||'').trim().toLowerCase();
     if(!channel){status('チャンネル名が未設定です','diag-err');return;}
     if(!window.tmi){status('tmi.js の読み込みに失敗しました','diag-err');return;}
     const opts={connection:{secure:true,reconnect:true},options:{skipMembership:true},channels:[channel]};if(auth)opts.identity={username:auth.login,password:`oauth:${auth.accessToken}`};
