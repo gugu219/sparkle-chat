@@ -114,7 +114,7 @@
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     let timer,loaded=false,lastCh=null;
     const update=()=>{
-      const v=REG.frame();out.value=url();
+      const v=REG.alert();out.value=url();
       for(const id in OUTS){const[k,u]=OUTS[id],el=document.querySelector(`#${id}-value`);if(el)el.textContent=(k==='radius'&&+v[k]>=100)?'まる':v[k]+u;}
       EVENTS.forEach(e=>{const vl=document.querySelector(`#${e}Vol-value`);if(vl)vl.textContent=v[e+'Vol']+'%';
         const dl=document.querySelector(`#${e}Dur-value`);if(dl)dl.textContent=v[e+'Dur']+'秒';});
@@ -166,7 +166,9 @@
         tabs.querySelectorAll('.pev').forEach(x=>x.classList.toggle('is-active',x===b));
         host.querySelectorAll('.pblock').forEach(p=>{p.hidden=p.dataset.sev!==b.dataset.sev;});});
       host.addEventListener('click',ev=>{const k=ev.target.dataset.sndtest;if(!k)return;
-        frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-sound',event:k},target);});
+        const pm={sub:12,resub:12,bits:1000,gift:10,streak:50}[k]||1;
+        if(!frame.contentWindow?.sparkleAlertPreviewSound?.(k,pm,k==='sub'||k==='resub'))
+          frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-sound',event:k},target);});
     })();
     refreshLib();
     const store=persist(form,'sparklechat-alert',values);
@@ -183,7 +185,9 @@
     document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
       const ev=e.target.dataset.alertEvent;if(!ev)return;
       const[detail,num,numLabel,numPrefix]=SAMPLE[ev]||['',0,''];
-      frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,
+      const magnitude=+(e.target.dataset.alertNum||num)||1;
+      const soundPlayed=ev==='gift'&&!!frame.contentWindow?.sparkleAlertPreviewSound?.(ev,magnitude,false);
+      frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,soundPlayed,
         name:NAMES[Math.floor(Math.random()*NAMES.length)],detail:e.target.dataset.alertDetail||detail,
         num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'},target);});
 

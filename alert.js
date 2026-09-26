@@ -357,11 +357,11 @@
   let sfxOn = true;                                          /* true when procedural sound is in use (no custom file) */
   const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star', flame: '--i-flame', hype: '--i-hype' };
 
-  function show(kind, name, detail, num, numLabel, numPrefix, mag) {
+  function show(kind, name, detail, num, numLabel, numPrefix, mag, silent = false) {
     if (!EVENTS.includes(kind)) return;
     const gate = kind === 'resub' ? 'sub' : kind;           /* resub follows the sub toggle */
     if (s[gate] !== '1' && s[kind] !== '1') return;
-    queue.push({ kind, name, detail, num, numLabel, numPrefix, mag });
+    queue.push({ kind, name, detail, num, numLabel, numPrefix, mag, silent });
     if (!busy) next();
   }
   function next() {
@@ -400,7 +400,7 @@
     void bubble.offsetWidth;
     bubble.classList.add('is-in');
 
-    sfxOn = !playCustom(item.kind, () => procSound(item.kind, mag, hiTier));
+    sfxOn = !item.silent && !playCustom(item.kind, () => procSound(item.kind, mag, hiTier));
     if (sfxOn) procSound(item.kind, mag, hiTier);
     flourish(item.kind, mag, hiTier);
 
@@ -495,6 +495,11 @@
   }
 
   /* ---- live settings + test events from the editor ---- */
+  window.sparkleAlertPreviewSound = (kind, mag, hiTier) => {
+    if (!EVENTS.includes(kind)) return false;
+    if (!playCustom(kind, () => procSound(kind, mag, hiTier))) procSound(kind, mag, hiTier);
+    return true;
+  };
   window.addEventListener('message', e => {
     if(e.origin!==location.origin||e.source!==parent||e.data?.source !== 'prism-editor') return;
     if (e.data.type === 'alert-settings') { Object.assign(s, e.data.settings || {}); apply(); return; }
@@ -505,7 +510,7 @@
       if (!playCustom(k, () => procSound(k, pm, k === 'sub' || k === 'resub'))) procSound(k, pm, k === 'sub' || k === 'resub');
       return;
     }
-    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel, e.data.numPrefix);
+    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel, e.data.numPrefix, undefined, !!e.data.soundPlayed);
   });
 
   apply();
