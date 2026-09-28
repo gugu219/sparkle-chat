@@ -379,22 +379,72 @@
   let sfxOn = true;
   let holdTimer = null, exitTimer = null, countStartTimer = null;
   const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star', flame: '--i-flame', hype: '--i-hype' };
-  const PIXELS = {
-    crown: ['000yyyyyy000','00yYYYYYYy00','00yYyyyyYy00','00yy0000yy00','00yy0000yy00','000y0000y000','000yYyyYy000','00yyYyyYyy00','0yyyyyyyyyy0','0yYYYYYYYYy0','0yyyyyyyyyy0'],
-    gift: ['0000pppp0000','000pPPPPp000','00pppPPppp00','0pppppppppp0','0pPPpPPpPPp0','0pppppppppp0','00pppPPppp00','00pPpPPpPp00','00pPpPPpPp00','00pppppppp00'],
-    follow: ['0000rr000000','000rRRr00000','00rrRRrr0000','000rRRr00000','0000rr000000','0000gg000000','0000gg000000','000gggg00000','00gg00gg0000','0000gg000000'],
-    bits: ['0000bBBb0000','000bBBBBb000','00bBBBBBBb00','0bBBBBBBBBb0','bBBBBBBBBBBb','0bBBBBBBBBb0','00bBBBBBBb00','000bBBBBb000','0000bBBb0000'],
-    coin: ['0000gGGg0000','000gGGGGg000','00gGGGGGGg00','00gGgGGgGg00','00gGGGGGGg00','00gGgGGgGg00','00gGGGGGGg00','000gGGGGg000','0000gGGg0000'],
-    star: ['00000y000000','0000yYy00000','0000yYy00000','0yyyyYyyyyy0','00yYYYYYy000','000yYYYy0000','000yYYYYy000','00yyYyyYyy00','00yYy00yYy00'],
-    flame: ['00000o000000','0000oOo00000','000oOOo00000','000oOOOo0000','00oOOOOo0000','00oOOoOOo000','00oOOOOOo000','000oOOOOo000','0000oooo0000'],
-    hype: ['00000pPPp000','0000pPPPp000','000pPPPp0000','00pPPPp00000','000pPPPPp000','0000pPPPPp00','00000pPPPp00','000000pPPp00','0000000pp000']
+  // Hand-drawn 16px item sprites. A shared palette keeps edges and highlights crisp
+  // when the alert is scaled down in the editor or up in OBS.
+  const PIXEL_COLOR={
+    K:'#221b24',D:'#443649',S:'#77657a',W:'#fff8db',
+    g:'#926013',G:'#dba536',Y:'#ffe875',w:'#fff7bb',
+    r:'#843044',R:'#d74d67',P:'#ff93a9',
+    b:'#235a9d',B:'#419de1',C:'#89e6ff',c:'#d5fbff',
+    e:'#116c55',E:'#37b489',L:'#8df1be',
+    v:'#503289',V:'#8b5bd4',U:'#d4b3ff',
+    o:'#a64222',O:'#ee7d30',F:'#ffbc50'
   };
-  const PIXEL_COLOR={y:'#d79a1b',Y:'#fff06a',p:'#6540a6',P:'#bc91ff',r:'#a82338',R:'#f35463',g:'#116b40',G:'#49ed91',b:'#2868af',B:'#77d9ff',o:'#b9561e',O:'#ffba4e'};
+  const PIXELS={
+    crown:[
+      '................','...KK......KK...','..KYGK....KGYK..','..KYYGK..KGYYK..',
+      '..KYYYK..KYYYK..','..KYYYK..KYYYK..','..KYYYK..KYYYK..','..KYYYYKKYYYYK..',
+      '..KYYYYYYYYYYK..','..KGYYYYYYYYGK..','..KGWWGYYGWWGK..','..KGGGGGGGGGGK..',
+      '...KGGGGGGGGK...','...KYYYYYYYYK...','....KKKKKKKK....','................'
+    ],
+    gift:[
+      '................','....KK....KK....','...KRPK..KPRK...','..KRRRPKKPRRRK..',
+      '..KRRRRRRRRRRK..','...KRRRKKRRRK...','..KKKKKKKKKKKK..','..KPPPRKKRPPPK..',
+      '..KRRRRKKRRRRK..','..KRRRRKKRRRRK..','..KRRRRKKRRRRK..','..KRRRRKKRRRRK..',
+      '..KRRRRKKRRRRK..','..KRRRRKKRRRRK..','...KKKKKKKKKK...','................'
+    ],
+    follow:[
+      '................','......KK........','.....KRRK.......','....KRPPRK......',
+      '....KRWWRK......','.....KRRK.......','......KK........','......KK........',
+      '.....KEEK.......','.....KEEK.......','....KELL EK.....'.replace(' ',''),
+      '...KELLLLEK.....','....KEE EEK.....'.replace(' ',''),'......KK........','......KK........','................'
+    ],
+    bits:[
+      '................','......KK........','.....KcCK.......','....KcCCCK......',
+      '...KcCCB CCK....'.replace(' ',''),'..KcCCBBCCCK...','..KCCBBBBCCK...','...KCBBCBBCK....',
+      '...KCBBCBBCK....','..KCCBBBBCCK...','..KcCCBBCCCK...','...KcCCB CCK....'.replace(' ',''),
+      '....KcCCCK......','.....KcCK.......','......KK........','................'
+    ],
+    coin:[
+      '................','.....KKKK.......','...KKGGGGKK.....','..KGGYYYYGGK....',
+      '..KGYWWWWYGK....','.KGYWGGGGWYGK...','.KGYWGYYGWYGK...','.KGYWGYYGWYGK...',
+      '.KGYWGYYGWYGK...','.KGYWGGGGWYGK...','.KGYWWWWYGK...','..KGYYYYYYGK....',
+      '..KGGGGGGGGK....','...KKGGGGKK.....','.....KKKK.......','................'
+    ],
+    star:[
+      '................','.......KK.......','......KYYK......','......KYYK......',
+      '......KYYK......','..KKKKYYYYKKKK..','..KYYYYWWYYYYK..','...KYYYWWYYYK...','....KYYYYYYK....',
+      '....KYYYYYYK....','...KYYGKKGYYK...','..KYYGK..KGYYK..','..KYGK....KGYK..',
+      '..KKK......KKK..','................','................'
+    ],
+    flame:[
+      '................','........KK......','.......KOO K.....'.replace(' ',''),'......KOFFK.....',
+      '......KOFO K.....'.replace(' ',''),'....KKOFFOK.....','...KOOOFFOK.....','...KOFFF FOK.....'.replace(' ',''),
+      '..KOOFFFFFOK....','..KOFFWFF FOK...'.replace(' ',''),'..KOFFWWWFFOK...','...KOFFFFFOK....',
+      '...KOOFFOOK.....','....KOOOOK......','.....KKKK.......','................'
+    ],
+    hype:[
+      '................','......KK........','.....KUVK.......','....KUVVK.......',
+      '...KUVVK........','..KUVVK..KK.....','...KUVVK KUVK...'.replace(' ',''),'....KUVVKUVVK..',
+      '.....KUVVUVVK...','......KUVUVK....','.......KUVVK....','......KUVVK.....',
+      '.....KUVVK......','......KVK.......','.......K........','................'
+    ]
+  };
   const PIXEL_TITLE={sub:'New Subscriber',resub:'Subscription Renewed',gift:'New Gift',follow:'New Follower',bits:'New Bits',points:'Channel Points',donate:'New Donation',streak:'Watch Streak',hype:'Hype Train'};
   function pixelSprite(icon){
     const rows=PIXELS[icon]||PIXELS.star;
-    const blocks=rows.flatMap((row,y)=>[...row].map((c,x)=>PIXEL_COLOR[c]?`<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL_COLOR[c]}"/>`:'' )).join('');
-    return `<svg viewBox="0 0 12 12" aria-hidden="true" focusable="false" shape-rendering="crispEdges">${blocks}</svg>`;
+    const blocks=rows.flatMap((row,y)=>[...row.padEnd(16,'.')].map((c,x)=>PIXEL_COLOR[c]?`<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL_COLOR[c]}"/>`:'' )).join('');
+    return `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" shape-rendering="crispEdges">${blocks}</svg>`;
   }
   function setIcon(icon){elIcon.dataset.icon=icon;elIcon.style.setProperty('--icon',`var(${ICONS[icon]||'--i-crown'})`);elIcon.innerHTML=s.skin==='minecraft'?pixelSprite(icon):'';}
   function show(kind, name, detail, num, numLabel, numPrefix, mag, silent = false) {
