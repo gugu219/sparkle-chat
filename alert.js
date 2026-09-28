@@ -377,6 +377,7 @@
   const queue = [];
   let busy = false;
   let sfxOn = true;
+  let holdTimer = null, exitTimer = null, countStartTimer = null;
   const ICONS = { crown: '--i-crown', gift: '--i-gift', heart: '--i-heart', follow: '--i-follow', bits: '--i-bits', coin: '--i-coin', star: '--i-star', flame: '--i-flame', hype: '--i-hype' };
   const PIXELS = {
     crown: ['000yyyyyy000','00yYYYYYYy00','00yYyyyyYy00','00yy0000yy00','00yy0000yy00','000y0000y000','000yYyyYy000','00yyYyyYyy00','0yyyyyyyyyy0','0yYYYYYYYYy0','0yyyyyyyyyy0'],
@@ -403,8 +404,22 @@
     queue.push({ kind, name, detail, num, numLabel, numPrefix, mag, silent });
     if (!busy) next();
   }
-  function next() {
-    const item = queue.shift();
+  function stopBubblePreview() {
+    clearTimeout(holdTimer); clearTimeout(exitTimer); clearTimeout(countStartTimer); clearTimeout(cntTimer);
+    clearTimeout(sparksHost?._sparkClear);
+    if (sparksHost) sparksHost.textContent = '';
+    document.querySelector('.bubble__body')?.classList.remove('sh3', 'sh4', 'sh5');
+    bubble.classList.remove('is-on', 'is-in', 'is-out', 'rainbow', 'tier2', 'tier3');
+    busy = false;
+  }
+  function showPreview(kind, name, detail, num, numLabel, numPrefix, silent = false) {
+    if (!EVENTS.includes(kind)) return;
+    stopBubblePreview();
+    stopHypePreview();
+    next({ kind, name, detail, num, numLabel, numPrefix, silent });
+  }
+  function next(override) {
+    const item = override || queue.shift();
     if (!item) { busy = false; return; }
     busy = true;
     const [icon, title] = PRESET[item.kind] || PRESET.sub;
@@ -443,17 +458,17 @@
     if (sfxOn) procSound(item.kind, mag, tier);
     flourish(item.kind, mag, tier >= 2);
 
-    if (num > 1) setTimeout(() => {
+    if (num > 1) countStartTimer = setTimeout(() => {
       const c = elDetail.querySelector('.cnt'); if (!c) return;
       if (item.kind === 'streak') countUpStreak(c, num);
       else countUp(c, num, prefix);
     }, 380);
 
     const hold = clamp(s[item.kind + 'Dur'] || s.dur, 1, 30) * 1000;
-    setTimeout(() => {
+    holdTimer = setTimeout(() => {
       bubble.classList.remove('is-in');
       bubble.classList.add('is-out');
-      setTimeout(() => {
+      exitTimer = setTimeout(() => {
         bubble.classList.remove('is-on', 'is-out', 'rainbow', 'tier2', 'tier3');
         if (sparksHost) sparksHost.textContent = '';
         next();
@@ -470,6 +485,15 @@
   const hypeTimeFill = document.querySelector('#hype-timefill');
   const hypeSparks = document.querySelector('#hype-sparks');
   let hypeState = null, hypeTick = null, hypeOutT = null, hypeDone = false;
+  let hypeDemoTimers = [];
+  function stopHypePreview() {
+    hypeDemoTimers.forEach(clearTimeout); hypeDemoTimers = [];
+    clearInterval(hypeTick); hypeTick = null;
+    clearTimeout(hypeOutT); clearTimeout(hypeSparks?._sparkClear);
+    hypeSparks.textContent = '';
+    hypeState = null; hypeDone = false;
+    hype.classList.remove('is-on', 'is-out', 'levelup');
+  }
   const fmtT = sec => { sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); };
   const hypeSparkN = lvl => Math.min(34, Math.max(8, lvl * 7));   /* flashier every level */
   function hypeRender() {
@@ -528,12 +552,16 @@
     if (!hypeTick) hypeTick = setInterval(hypeTickFn, 500);
   }
   function hypeTestRun() {
+    stopBubblePreview();
+    stopHypePreview();
     const now = Date.now(), exp = t => new Date(now + t).toISOString();
     hypeBegin({ level: 1, progress: 260, goal: 500, expires_at: exp(13000) });
-    setTimeout(() => hypeProgress({ level: 2, progress: 300, goal: 800, expires_at: exp(13000) }), 2200);
-    setTimeout(() => hypeProgress({ level: 3, progress: 500, goal: 900, expires_at: exp(13000) }), 4600);
-    setTimeout(() => hypeProgress({ level: 4, progress: 820, goal: 1000, expires_at: exp(13000) }), 7000);
-    setTimeout(() => hypeEnd({ level: 4 }), 9500);   /* completes, but the panel stays until the timer reaches 0 */
+    hypeDemoTimers = [
+      setTimeout(() => hypeProgress({ level: 2, progress: 300, goal: 800, expires_at: exp(13000) }), 2200),
+      setTimeout(() => hypeProgress({ level: 3, progress: 500, goal: 900, expires_at: exp(13000) }), 4600),
+      setTimeout(() => hypeProgress({ level: 4, progress: 820, goal: 1000, expires_at: exp(13000) }), 7000),
+      setTimeout(() => hypeEnd({ level: 4 }), 9500)
+    ];   /* completes, but the panel stays until the timer reaches 0 */
   }
 
   /* ---- live settings + test events from the editor ---- */
@@ -553,7 +581,11 @@
       procSound(k, pm, 1);
       return;
     }
-    if (e.data.type === 'alert-event') show(e.data.event, e.data.name, e.data.detail, e.data.num, e.data.numLabel, e.data.numPrefix, undefined, !!e.data.soundPlayed);
+    if (e.data.type === 'alert-event') {
+      const p = e.data;
+      if (qs.has('preview')) showPreview(p.event, p.name, p.detail, p.num, p.numLabel, p.numPrefix, !!p.soundPlayed);
+      else show(p.event, p.name, p.detail, p.num, p.numLabel, p.numPrefix, undefined, !!p.soundPlayed);
+    }
   });
 
   apply();
