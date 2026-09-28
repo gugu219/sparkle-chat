@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700;900&family=Kosugi+Maru&family=Shippori+Mincho:wght@500;700;800&family=Zen+Old+Mincho:wght@400;700;900&family=DotGothic16&family=Yuji+Syuku&family=Klee+One:wght@400;600&family=Inter:wght@400;500;700;800&family=Poppins:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=2">
-  <link rel="stylesheet" href="cozy.css">
+  <link rel="stylesheet" href="cozy.css?v=2">
 </head>
 <body class="app-shell theme-selene">
   <header class="app-header">
@@ -249,6 +249,14 @@
       </form>
 
       <form id="alert-form" class="settings-form" data-panel="alert" hidden>
+        <fieldset>
+          <legend>ALERT STYLE</legend>
+          <div class="alert-style-options" role="group" aria-label="アラートの見た目">
+            <label><input type="radio" name="skin" value="classic" checked><span><strong>通常</strong><small>現在の丸いアラート</small></span></label>
+            <label><input type="radio" name="skin" value="minecraft"><span><strong>マインクラフト風</strong><small>実績解除のようなドット絵通知</small></span></label>
+          </div>
+          <p class="field-hint">切り替えるとプレビューとOBSのアラートに反映されます。下のテストボタンで各イベントを確認できます。</p>
+        </fieldset>
         <fieldset>
           <legend>CHANNEL</legend>
           <div class="field">
@@ -534,6 +542,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=8"></script><script src="studio.js"></script><script src="workspace.js"></script>
+  <script src="script.js?v=9"></script><script src="studio.js"></script><script src="workspace.js"></script>
 </body>
 </html>

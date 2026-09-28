@@ -30,3 +30,13 @@ html[data-page="view"] .chat-message__bubble{border-radius:7px 18px 18px 18px;bo
 .widget .alert-gift{border-left-color:#d6a4c0}
 .widget .alert-tip{border-left-color:#a9c9a7}
 .widget .alert-cheer{border-left-color:#a8bdde}
+
+.alert-style-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.alert-style-options label{position:relative;cursor:pointer}
+.alert-style-options input{position:absolute;opacity:0;inset:0}
+.alert-style-options span{display:grid;align-content:center;min-height:76px;padding:12px;border:2px solid #d6c8b5;border-radius:11px;background:#fffdf8;color:#544b40;line-height:1.4}
+.alert-style-options strong{font-size:14px}
+.alert-style-options small{margin-top:5px;color:#766f66;font-size:11px}
+.alert-style-options input:checked+span{border-color:#785eaa;background:#f2ecfb;box-shadow:0 3px 0 #d9c8ec;color:#493270}
+.alert-style-options input:focus-visible+span{outline:3px solid #285f91;outline-offset:3px}
+@media(max-width:480px){.alert-style-options{grid-template-columns:1fr}}

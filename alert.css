@@ -247,3 +247,59 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .hype__sparks{position:absolute;inset:0;z-index:6;pointer-events:none;overflow:visible}
 
 @media(prefers-reduced-motion:reduce){.bubble.is-in,.bubble.is-out,.cnt,.bubble__body,.hype{animation:none!important}}
+
+/* Original pixel-art advancement style, selected from the alert editor. */
+.mode-minecraft .bubble{
+  min-width:min(390px,86vw);max-width:min(680px,86vw);
+  padding:14px 20px 14px 16px;border:4px solid #111;border-radius:2px;
+  background:#222;backdrop-filter:none;-webkit-backdrop-filter:none;
+  box-shadow:0 0 0 3px #777,0 0 0 6px #242424,8px 8px 0 rgba(0,0,0,.45);
+  color:#fff;transform-origin:center center;
+}
+.mode-minecraft .bubble__body{gap:16px}
+.mode-minecraft .bubble__badge{width:52px;height:52px;border-radius:0;background:transparent}
+.mode-minecraft .bubble__icon{
+  width:48px;height:48px;background:none;
+  -webkit-mask:none;mask:none;image-rendering:pixelated;
+  filter:drop-shadow(3px 3px 0 #111);
+}
+.mode-minecraft .bubble__icon svg{display:block;width:100%;height:100%;image-rendering:pixelated}
+.mode-minecraft .bubble__text{padding:0;font-family:"Press Start 2P","DotGothic16",monospace;line-height:1.55}
+.mode-minecraft .bubble__title{
+  margin:0 0 5px;color:#ffff70;font-size:clamp(12px,calc(var(--size) * .58),19px);
+  font-weight:400;letter-spacing:0;line-height:1.4;text-shadow:2px 2px 0 #382b08;
+}
+.mode-minecraft .bubble__msg,.mode-minecraft .bubble__detail{
+  display:inline;margin:0;font-size:clamp(11px,calc(var(--size) * .5),17px);
+  font-weight:400;letter-spacing:0;line-height:1.6;text-shadow:2px 2px 0 #101010;
+}
+.mode-minecraft .bubble__msg{color:#f5f5f5}
+.mode-minecraft .bubble__detail{margin-left:.45em;color:#ff68dc}
+.mode-minecraft .bubble__detail:empty{display:none}
+.mode-minecraft .bubble__aura,.mode-minecraft .bubble__ring,
+.mode-minecraft .bubble__sparks,.mode-minecraft .bubble__tail,
+.mode-minecraft .bubble__shine,.mode-minecraft .bubble__progress{display:none!important}
+.mode-minecraft .bubble.rainbow{filter:none}
+.mode-minecraft .bubble.is-in,.mode-minecraft .anim-poyon .bubble.is-in,
+.mode-minecraft .anim-slide .bubble.is-in,.mode-minecraft .anim-drop .bubble.is-in,
+.mode-minecraft .anim-zoom .bubble.is-in{animation:advancement-in .38s steps(5,end) both}
+.mode-minecraft .bubble.is-out{animation:advancement-out .24s steps(4,end) both}
+.mode-minecraft .bubble.is-in .bubble__title,
+.mode-minecraft .bubble.is-in.tier2 .bubble__detail,
+.mode-minecraft .bubble.is-in.tier3 .bubble__detail{animation:none;text-shadow:2px 2px 0 #382b08}
+@keyframes advancement-in{from{opacity:0;transform:translateY(-22px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes advancement-out{to{opacity:0;transform:translateY(-12px)}}
+
+.mode-minecraft .hype{
+  width:min(680px,86vw);padding:18px 20px;border:4px solid #111;border-radius:2px;
+  background:#222;backdrop-filter:none;-webkit-backdrop-filter:none;
+  box-shadow:0 0 0 3px #777,0 0 0 6px #242424,8px 8px 0 rgba(0,0,0,.45);
+  font-family:"Press Start 2P","DotGothic16",monospace;
+}
+.mode-minecraft .hype__badge{border-radius:0;background:#574082}
+.mode-minecraft .hype__title{color:#ffff70;background:none;-webkit-text-fill-color:currentColor;letter-spacing:0}
+.mode-minecraft .hype__lvl,.mode-minecraft .hype__timer{font-size:clamp(11px,calc(var(--size) * .48),16px)}
+.mode-minecraft .hype__timer{border-radius:0;background:#353535}
+.mode-minecraft .hype__bar,.mode-minecraft .hype__timebar{border-radius:0;background:#111}
+.mode-minecraft .hype__fill,.mode-minecraft .hype__timefill{border-radius:0;box-shadow:none;background:#bb8dff}
+@media(prefers-reduced-motion:reduce){.mode-minecraft .bubble.is-in,.mode-minecraft .bubble.is-out{animation:none!important}}

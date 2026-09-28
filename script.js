@@ -81,7 +81,7 @@
     const form=document.querySelector('#alert-form');if(!form)return;
     const frame=document.querySelector('#alert-preview'),out=document.querySelector('#alert-url'),toast=document.querySelector('#toast');
     const EVENTS=['sub','resub','gift','follow','bits','points','donate','streak','hype'];
-    const DEF={pos:'bc',font:'maru',anim:'poyon',dur:'5',tail:'0',
+    const DEF={pos:'bc',skin:'classic',font:'maru',anim:'poyon',dur:'5',tail:'0',
       size:'26',radius:'100',pad:'22',txt:'#ffffff',acc:'#ff8fc5',ico:'#ffffff',icoBg:'#ff8fc5',icoBgA:'100',
       vol:'70',
       bg:'#181226',bgA:'62',blur:'14',glass:'140',
