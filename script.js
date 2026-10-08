@@ -355,16 +355,47 @@
     store.restore();
     [...form.elements].forEach(x=>{x.addEventListener('input',()=>{store.save();refreshPreview();});x.addEventListener('change',()=>{store.save();refreshPreview();});});
 
-    document.querySelector('#combined-copy').onclick=async()=>{
-      const cfg=buildConfig();if(cfg.frame?.customImage?.startsWith('data:')){flash('自作枠を保存してからURLを発行してください。');return;}let link='';
-      if(location.protocol!=='file:'){
-        try{const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({config:cfg})});
-          const j=await r.json().catch(()=>({}));if(!r.ok){flash(j.error||'URLを保存できませんでした');return;}if(j.id)link=`${new URL('all.html',location.href).href}?id=${j.id}`;}catch{flash('通信できません。接続を確認して再試行してください。');return;}
+    const LIVE_KEY='sparklechat-live-obs-id',liveStatus=document.querySelector('#combined-live-status');
+    let fixedId='';try{const saved=localStorage.getItem(LIVE_KEY)||'';if(/^[a-zA-Z0-9]{20}$/.test(saved))fixedId=saved;}catch{}
+    const linkFor=id=>`${new URL('all.html',location.href).href}?id=${id}`;
+    if(fixedId){out.value=linkFor(fixedId);liveStatus.textContent='固定URLが設定済みです。変更は自動で保存されます。';}
+    let saveTimer=null,saving=false,dirty=false;
+    const saveFixed=async()=>{
+      if(!fixedId)return false;
+      dirty=true;if(saving)return true;
+      saving=true;
+      while(dirty&&fixedId){
+        dirty=false;
+        const cfg=buildConfig();
+        if(cfg.frame?.customImage?.startsWith('data:')){liveStatus.textContent='自作枠の画像を保存すると自動更新を再開します。';break;}
+        liveStatus.textContent='OBSの設定を保存中…';
+        try{
+          const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:fixedId,config:cfg})});
+          const j=await r.json().catch(()=>({}));
+          if(!r.ok){liveStatus.textContent=j.error||'自動保存できませんでした。';if(r.status===403){fixedId='';out.value='';try{localStorage.removeItem(LIVE_KEY);}catch{}}break;}
+          liveStatus.textContent='保存済み · OBSへ数秒以内に反映されます。';
+        }catch{liveStatus.textContent='通信できません。設定を変えると再試行します。';break;}
       }
-      if(!link){flash('保存に失敗しました。連携と保存先を確認してください。');return;}
-      out.value=link;refreshPreview();
-      try{await navigator.clipboard.writeText(link);flash('まとめURLを発行してコピーしました');}
-      catch{out.select();document.execCommand('copy');flash('まとめURLを発行してコピーしました');}
+      saving=false;return !!fixedId;
+    };
+    const scheduleSave=()=>{if(!fixedId)return;liveStatus.textContent='変更を確認中…';clearTimeout(saveTimer);saveTimer=setTimeout(saveFixed,750);};
+    for(const id of ['widget-form','frame-form','alert-form','extras-form','combined-form']){
+      const source=document.getElementById(id);source?.addEventListener('input',scheduleSave);source?.addEventListener('change',scheduleSave);
+      source?.addEventListener('click',e=>{if(e.target.closest('button')?.id!=='combined-copy')scheduleSave();});
+    }
+    document.querySelector('#combined-copy').onclick=async()=>{
+      const cfg=buildConfig();if(cfg.frame?.customImage?.startsWith('data:')){flash('自作枠を保存してからURLを発行してください。');return;}
+      if(location.protocol==='file:'){flash('本番サイトでURLを発行してください。');return;}
+      if(!fixedId){
+        try{const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({config:cfg})});
+          const j=await r.json().catch(()=>({}));if(!r.ok||!j.id){flash(j.error||'固定URLを発行できませんでした');return;}
+          fixedId=j.id;try{localStorage.setItem(LIVE_KEY,fixedId);}catch{}
+        }catch{flash('通信できません。接続を確認して再試行してください。');return;}
+      }else await saveFixed();
+      if(!fixedId)return;
+      const link=linkFor(fixedId);out.value=link;liveStatus.textContent='固定URLが設定済みです。変更は自動で保存されます。';
+      try{await navigator.clipboard.writeText(link);flash('固定OBS URLをコピーしました');}
+      catch{out.select();document.execCommand('copy');flash('固定OBS URLをコピーしました');}
     };
 
     const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
@@ -515,7 +546,7 @@
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
     window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow||e.data?.source!=='sparkle-camera-move')return;
       form.elements.cameraX.value=e.data.x;form.elements.cameraY.value=e.data.y;
-      frameStore.save();update();});
+      frameStore.save();update();form.dispatchEvent(new Event('change',{bubbles:true}));});
     document.querySelector('#frame-clear')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-clear'},target));
 
     /* colour count: show only the swatches in use (2-8) */
