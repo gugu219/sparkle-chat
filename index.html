@@ -504,7 +504,7 @@
       <form id="combined-form" class="settings-form" data-panel="combined" hidden>
         <fieldset>
           <legend>まとめ（1つのブラウザソースに統合）</legend>
-          <p class="field-hint">チャット・枠・アラート・テロップの<strong>今の設定</strong>を、OBSの<strong>ブラウザソース1つ</strong>にまとめたURLを発行します。</p>
+          <p class="field-hint">一度だけ固定URLを発行してOBSに貼れば、以後は各タブの設定変更が自動で反映されます。OBS側は数秒以内に更新されます。</p>
           <div class="field">
             <label class="field-label" for="combined-channel">Twitch チャンネル名（全体で共通）</label>
             <div class="input-with-prefix"><span>twitch.tv/</span><input id="combined-channel" name="channel" autocomplete="off" placeholder="your_channel" pattern="[A-Za-z0-9_]+"></div>
@@ -520,9 +520,10 @@
 
         <fieldset class="publish-box"><legend>PUBLISH</legend>
           <label class="field-label" for="combined-url">OBSブラウザソース（まとめ・これ1つでOK）</label>
-          <button type="button" id="combined-copy" class="apply-btn">4つの設定をまとめてURL発行・コピー</button>
+          <button type="button" id="combined-copy" class="apply-btn">固定OBS URLを発行・コピー</button>
           <div class="url-output"><input id="combined-url" readonly aria-label="まとめ URL"></div>
-          <p class="field-hint">このURLを 1920×1080 のブラウザソース<strong>1つ</strong>に貼れば全部まとまって表示されます。各タブで設定を変えたら、もう一度このボタンで発行し直してください。</p>
+          <p id="combined-live-status" class="field-hint" role="status">固定URLを発行すると自動保存が始まります。</p>
+          <p class="field-hint">このURLを1920×1080のブラウザソース<strong>1つ</strong>に貼ってください。設定変更時にOBSの表示が短く再読み込みされます。</p>
           <p class="field-hint">※ 画像・効果音は先に各タブ（本番サイト上）でアップロードしておくと、まとめURLにも反映されます。</p>
         </fieldset>
       </form>
@@ -553,6 +554,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=10"></script><script src="studio.js"></script><script src="workspace.js"></script>
+  <script src="script.js?v=11"></script><script src="studio.js"></script><script src="workspace.js"></script>
 </body>
 </html>
