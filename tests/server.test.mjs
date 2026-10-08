@@ -72,6 +72,17 @@ test('authenticated editor retains overlay access when Twitch needs reauthentica
  await set('owner:owner','account');await set('profile:account',{overlay:'read-only'});
  const r=await session(request('/api/auth/session','GET',null,true));assert.equal(r.status,200);const data=await r.json();assert.equal(data.overlay,'read-only');assert.match(data.error,/再認証/);
 });
+test('fixed OBS URL updates in place only for its owner',async()=>{
+ await set('owner:owner','account');await set('profile:account',{overlay:'a'.repeat(64)});
+ const created=await configApi(request('/api/config','POST',{config:{frame:{cameraOn:'0'}}},true));
+ const {id}=await created.json();assert.equal(id.length,20);
+ const changed=await configApi(request('/api/config','POST',{id,config:{frame:{cameraOn:'1',cameraRatio:'9:16'}}},true));
+ assert.equal(changed.status,200);assert.equal((await changed.json()).id,id);
+ const live=await (await configApi(request('/api/config?id='+id))).json();assert.equal(live.frame.cameraRatio,'9:16');
+ await set('owner:owner','other');await set('profile:other',{overlay:'b'.repeat(64)});
+ assert.equal((await configApi(request('/api/config','POST',{id,config:{frame:{cameraOn:'0'}}},true))).status,403);
+ assert.equal((await (await configApi(request('/api/config?id='+id))).json()).frame.cameraOn,'1');
+});
 test('unreadable old integration settings can be replaced with new URLs',async()=>{
  await set('owner:owner','account');await set('integrations:account',{iv:[],data:[]});
  assert.equal((await integrations(request('/api/integrations','GET',null,true))).status,409);
