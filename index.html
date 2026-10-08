@@ -137,6 +137,17 @@
           <div class="range-row"><label class="field-label" for="fpw">枠の幅（比率・画面に対する％） <output id="fpw-value">100%</output></label><input id="fpw" name="fpw" type="range" min="20" max="100" value="100"></div>
           <div class="range-row"><label class="field-label" for="fph">枠の高さ（比率・画面に対する％） <output id="fph-value">100%</output></label><input id="fph" name="fph" type="range" min="20" max="100" value="100"></div>
           <p class="field-hint">幅と高さを別々に調整して、16:9以外の自由な比率（正方形・縦長など）にできます。枠は画面中央に配置されます。</p>
+          <div class="field camera-frame-settings">
+            <label class="toggle"><input type="checkbox" name="cameraOn"><span class="toggle__track"></span><span>カメラ用の枠を追加</span></label>
+            <p class="field-hint">外側の枠とは独立した透明な枠です。OBSでカメラ映像を枠の内側に重ねてください。色と発光は下のFRAME設定を共有します。</p>
+            <label class="field-label" for="cameraRatio">カメラ枠の比率</label>
+            <select id="cameraRatio" name="cameraRatio"><option value="16:9">16:9 横長</option><option value="1:1">1:1 正方形</option><option value="4:3">4:3 横長</option><option value="9:16">9:16 縦長</option></select>
+            <div class="range-row"><label class="field-label" for="cameraWidth">カメラ枠の幅 <output id="cameraWidth-value">480px</output></label><input id="cameraWidth" name="cameraWidth" type="range" min="120" max="1000" step="10" value="480"></div>
+            <div class="range-row"><label class="field-label" for="cameraX">横位置（左から） <output id="cameraX-value">1360px</output></label><input id="cameraX" name="cameraX" type="range" min="0" max="1800" step="10" value="1360"></div>
+            <div class="range-row"><label class="field-label" for="cameraY">縦位置（上から） <output id="cameraY-value">720px</output></label><input id="cameraY" name="cameraY" type="range" min="0" max="960" step="10" value="720"></div>
+            <div class="range-row"><label class="field-label" for="cameraStroke">カメラ枠の太さ <output id="cameraStroke-value">12px</output></label><input id="cameraStroke" name="cameraStroke" type="range" min="2" max="60" value="12"></div>
+            <p class="field-hint">プレビュー上では枠をドラッグして移動できます。カメラ枠はOBS出力でも同じ位置・大きさになります。</p>
+          </div>
           <div class="range-row"><label class="field-label" for="fw">フレームの太さ <output id="fw-value">14px</output></label><input id="fw" name="fw" type="range" min="2" max="80" value="14"></div>
           <div class="range-row"><label class="field-label" for="fr">外側の丸み <output id="fr-value">28px</output></label><input id="fr" name="fr" type="range" min="0" max="200" value="28"></div>
           <div class="range-row"><label class="field-label" for="fri">内側の丸み <output id="fri-value">14px</output></label><input id="fri" name="fri" type="range" min="0" max="200" value="14"></div>
@@ -542,6 +553,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=9"></script><script src="studio.js"></script><script src="workspace.js"></script>
+  <script src="script.js?v=10"></script><script src="studio.js"></script><script src="workspace.js"></script>
 </body>
 </html>

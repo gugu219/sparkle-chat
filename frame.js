@@ -20,6 +20,7 @@
 
   const DEFAULTS = {
     customImage:'',customX:'0',customY:'0',customScale:'100',customOpacity:'100',customLayer:'back',fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
+    cameraOn:'0',cameraRatio:'16:9',cameraWidth:'480',cameraX:'1360',cameraY:'720',cameraStroke:'12',
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
@@ -46,6 +47,7 @@
   const stage = document.querySelector('#stage');
   const sparkles = document.querySelector('#sparkles');
   const particles = document.querySelector('#particles');
+  const camera = document.querySelector('#camera-frame');
 
   const clamp = (v, lo, hi) => { const n = parseFloat(v); return Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo)); };
   const hex = (v, fb) => { const h = String(v || '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6); return h.length === 6 ? '#' + h : fb; };
@@ -87,6 +89,27 @@
       + `<path fill="#fff" fill-rule="evenodd" d="${outer}${inner}"/></svg>`;
     root.style.setProperty('--ringmask', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
   }
+  function cameraGeometry() {
+    const ratios = {'16:9':16/9,'1:1':1,'4:3':4/3,'9:16':9/16};
+    const ratio = ratios[s.cameraRatio] || ratios['16:9'];
+    const width = Math.round(clamp(s.cameraWidth,120,Math.min(1000,Math.floor(1080*ratio))));
+    const height = Math.round(width / ratio);
+    return {width,height,x:Math.round(clamp(s.cameraX,0,1920-width)),y:Math.round(clamp(s.cameraY,0,1080-height))};
+  }
+  function applyCamera() {
+    const {width,height,x,y}=cameraGeometry();
+    camera.hidden=s.cameraOn!=='1';
+    camera.style.setProperty('--camera-w',width+'px');
+    camera.style.setProperty('--camera-h',height+'px');
+    camera.style.setProperty('--camera-x',x+'px');
+    camera.style.setProperty('--camera-y',y+'px');
+    const stroke=clamp(s.cameraStroke,2,60),radius=clamp(s.fr,0,200);
+    const outer=roundRect(0,0,width,height,radius);
+    const inner=roundRect(stroke,stroke,width-2*stroke,height-2*stroke,Math.max(0,radius-stroke));
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><path fill="#fff" fill-rule="evenodd" d="${outer}${inner}"/></svg>`;
+    camera.style.setProperty('--camera-mask',`url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
+    document.body.classList.toggle('no-camera-sheen',s.sheenOn!=='1');
+  }
 
   /* ---- settings -> CSS variables ---- */
   function apply() {
@@ -106,6 +129,7 @@
     root.style.setProperty('--shine', ((110 - clamp(s.shine, 0, 100)) / 8).toFixed(2) + 's');
     stage.classList.toggle('no-sheen', s.sheenOn !== '1');
     buildMask();
+    applyCamera();
     buildSparkles();
   }
 
@@ -239,6 +263,19 @@
   });
 
   apply();
+  if (qs.has('preview')) {
+    document.body.classList.add('camera-preview');
+    let drag=null;
+    camera.addEventListener('pointerdown',e=>{if(camera.hidden)return;const g=cameraGeometry();drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,originX:g.x,originY:g.y,width:g.width,height:g.height};camera.setPointerCapture(e.pointerId);e.preventDefault();});
+    camera.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;
+      s.cameraX=String(Math.round(clamp(drag.originX+(e.clientX-drag.startX),0,1920-drag.width)));
+      s.cameraY=String(Math.round(clamp(drag.originY+(e.clientY-drag.startY),0,1080-drag.height)));
+      applyCamera();
+      parent.postMessage({source:'sparkle-camera-move',x:s.cameraX,y:s.cameraY},location.origin);
+    });
+    camera.addEventListener('pointerup',()=>{drag=null;});
+    camera.addEventListener('pointercancel',()=>{drag=null;});
+  }
   parent.postMessage({source:'sparkle-frame-ready'},location.origin);
   if (window.ResizeObserver) new ResizeObserver(buildMask).observe(stage);
   else window.addEventListener('resize', buildMask);

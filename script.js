@@ -435,6 +435,7 @@
     const form=document.querySelector('#frame-form');if(!form)return;
     const frame=document.querySelector('#frame-preview'),out=document.querySelector('#frame-url'),toast=document.querySelector('#toast');
     const DEF={fw:'14',fr:'28',fri:'14',fpw:'100',fph:'100',mode:'gradient',ccount:'4',
+      cameraOn:'0',cameraRatio:'16:9',cameraWidth:'480',cameraX:'1360',cameraY:'720',cameraStroke:'12',
       c1:'#ffd6ec',c2:'#cde7ff',c3:'#e6d9ff',c4:'#d9fff0',c5:'#fff3c4',c6:'#ffd9d9',c7:'#d9f2ff',c8:'#f0d9ff',
       glow:'55',flow:'40',shine:'50',sheenOn:'1',spark:'14',
       sub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',
@@ -451,9 +452,9 @@
     EVENTS.forEach(e=>{const[sh,mo,ct,sz,sp,op]=P_DEF[e];
       Object.assign(DEF,{[e+'pShape']:sh,[e+'pMotion']:mo,[e+'pCount']:ct,[e+'pSize']:sz,[e+'pSpeed']:sp,[e+'pOpa']:op,
         [e+'pCMode']:'mix',[e+'pC1']:'#ffd6ec',[e+'pC2']:'#cde7ff',[e+'pC3']:'#e6d9ff',[e+'pC4']:'#fff3c4'});});
-    const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P'),'sheenOn'];
-    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%',fpw:'%',fph:'%'};
-    const OUTS=['fw','fr','fri','fpw','fph','glow','flow','shine','spark'];
+    const CHECKS=[...EVENTS,...EVENTS.map(e=>e+'P'),'sheenOn','cameraOn'];
+    const UNITS={fw:'px',fr:'px',fri:'px',glow:'%',fpw:'%',fph:'%',cameraWidth:'px',cameraX:'px',cameraY:'px',cameraStroke:'px'};
+    const OUTS=['fw','fr','fri','fpw','fph','glow','flow','shine','spark','cameraWidth','cameraX','cameraY','cameraStroke'];
     const P_OUTS=['pCount','pSize','pSpeed','pOpa'],P_UNITS={pSize:'px',pOpa:'%'};
     const target=location.protocol==='file:'?'*':location.origin;
     const values=()=>{const v={...DEF,...Object.fromEntries(new FormData(form))};CHECKS.forEach(k=>{const el=form.elements[k];if(el)v[k]=el.checked?'1':'0';});delete v.widget;if(window.sparkleOverlay)v.overlay=window.sparkleOverlay;return v;};
@@ -463,6 +464,15 @@
     const flash=m=>{toast.textContent=m;toast.classList.add('is-visible');setTimeout(()=>toast.classList.remove('is-visible'),1800);};
     let timer,loaded=false,lastCh=null;
     const update=()=>{
+      const ratio={'16:9':16/9,'1:1':1,'4:3':4/3,'9:16':9/16}[form.elements.cameraRatio.value]||16/9;
+      const widthControl=form.elements.cameraWidth;
+      widthControl.max=String(Math.min(1000,Math.floor(1080*ratio)));
+      if(+widthControl.value>+widthControl.max)widthControl.value=widthControl.max;
+      const width=+widthControl.value,height=Math.round(width/ratio);
+      form.elements.cameraX.max=String(1920-width);
+      form.elements.cameraY.max=String(1080-height);
+      if(+form.elements.cameraX.value>+form.elements.cameraX.max)form.elements.cameraX.value=form.elements.cameraX.max;
+      if(+form.elements.cameraY.value>+form.elements.cameraY.max)form.elements.cameraY.value=form.elements.cameraY.max;
       const v=values();out.value=url();
       OUTS.forEach(k=>{const el=document.querySelector(`#${k}-value`);if(el)el.textContent=v[k]+(UNITS[k]||'');});
       EVENTS.forEach(e=>P_OUTS.forEach(k=>{const el=document.querySelector(`#${e}${k}-value`);if(el)el.textContent=v[e+k]+(P_UNITS[k]||'');}));
@@ -503,6 +513,9 @@
     const frameStore=persist(form,'sparklechat-frame',values);frameStore.restore();
     [...form.elements].forEach(x=>{x.addEventListener('input',()=>frameStore.save());x.addEventListener('change',()=>frameStore.save());});
     [...form.elements].forEach(x=>{x.addEventListener('input',update);x.addEventListener('change',update);});
+    window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow||e.data?.source!=='sparkle-camera-move')return;
+      form.elements.cameraX.value=e.data.x;form.elements.cameraY.value=e.data.y;
+      frameStore.save();update();});
     document.querySelector('#frame-clear')?.addEventListener('click',()=>frame.contentWindow?.postMessage({source:'prism-editor',type:'frame-clear'},target));
 
     /* colour count: show only the swatches in use (2-8) */

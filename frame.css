@@ -19,6 +19,20 @@
 html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden}
 .stage{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
   width:var(--stage-w,100%);height:var(--stage-h,100%);pointer-events:none}
+.camera-frame{position:fixed;z-index:3;left:var(--camera-x,1360px);top:var(--camera-y,720px);
+  width:var(--camera-w,480px);height:var(--camera-h,270px);pointer-events:none;
+  --camera-stroke:12px;--camera-mask:none}
+.camera-frame[hidden]{display:none}
+.camera-frame__halo,.camera-frame__ring{position:absolute;inset:0;
+  -webkit-mask:var(--camera-mask) center/100% 100% no-repeat;
+  mask:var(--camera-mask) center/100% 100% no-repeat}
+.camera-frame__halo{background:var(--grad-linear);opacity:var(--glow);filter:drop-shadow(0 0 12px #fff)}
+.camera-frame__ring{overflow:hidden;background:var(--grad-linear);
+  filter:drop-shadow(0 0 8px rgba(255,255,255,.5))}
+.camera-frame__ring .aurora{inset:-75%}
+.camera-frame__ring .gloss,.camera-frame__ring .sheen{inset:-75%}
+.no-camera-sheen .camera-frame__ring .sheen{display:none}
+body.camera-preview .camera-frame{pointer-events:auto;cursor:move;touch-action:none}
 
 /* ---- ring geometry (SVG mask: independent outer / inner radius) ---- */
 .ring{position:absolute;inset:0;
