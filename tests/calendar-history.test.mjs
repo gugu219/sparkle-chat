@@ -16,6 +16,11 @@ test('quoted commas in stream titles do not move the category column',()=>{
  assert.deepEqual(historyFromCsv(csv)['2026-10-01'],{kind:'chat',text:'雑談'});
 });
 
+test('singing in column H uses the microphone sticker',()=>{
+ const csv='A,B,C,D,E,F,G,H\n,10月1日,,,,,,弾き語り\n';
+ assert.deepEqual(historyFromCsv(csv)['2026-10-01'],{kind:'sing',text:'弾き語り'});
+});
+
 test('past days missing from the sheet replace planned entries with rest',()=>{
  const csv='A,B,C,D,E,F,G,H\n,10月1日,,,,,,雑談\n';
  const history=historyFromCsv(csv,{through:'2026-10-03'});
