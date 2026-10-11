@@ -23,7 +23,7 @@ export default async function(req){
    const day=new Date(date+'T00:00:00Z');if(Number.isNaN(day.getTime())||day.toISOString().slice(0,10)!==date)return json({error:'日付が正しくありません'},400);
    const text=String(entry.text||'').trim();const kind=String(entry.kind||'');
    if(text.length>90||kind&&!kinds.has(kind))return json({error:'予定が長すぎるか、シールが正しくありません'},400);
-   if(text||kind)clean[date]={text,kind};
+   clean[date]={text,kind};
   }
   const id=String(body.id||'');
   if(id&&!/^[a-f0-9]{32}$/.test(id))return json({error:'リンクが正しくありません'},400);
