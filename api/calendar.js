@@ -2,7 +2,7 @@ import {owner,sameOrigin,get,set,random,json} from '../lib/store.js';
 
 const kinds=new Set(['stream','rest','game','chat','drink']);
 const key=id=>`calendar:${id}`;
-export default async function(req){
+async function handle(req){
  try{
   const url=new URL(req.url);
   if(req.method==='GET'){
@@ -34,3 +34,6 @@ export default async function(req){
   return json({id:calendarId,updatedAt});
  }catch(e){return json({error:e.message||'保存に失敗しました'},e.message?.includes('再接続')?401:500);}
 }
+export const GET=handle;
+export const POST=handle;
+export default handle;
