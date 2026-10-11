@@ -75,7 +75,7 @@ if(overlay){
  document.getElementById('today').addEventListener('click',()=>{year=now.getFullYear();month=now.getMonth()+1;selected='';render();});
  document.querySelectorAll('.stickers button').forEach(button=>button.addEventListener('click',()=>{if(!selected)return;const current=currentEntry(selected);const kind=current.kind===button.dataset.kind?'':button.dataset.kind;entries[selected]=editedEntry(selected,{kind,startHour:kind==='rest'?'':current.startHour||''});select(selected);draft();}));
  startHourSelect.addEventListener('change',event=>{if(!selected)return;entries[selected]=editedEntry(selected,{startHour:event.target.value});select(selected);draft();});
- document.getElementById('event-text').addEventListener('input',event=>{if(!selected)return;entries[selected]=editedEntry(selected,{text:event.target.value});render();draft();});
+ document.getElementById('event-text').addEventListener('input',event=>{if(!selected)return;entries[selected]=editedEntry(selected,{text:event.target.value});if(Object.hasOwn(historyEntries,selected)){document.getElementById('restore-sheet').hidden=false;document.getElementById('recorded-note').textContent='この日は手入力の内容を表示しています。シートの記録に戻すこともできます。';}render();draft();});
  document.getElementById('clear-day').addEventListener('click',()=>{if(!selected)return;entries[selected]=editedEntry(selected,{kind:'',text:'',startHour:''});select(selected);draft();});
  document.getElementById('restore-sheet').addEventListener('click',()=>{if(!selected||!Object.hasOwn(historyEntries,selected))return;delete entries[selected];select(selected);draft();});
  document.getElementById('publish').addEventListener('click',()=>save(true));
