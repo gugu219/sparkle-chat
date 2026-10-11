@@ -9,7 +9,9 @@ export async function GET(req){
    if(!response.ok)throw Error('Sheet unavailable');
    const csv=await response.text();
    if(csv.length>2_000_000)throw Error('Sheet too large');
-   cached={entries:historyFromCsv(csv),synced:true,updatedAt:Date.now()};
+   const yesterday=new Date(Date.now()+9*60*60*1000-24*60*60*1000).toISOString().slice(0,10);
+   const through=yesterday<'2026-12-31'?yesterday:'2026-12-31';
+   cached={entries:historyFromCsv(csv,{through}),synced:true,updatedAt:Date.now()};
   }catch{cached={...cached,updatedAt:Date.now()};}
  }
  return Response.json({entries:cached.entries,synced:cached.synced},{headers:{'Cache-Control':'public, max-age=60, stale-while-revalidate=240'}});
