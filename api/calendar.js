@@ -22,8 +22,9 @@ async function handle(req){
    if(!/^20\d\d-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(date)||!entry||typeof entry!=='object'||Array.isArray(entry))return json({error:'日付が正しくありません'},400);
    const day=new Date(date+'T00:00:00Z');if(Number.isNaN(day.getTime())||day.toISOString().slice(0,10)!==date)return json({error:'日付が正しくありません'},400);
    const text=String(entry.text||'').trim();const kind=String(entry.kind||'');const startHour=String(entry.startHour||'');
+   if(entry.overrideHistory!==undefined&&typeof entry.overrideHistory!=='boolean')return json({error:'編集済みの記録が正しくありません'},400);
    if(text.length>90||kind&&!kinds.has(kind)||startHour&&!/^(?:1\d|2[0-3])$/.test(startHour))return json({error:'予定・シール・開始時間を確認してください'},400);
-   clean[date]={text,kind,startHour};
+   clean[date]={text,kind,startHour,overrideHistory:entry.overrideHistory===true};
   }
   const id=String(body.id||'');
   if(id&&!/^[a-f0-9]{32}$/.test(id))return json({error:'リンクが正しくありません'},400);
