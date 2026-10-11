@@ -29,5 +29,5 @@
 @media(max-width:500px){.day{min-height:76px}.day-number{font-size:14px}.day-note{font-size:10px;line-height:1.35}.sticker-guide span{font-size:12px}.sticker-guide .pixel-icon{width:16px;height:16px}.calendar-overlay .day{min-height:82px}.calendar-overlay .day-note{font-size:11px}}
 .brand,.eyebrow,.intro h1,.back,.calendar-toolbar h2,.month-actions button,.quiet,.sticker-guide span,.weekdays span,.day-number,.edit-card h2,.publish h3,.stickers small,.edit-card label,.publish button,.overlay-heading{font-family:BestTenDOT,'DotGothic16',sans-serif;font-weight:400}
 .overlay-heading{font-weight:400}
-.publish input{display:block;margin:12px 0;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:500;user-select:all}
+.publish textarea{display:block;width:100%;margin:12px 0;padding:10px;resize:none;border:2px solid #b79b9d;border-radius:2px;background:#fffdf8;color:#463942;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:500;line-height:1.5;overflow-wrap:anywhere;user-select:all}
 .obs-open{display:inline-block;margin:2px 0 14px;color:#694c5b;text-decoration:underline;text-underline-offset:4px;font-size:15px}
