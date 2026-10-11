@@ -50,6 +50,11 @@ test('calendar issues a separate public OBS link and only its owner can update i
  assert.equal((await calendarApi(request('/api/calendar','POST',{id,entries:{}},true))).status,403);
  assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{'2026-02-30':{kind:'rest'}}},true))).status,400);
  assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{'2026-10-13':{kind:'game',startHour:'24'}}},true))).status,400);
+ await set('owner:owner','account');
+ const edited=await calendarApi(request('/api/calendar','POST',{id,entries:{'2026-10-01':{kind:'chat',text:'配信後に修正',startHour:'',overrideHistory:true}}},true));
+ assert.equal(edited.status,200);
+ assert.equal((await (await calendarApi(request('/api/calendar?id='+id))).json()).entries['2026-10-01'].overrideHistory,true);
+ assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{'2026-10-01':{overrideHistory:'true'}}},true))).status,400);
 });
 test('encrypted secrets round-trip and reject modified ciphertext',async()=>{const encrypted=await seal({token:'private'});assert.equal(JSON.stringify(encrypted).includes('private'),false);assert.deepEqual(await unseal(encrypted),{token:'private'});encrypted.data[0]^=1;await assert.rejects(()=>unseal(encrypted));});
 test('OAuth status requires owner cookie even with legacy widget id',async()=>{const r=await session(request('/api/auth/session?widget=old-secret'));assert.equal(r.status,401);assert.equal((await r.text()).includes('accessToken'),false);});
