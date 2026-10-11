@@ -1,6 +1,6 @@
 import {owner,sameOrigin,get,set,random,json} from '../lib/store.js';
 
-const kinds=new Set(['stream','rest','game','chat','drink']);
+const kinds=new Set(['stream','rest','game','chat','sing','drink']);
 const key=id=>`calendar:${id}`;
 async function handle(req){
  try{
