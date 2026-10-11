@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
-:root{font-family:'DotGothic16','M PLUS Rounded 1c','Yu Gothic',sans-serif;font-weight:700;color:#463942;background:#f4eee5}
+@font-face{font-family:BestTenDOT;src:url('./BestTen-DOT.otf') format('opentype');font-style:normal;font-weight:400;font-display:swap}
+:root{font-family:BestTenDOT,'DotGothic16',sans-serif;font-weight:400;font-synthesis:none;color:#463942;background:#f4eee5}
 *{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #a36380;outline-offset:3px}
 .calendar-editor{background-color:#f4eee5;background-image:linear-gradient(#e9ded544 1px,transparent 1px),linear-gradient(90deg,#e9ded544 1px,transparent 1px);background-size:24px 24px}
 .top{height:68px;padding:0 max(4vw,24px);display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #9e7a82;background:#fcf8f0;box-shadow:0 4px #dfc8bf;color:#806d76;font-size:13px}.brand{font-family:DotGothic16,sans-serif;color:#795666;text-decoration:none;font-size:20px;letter-spacing:.04em}.brand span{font-size:12px;margin-left:3px}
@@ -14,15 +15,19 @@
 /* Keep the pixel lettering legible in the editor and the OBS browser source. */
 .kind-sing{background:#f1e4ef;border-color:#cba9c4}
 .day{min-height:118px}
-.day-number{font-size:18px;font-weight:700;color:#513d4b}
-.day-note{font-family:'DotGothic16','M PLUS Rounded 1c',sans-serif;font-weight:700;font-size:14px;line-height:1.5;color:#342d34;text-shadow:.45px 0 currentColor}
-.sticker-guide span{font-weight:700;font-size:14px;color:#513c4a}
-.weekdays span{font-weight:700;font-size:16px;color:#594655}
+.day-number{font-size:18px;font-weight:400;color:#513d4b}
+.day-note{font-family:BestTenDOT,'DotGothic16',sans-serif;font-weight:400;font-size:16px;line-height:1.45;color:#342d34;text-shadow:none}
+.sticker-guide span{font-weight:400;font-size:15px;color:#513c4a}
+.weekdays span{font-weight:400;font-size:16px;color:#594655}
 .stickers button{width:64px;height:70px}
-.stickers small{font-weight:700;font-size:12px}
-.edit-card textarea{font-size:16px;font-weight:700;line-height:1.6}
+.stickers small{font-weight:400;font-size:13px}
+.edit-card textarea{font-size:16px;font-weight:400;line-height:1.6}
 .calendar-overlay .day{min-height:130px}
 .calendar-overlay .day-note{font-size:18px;line-height:1.45}
 .calendar-overlay .sticker-guide span{font-size:17px}
 @media(max-width:900px){.day{min-height:94px}.day-note{font-size:12px}.calendar-overlay .day{min-height:104px}}
 @media(max-width:500px){.day{min-height:76px}.day-number{font-size:14px}.day-note{font-size:10px;line-height:1.35}.sticker-guide span{font-size:12px}.sticker-guide .pixel-icon{width:16px;height:16px}.calendar-overlay .day{min-height:82px}.calendar-overlay .day-note{font-size:11px}}
+.brand,.eyebrow,.intro h1,.back,.calendar-toolbar h2,.month-actions button,.quiet,.sticker-guide span,.weekdays span,.day-number,.edit-card h2,.publish h3,.stickers small,.edit-card label,.publish button,.overlay-heading{font-family:BestTenDOT,'DotGothic16',sans-serif;font-weight:400}
+.overlay-heading{font-weight:400}
+.publish input{display:block;margin:12px 0;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:500;user-select:all}
+.obs-open{display:inline-block;margin:2px 0 14px;color:#694c5b;text-decoration:underline;text-underline-offset:4px;font-size:15px}
