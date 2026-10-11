@@ -66,3 +66,17 @@ html.obs-calendar{width:100%;height:100%}
 .calendar-overlay .day{min-height:0}
 @media(max-width:900px){.calendar-overlay{padding:8px}.calendar-overlay .overlay-sheet{width:100%}.calendar-overlay .day{min-height:0}}
 @media(max-height:800px){.calendar-overlay .overlay-heading{margin-bottom:8px;padding:8px 12px}.calendar-overlay .overlay-heading h1{font-size:28px}.calendar-overlay .sticker-guide{margin-bottom:8px}.calendar-overlay .sticker-guide span{padding:4px 6px}.calendar-overlay .weekdays span{padding:4px 0}.calendar-overlay .day{padding:4px;gap:2px}.calendar-overlay .day-number{font-size:14px}.calendar-overlay .day-sticker{width:25px;height:23px}.calendar-overlay .day-sticker .pixel-icon{width:20px;height:20px}.calendar-overlay .day-note{font-size:12px;line-height:1.25;-webkit-line-clamp:2}}
+
+/* Date, sticker, and optional start-time stamp share the first row. */
+.day-top{display:flex;align-items:center;gap:4px;max-width:100%;white-space:nowrap}
+.day-time{display:inline-block;flex:none;padding:4px 5px;background:#e5eaf0;border:1px solid #8b9eaf;color:#30465b;font-family:BestTenDOT,'DotGothic16',sans-serif;font-size:12px;line-height:1.1}
+.calendar-editor .day-number{font-size:14px}
+.calendar-editor .day-sticker{width:25px;height:24px}
+.calendar-editor .day-sticker .pixel-icon{width:20px;height:19px}
+.calendar-editor .day-time{padding:3px;font-size:11px}
+.edit-card label[for=start-hour]{display:block;margin:12px 0 7px}
+.edit-card select{display:block;width:100%;margin-bottom:18px;padding:10px;background:#fffdf8;border:2px solid #b79b9d;border-radius:2px;color:#594b55;font-family:BestTenDOT,'DotGothic16',sans-serif;font-size:16px}
+.edit-card select:disabled{opacity:.6}
+.calendar-overlay .day-top{gap:8px}
+.calendar-overlay .day-time{padding:6px 8px;background:#1b3849d9;border-color:#8ac5d1;color:#effcff;font-size:17px;box-shadow:0 2px 6px #02060c88}
+@media(max-height:800px){.calendar-overlay .day-top{gap:4px}.calendar-overlay .day-time{padding:3px 4px;font-size:12px}}

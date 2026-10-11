@@ -15,6 +15,8 @@ function pixelIcon(kind){
 }
 document.querySelectorAll('.sticker-guide span[data-kind]').forEach(label=>label.prepend(pixelIcon(label.dataset.kind)));
 document.querySelectorAll('.stickers button').forEach(button=>{button.prepend(pixelIcon(button.dataset.kind));});
+const startHourSelect=document.getElementById('start-hour');
+if(startHourSelect)for(let hour=10;hour<=23;hour++){const option=document.createElement('option');option.value=String(hour);option.textContent=`${hour}時から`;startHourSelect.append(option);}
 const localKey='sparkle-calendar-draft',idKey='sparkle-calendar-id';
 const overlay=document.body.classList.contains('calendar-overlay');
 const params=new URLSearchParams(location.search);
@@ -34,13 +36,15 @@ function render(){
   const key=dateKey(day),entry=currentEntry(key),cell=document.createElement(overlay?'div':'button');cell.className='day';
   if(!overlay){cell.type='button';cell.setAttribute('aria-label',`${month}月${day}日を編集`);cell.addEventListener('click',()=>select(key));}
   if(key===selected)cell.classList.add('is-selected');if(key===new Date().toLocaleDateString('sv-SE'))cell.classList.add('is-today');
-  const number=document.createElement('span');number.className='day-number';number.textContent=day;cell.append(number);
-  if(sprites[entry.kind]){const sticker=document.createElement('span');sticker.className=`day-sticker kind-${entry.kind}`;sticker.append(pixelIcon(entry.kind));cell.append(sticker);}
+  const top=document.createElement('span');top.className='day-top';cell.append(top);
+  const number=document.createElement('span');number.className='day-number';number.textContent=day;top.append(number);
+  if(sprites[entry.kind]){const sticker=document.createElement('span');sticker.className=`day-sticker kind-${entry.kind}`;sticker.append(pixelIcon(entry.kind));top.append(sticker);}
+  if(entry.kind!=='rest'&&entry.startHour&&/^(?:1\d|2[0-3])$/.test(String(entry.startHour))){const time=document.createElement('span');time.className='day-time';time.textContent=`${entry.startHour}時〜`;top.append(time);}
   if(entry.text){const note=document.createElement('span');note.className='day-note';note.textContent=entry.text;cell.append(note);}
   grid.append(cell);
  }
 }
-function select(key){selected=key;const entry=currentEntry(key),recorded=Object.hasOwn(historyEntries,key);document.getElementById('day-editor').hidden=false;document.getElementById('selected-title').textContent=`${Number(key.slice(5,7))}月${Number(key.slice(8))}日の予定`;document.getElementById('event-text').value=entry.text||'';document.getElementById('event-text').disabled=recorded;document.getElementById('clear-day').disabled=recorded;document.querySelectorAll('.stickers button').forEach(b=>{b.disabled=recorded;b.classList.toggle('selected',b.dataset.kind===entry.kind);});document.getElementById('recorded-note').hidden=!recorded;render();}
+function select(key){selected=key;const entry=currentEntry(key),recorded=Object.hasOwn(historyEntries,key);document.getElementById('day-editor').hidden=false;document.getElementById('selected-title').textContent=`${Number(key.slice(5,7))}月${Number(key.slice(8))}日の予定`;document.getElementById('event-text').value=entry.text||'';document.getElementById('event-text').disabled=recorded;startHourSelect.value=String(entry.startHour||'');startHourSelect.disabled=recorded||entry.kind==='rest';document.getElementById('clear-day').disabled=recorded;document.querySelectorAll('.stickers button').forEach(b=>{b.disabled=recorded;b.classList.toggle('selected',b.dataset.kind===entry.kind);});document.getElementById('recorded-note').hidden=!recorded;render();}
 async function refreshHistory(){try{const response=await fetch('/api/calendar-history',{cache:'no-store'});if(!response.ok)return;const data=await response.json();historyEntries=data.entries||{};render();if(!overlay){document.getElementById('history-status').textContent=data.synced?'配信履歴シートと同期中。過ぎた日はシートの内容を手入力より優先します。追記は約5分以内に反映されます。':'10月1〜10日の履歴を表示中。シートへの接続を再試行します。';if(selected)select(selected);}}catch{}}
 function draft(){try{localStorage.setItem(localKey,JSON.stringify(entries));}catch{}document.getElementById('save-status').textContent=calendarId?'変更を保存しています…':'この端末に下書き保存しました。';if(calendarId){clearTimeout(draft.timer);draft.timer=setTimeout(()=>save(false),700);}}
 function showObsLink(){const link=new URL('calendar-view.html',location.href);if(calendarId)link.searchParams.set('id',calendarId);document.getElementById('obs-url').value=link.href;document.getElementById('obs-open').href=link.href;return link.href;}
@@ -57,9 +61,10 @@ if(overlay){
  document.getElementById('previous').addEventListener('click',()=>{month--;if(month===0){month=12;year--;}selected='';render();});
  document.getElementById('next').addEventListener('click',()=>{month++;if(month===13){month=1;year++;}selected='';render();});
  document.getElementById('today').addEventListener('click',()=>{year=now.getFullYear();month=now.getMonth()+1;selected='';render();});
- document.querySelectorAll('.stickers button').forEach(button=>button.addEventListener('click',()=>{if(!selected||Object.hasOwn(historyEntries,selected))return;const current=entries[selected]||{};const kind=current.kind===button.dataset.kind?'':button.dataset.kind;entries[selected]={...current,kind};select(selected);draft();}));
+ document.querySelectorAll('.stickers button').forEach(button=>button.addEventListener('click',()=>{if(!selected||Object.hasOwn(historyEntries,selected))return;const current=entries[selected]||{};const kind=current.kind===button.dataset.kind?'':button.dataset.kind;entries[selected]={...current,kind,startHour:kind==='rest'?'':current.startHour||''};select(selected);draft();}));
+ startHourSelect.addEventListener('change',event=>{if(!selected||Object.hasOwn(historyEntries,selected))return;entries[selected]={...(entries[selected]||{}),startHour:event.target.value};render();draft();});
  document.getElementById('event-text').addEventListener('input',event=>{if(!selected||Object.hasOwn(historyEntries,selected))return;entries[selected]={...(entries[selected]||{}),text:event.target.value};render();draft();});
- document.getElementById('clear-day').addEventListener('click',()=>{if(Object.hasOwn(historyEntries,selected))return;entries[selected]={kind:'',text:''};select(selected);draft();});
+ document.getElementById('clear-day').addEventListener('click',()=>{if(Object.hasOwn(historyEntries,selected))return;entries[selected]={kind:'',text:'',startHour:''};select(selected);draft();});
  document.getElementById('publish').addEventListener('click',()=>save(true));
  load();
 }
