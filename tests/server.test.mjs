@@ -8,6 +8,7 @@ import login from '../api/auth/login.js';
 import callback from '../api/auth/callback.js';
 import image from '../api/image.js';
 import configApi from '../api/config.js';
+import calendarApi from '../api/calendar.js';
 import eventApi from '../api/events.js';
 import integrations from '../api/integrations.js';
 import overlay from '../api/overlay.js';
@@ -37,6 +38,17 @@ globalThis.fetch=async(url,options={})=>{
 };
 beforeEach(()=>{db.clear();z.clear();hash.clear();donations=[];});after(()=>{globalThis.fetch=originalFetch;});
 const request=(path,method='GET',value,authenticated=false)=>new Request('https://sparkle.test'+path,{method,headers:{origin:'https://sparkle.test',...(authenticated?{cookie:'sparkle_owner=owner'}:{})},...(!['GET','HEAD'].includes(method)?{body:JSON.stringify(value)}:{})});
+test('calendar issues a separate public OBS link and only its owner can update it',async()=>{
+ await set('owner:owner','account');
+ assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{}}))).status,401);
+ const created=await calendarApi(request('/api/calendar','POST',{entries:{'2026-10-12':{kind:'game',text:'21:00 テスト配信'}}},true));
+ assert.equal(created.status,200);const {id}=await created.json();
+ const read=await (await calendarApi(request('/api/calendar?id='+id))).json();
+ assert.equal(read.entries['2026-10-12'].text,'21:00 テスト配信');assert.equal(read.owner,undefined);
+ await set('owner:owner','other');
+ assert.equal((await calendarApi(request('/api/calendar','POST',{id,entries:{}},true))).status,403);
+ assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{'2026-02-30':{kind:'rest'}}},true))).status,400);
+});
 test('encrypted secrets round-trip and reject modified ciphertext',async()=>{const encrypted=await seal({token:'private'});assert.equal(JSON.stringify(encrypted).includes('private'),false);assert.deepEqual(await unseal(encrypted),{token:'private'});encrypted.data[0]^=1;await assert.rejects(()=>unseal(encrypted));});
 test('OAuth status requires owner cookie even with legacy widget id',async()=>{const r=await session(request('/api/auth/session?widget=old-secret'));assert.equal(r.status,401);assert.equal((await r.text()).includes('accessToken'),false);});
 test('OAuth status does not expose access or refresh tokens',async()=>{await set('owner:owner','account');await set('profile:account',{overlay:'read-only'});await set('twitch:account',await seal({login:'mika',userId:'123',accessToken:'PRIVATE_ACCESS',refreshToken:'PRIVATE_REFRESH',expiresAt:Date.now()+3600000,validatedAt:Date.now()}));const r=await session(request('/api/auth/session','GET',null,true));const text=await r.text();assert.equal(r.status,200);assert.equal(text.includes('PRIVATE'),false);assert.equal(JSON.parse(text).overlay,'read-only');});
