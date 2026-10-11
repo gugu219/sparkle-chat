@@ -14,4 +14,3 @@ export async function GET(req){
  }
  return Response.json({entries:cached.entries,synced:cached.synced},{headers:{'Cache-Control':'public, max-age=60, stale-while-revalidate=240'}});
 }
-export default GET;

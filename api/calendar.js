@@ -36,4 +36,3 @@ async function handle(req){
 }
 export const GET=handle;
 export const POST=handle;
-export default handle;
