@@ -1,4 +1,20 @@
-const symbols={stream:'♥',rest:'×',game:'🎮',chat:'☕',drink:'🍷'};
+// Tiny hand-drawn sprites stay sharp in both the editor and the OBS browser source.
+const sprites={
+ stream:['............','.ppp...ppp..','pphhp.pphhp.','phhhppphhhp.','phhhhhhhhp..','.phhhhhhp...','..phhhhp....','...phhp.....','....pp......'],
+ rest:['............','dd......dd..','.dd....dd...','..dd..dd....','...dddd.....','....dd......','...dddd.....','..dd..dd....','.dd....dd...','dd......dd..'],
+ game:['............','..dddddddd..','.dggggggggd.','dggdg..gdggd','dggddd.gdggd','dggdg..gdggd','dggggggggggd','.dggggggggd.','..dd....dd..'],
+ chat:['............','..dddddddd..','.dccccccccd.','dccccccccccd','dccccccccccd','dccccccccccd','.dccccccccd.','..dddccddd..','...dccc.....','....dd......'],
+ drink:['............','..dddddddd..','..drrrrrrd..','...drrrrd...','....drrd....','.....dd.....','.....dd.....','.....dd.....','...dddddd...']
+};
+const spriteColors={stream:{p:'#9b536f',h:'#f7a9bd'},rest:{d:'#877c87'},game:{d:'#5a647a',g:'#a8c9a6'},chat:{d:'#826879',c:'#f5cbb1'},drink:{d:'#786079',r:'#bc7896'}};
+function pixelIcon(kind){
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 12 10');svg.setAttribute('aria-hidden','true');svg.classList.add('pixel-icon');
+ const colors=spriteColors[kind]||{};
+ (sprites[kind]||[]).forEach((row,y)=>[...row].forEach((pixel,x)=>{if(!colors[pixel])return;const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');rect.setAttribute('x',x);rect.setAttribute('y',y);rect.setAttribute('width',1);rect.setAttribute('height',1);rect.setAttribute('fill',colors[pixel]);svg.append(rect);}));
+ return svg;
+}
+document.querySelectorAll('.sticker-guide span').forEach((label,index)=>{const kind=Object.keys(sprites)[index];label.textContent=label.textContent.replace(/^[^ ]+ /,'');label.prepend(pixelIcon(kind));});
+document.querySelectorAll('.stickers button').forEach(button=>{button.firstChild?.remove();button.prepend(pixelIcon(button.dataset.kind));});
 const localKey='sparkle-calendar-draft',idKey='sparkle-calendar-id';
 const overlay=document.body.classList.contains('calendar-overlay');
 const params=new URLSearchParams(location.search);
@@ -18,7 +34,7 @@ function render(){
   if(!overlay){cell.type='button';cell.setAttribute('aria-label',`${month}月${day}日を編集`);cell.addEventListener('click',()=>select(key));}
   if(key===selected)cell.classList.add('is-selected');if(key===new Date().toLocaleDateString('sv-SE'))cell.classList.add('is-today');
   const number=document.createElement('span');number.className='day-number';number.textContent=day;cell.append(number);
-  if(entry.kind){const sticker=document.createElement('span');sticker.className=`day-sticker kind-${entry.kind}`;sticker.textContent=symbols[entry.kind]||'';cell.append(sticker);}
+  if(sprites[entry.kind]){const sticker=document.createElement('span');sticker.className=`day-sticker kind-${entry.kind}`;sticker.append(pixelIcon(entry.kind));cell.append(sticker);}
   if(entry.text){const note=document.createElement('span');note.className='day-note';note.textContent=entry.text;cell.append(note);}
   grid.append(cell);
  }
