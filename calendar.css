@@ -31,3 +31,29 @@
 .overlay-heading{font-weight:400}
 .publish textarea{display:block;width:100%;margin:12px 0;padding:10px;resize:none;border:2px solid #b79b9d;border-radius:2px;background:#fffdf8;color:#463942;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:500;line-height:1.5;overflow-wrap:anywhere;user-select:all}
 .obs-open{display:inline-block;margin:2px 0 14px;color:#694c5b;text-decoration:underline;text-underline-offset:4px;font-size:15px}
+
+/* OBS output: only the calendar cells have a translucent dark surface. */
+html.obs-calendar,.calendar-overlay{background:transparent;background-image:none}
+.calendar-overlay{padding:26px 30px;color:#f5f7fb}
+.calendar-overlay .overlay-sheet{width:min(1340px,calc(100vw - 60px));max-width:none;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
+.calendar-overlay .overlay-heading{display:block;width:max-content;max-width:100%;margin:0 0 17px;padding:12px 16px;background:#091322c9;border-left:4px solid #9dcbd2;box-shadow:0 5px 16px #02060c80;color:#f5f7fb;letter-spacing:0}
+.calendar-overlay .overlay-heading h1{margin:0 0 8px;color:#fff;font-size:38px;line-height:1.25;text-shadow:0 2px 8px #05080fd9}
+.calendar-overlay .overlay-heading p{margin:0;color:#e3eaf3;font-size:15px;line-height:1.5;text-shadow:0 1px 5px #05080fe6}
+.calendar-overlay .sticker-guide{margin:0 0 17px;gap:8px}
+.calendar-overlay .sticker-guide span{padding:7px 10px;background:#111b2bc9;border:1px solid #8195a7a6;box-shadow:0 2px 8px #02070e66;color:#f4f7fc;font-size:16px}
+.calendar-overlay .weekdays span{padding:8px 0 10px;background:#0b1424ae;color:#f2f6fb;font-size:18px;text-shadow:0 1px 5px #05080fe6}
+.calendar-overlay .weekdays span:first-child{color:#ffafb4}
+.calendar-overlay .weekdays span:last-child{color:#a9d6f1}
+.calendar-overlay .calendar-grid{gap:2px;border:1px solid #a2b5c8a6;background:#92a9b8a3;box-shadow:0 6px 20px #02060cb8}
+.calendar-overlay .day{min-height:128px;padding:11px;background:#0b1424c9;color:#f5f7fb}
+.calendar-overlay .day.is-empty{background:#091320a6;background-image:none}
+.calendar-overlay .day-number{color:#f8fbff;font-size:19px}
+.calendar-overlay .is-today .day-number{background:#b2d7e8;color:#102131;box-shadow:none}
+.calendar-overlay .day-note{color:#fff;font-size:18px;line-height:1.4;text-shadow:0 1px 4px #02060ccc}
+.calendar-overlay .day-sticker{width:36px;height:34px;background:#203348d9;border:1px solid #90aac1bd;box-shadow:none}
+.calendar-overlay .day-sticker .pixel-icon{width:29px;height:27px;filter:brightness(1.45)}
+.calendar-overlay .kind-rest{background:#2a3141d9;border-color:#a8b0c3bd}
+.calendar-overlay .kind-game{background:#1b3c3bd9;border-color:#91d1c4bd}
+.calendar-overlay .kind-chat{background:#443629d9;border-color:#e1bf90bd}
+.calendar-overlay .kind-sing{background:#382b47d9;border-color:#cda6dcbd}
+@media(max-width:900px){.calendar-overlay{padding:14px}.calendar-overlay .overlay-sheet{width:calc(100vw - 28px)}.calendar-overlay .overlay-heading h1{font-size:28px}.calendar-overlay .day{min-height:100px;padding:6px}.calendar-overlay .day-note{font-size:13px}.calendar-overlay .sticker-guide span{font-size:12px}}

@@ -26,7 +26,7 @@ const grid=document.getElementById('calendar-grid'),title=document.getElementByI
 const currentEntry=key=>{const entry=historyEntries[key]||entries[key]||{};return entry.kind==='drink'?{...entry,kind:'chat'}:entry;};
 const dateKey=day=>`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 function render(){
- title.textContent=`${year}年 ${month}月`;
+ title.textContent=overlay?`${year}年${month}月 配信カレンダー`:`${year}年 ${month}月`;
  grid.replaceChildren();
  const offset=new Date(year,month-1,1).getDay(),days=new Date(year,month,0).getDate();
  for(let i=0;i<offset;i++){const filler=document.createElement('div');filler.className='day is-empty';grid.append(filler);}
