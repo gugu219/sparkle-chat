@@ -84,7 +84,7 @@ test('only the connected broadcaster can save and read bot rules',async()=>{
 });
 test('bot replies once and posts promotions only after live interval',async()=>{
  await set('twitch:account',await seal({userId:'123',accessToken:'private',refreshToken:'private',expiresAt:Date.now()+3600000,validatedAt:Date.now()}));
- await set('bot:account',{enabled:true,commands:[{name:'discord',response:'Discord link'}],promos:['X link'],interval:30});
+ await set('bot:account',{enabled:true,commands:[{name:'discord',response:'Discord link'}],promos:['X link','Discord promo'],interval:30});
  const commandEvent={chatter_user_id:'456',message_id:'msg1',message:{text:'!discord'}};
  assert.equal(await handleBotChat('account',commandEvent,'event1'),true);
  assert.equal(await handleBotChat('account',commandEvent,'event1'),false);
@@ -93,6 +93,9 @@ test('bot replies once and posts promotions only after live interval',async()=>{
  assert.equal(await handleBotChat('account',{chatter_user_id:'456',message:{text:'hello'}},'event2'),true);
  assert.equal(await handleBotChat('account',{chatter_user_id:'789',message:{text:'hello'}},'event3'),false);
  assert.equal(botSends.length,2);assert.equal(botSends[1].message,'X link');
+ await set('stream:account',{id:'live1',live:true,time:new Date(Date.now()-61*60000).toISOString()});
+ assert.equal(await handleBotChat('account',{chatter_user_id:'789',message:{text:'another hello'}},'event4'),true);
+ assert.equal(botSends[2].message,'Discord promo');
 });
 test('Twitch duplicate notifications create exactly one private log entry',async()=>{await set('twitch-user:123','account');const p={subscription:{type:'channel.follow',condition:{broadcaster_user_id:'123'}},event:{user_name:'Mika',user_id:'456'}};await hook(await signed(p));await hook(await signed(p));assert.equal((await recent('account')).length,1);assert.equal((await eventApi(request('/api/events'))).status,401);});
 test('stream offline clears render badges without altering previous stream data',async()=>{await set('twitch-user:123','account');await set('stream:account',{id:'stream1',live:true,time:new Date(Date.now()-1000).toISOString()});const payload={subscription:{type:'stream.offline',condition:{broadcaster_user_id:'123'}},event:{}};await hook(await signed(payload));assert.equal((await get('stream:account')).live,false);});
