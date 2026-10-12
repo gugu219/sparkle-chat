@@ -17,32 +17,39 @@ import {validWidget} from '../api/integrations.js';
 import {syncDonations} from '../lib/streamlabs.js';
 import {cleanBotConfig,handleBotChat} from '../lib/bot.js';
 import botApi from '../api/bot.js';
-const originalFetch=globalThis.fetch;const db=new Map(),z=new Map(),hash=new Map();let donations=[],botSends=[],redisFailures=0;
+const originalFetch=globalThis.fetch;const db=new Map(),newDb=new Map(),z=new Map(),hash=new Map();let donations=[],botSends=[],redisFailures=0;
 Object.assign(process.env,{UPSTASH_REDIS_REST_URL:'https://redis.test',UPSTASH_REDIS_REST_TOKEN:'test',APP_ENCRYPTION_KEY:'test-only-encryption-key-32-characters',TWITCH_WEBHOOK_SECRET:'test-only-webhook-secret-32-characters',TWITCH_CLIENT_ID:'client',TWITCH_CLIENT_SECRET:'test',APP_BASE_URL:'https://sparkle.test'});
 globalThis.fetch=async(url,options={})=>{
  if(String(url)==='https://api.twitch.tv/helix/chat/messages'){botSends.push(JSON.parse(options.body));return Response.json({data:[{message_id:'sent-'+botSends.length,is_sent:true}]});}
  if(String(url).startsWith('https://streamlabs.com/')){const q=new URL(url).searchParams;let rows=donations.filter(d=>(!q.get('after')||d.donation_id>+q.get('after'))&&(!q.get('before')||d.donation_id<+q.get('before')));return Response.json({data:rows.slice(0,100)});}
- if(String(url)!=='https://redis.test')throw Error('Unexpected network access: '+url);
+ if(!['https://redis.test','https://new-redis.test'].includes(String(url)))throw Error('Unexpected network access: '+url);
+ const activeDb=String(url)==='https://new-redis.test'?newDb:db;
  const [cmd,key,...args]=JSON.parse(options.body);let result=null;
  if(key==='transient-key'&&redisFailures++===0)return Response.json({error:'rate limit exceeded'},{status:400});
  switch(cmd){
- case 'GET':result=db.get(key)??null;break;
- case 'GETDEL':result=db.get(key)??null;db.delete(key);break;
- case 'SET':if(args.includes('NX')&&db.has(key))break;db.set(key,args[0]);result='OK';break;
- case 'DEL':db.delete(key);result=1;break;
+ case 'GET':result=activeDb.get(key)??null;break;
+ case 'GETDEL':result=activeDb.get(key)??null;activeDb.delete(key);break;
+ case 'SET':if(args.includes('NX')&&activeDb.has(key))break;activeDb.set(key,args[0]);result='OK';break;
+ case 'DEL':activeDb.delete(key);result=1;break;
  case 'EXPIRE':result=1;break;
  case 'ZADD':if(!z.has(key))z.set(key,new Map());z.get(key).set(args[1],+args[0]);result=1;break;
  case 'ZREMRANGEBYSCORE':for(const [k,v]of z.get(key)||[])if(v<=+args[1])z.get(key).delete(k);result=0;break;
  case 'ZRANGEBYSCORE':result=[...(z.get(key)||[])].filter(([,v])=>v>=+args[0]).sort((a,b)=>a[1]-b[1]).slice(0,args[4]||200).map(([k])=>k);break;
  case 'ZREVRANGEBYSCORE':result=[...(z.get(key)||[])].filter(([,v])=>v>=+args[1]).sort((a,b)=>b[1]-a[1]).slice(0,300).map(([k])=>k);break;
- case 'MGET':result=[key,...args].map(k=>db.get(k)??null);break;
+ case 'MGET':result=[key,...args].map(k=>activeDb.get(k)??null);break;
  case 'HSET':if(!hash.has(key))hash.set(key,new Map());hash.get(key).set(args[0],args[1]);result=1;break;
  case 'HGETALL':result=[...(hash.get(key)||[])].flat();break;
  default:throw Error('Unknown Redis command '+cmd);
  }return Response.json({result});
 };
-beforeEach(()=>{db.clear();z.clear();hash.clear();donations=[];botSends=[];redisFailures=0;});after(()=>{globalThis.fetch=originalFetch;});
+beforeEach(()=>{db.clear();newDb.clear();z.clear();hash.clear();donations=[];botSends=[];redisFailures=0;delete process.env.SPARKLE_NEW_KV_REST_API_URL;delete process.env.SPARKLE_NEW_KV_REST_API_TOKEN;});after(()=>{globalThis.fetch=originalFetch;});
 test('Redis retries a temporary limit response',async()=>{assert.equal(await get('transient-key'),null);assert.equal(redisFailures,2);});
+test('old calendar and frame records move to the new store without changing their keys',async()=>{
+ await set('calendar:old-id',{entries:{'2026-10-12':{text:'配信'}}});await set('img:old-image','data:image/png;base64,AAAA');
+ process.env.SPARKLE_NEW_KV_REST_API_URL='https://new-redis.test';process.env.SPARKLE_NEW_KV_REST_API_TOKEN='new-test-token';
+ assert.equal((await get('calendar:old-id')).entries['2026-10-12'].text,'配信');assert.equal(await get('img:old-image'),'data:image/png;base64,AAAA');
+ db.clear();assert.equal((await get('calendar:old-id')).entries['2026-10-12'].text,'配信');assert.equal(await get('img:old-image'),'data:image/png;base64,AAAA');
+});
 const request=(path,method='GET',value,authenticated=false)=>new Request('https://sparkle.test'+path,{method,headers:{origin:'https://sparkle.test',...(authenticated?{cookie:'sparkle_owner=owner'}:{})},...(!['GET','HEAD'].includes(method)?{body:JSON.stringify(value)}:{})});
 test('calendar issues a separate public OBS link and only its owner can update it',async()=>{
  await set('owner:owner','account');
