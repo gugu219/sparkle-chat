@@ -1,5 +1,6 @@
 import {handle,json,get,set,command} from '../lib/store.js';
 import {append,normalizeTwitch} from '../lib/events.js';
+import {handleBotChat} from '../lib/bot.js';
 export const config={runtime:'edge'};
 export default handle(async req=>{
  if(req.method!=='POST')return json({error:'Method not allowed'},405);
@@ -14,6 +15,10 @@ export default handle(async req=>{
  if(kind==='webhook_callback_verification')return new Response(data.challenge,{headers:{'Content-Type':'text/plain'}});
  const account=await get('twitch-user:'+data.subscription?.condition?.broadcaster_user_id);if(!account)return new Response(null,{status:204});
  if(kind==='revocation'){await set('connection-error:'+account,'Twitchが購読を解除しました。再接続してください。');return new Response(null,{status:204});}
+ if(data.subscription.type==='channel.chat.message'){
+  try{await handleBotChat(account,data.event,id);}catch(error){await set('bot-error:'+account,error.message||'Twitchへ投稿できませんでした。',86400);}
+  return new Response(null,{status:204});
+ }
  const event=normalizeTwitch(data.subscription.type,data.event,id,time);
  if(await append(account,event)){
   if(event.type==='stream.online')await set('stream:'+account,{id:event.streamId,live:true,time,streaks:{}});
