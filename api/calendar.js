@@ -2,10 +2,17 @@ import {owner,sameOrigin,get,set,random,json} from '../lib/store.js';
 
 const kinds=new Set(['stream','rest','game','chat','sing','drink']);
 const key=id=>`calendar:${id}`;
+const ownerKey=account=>`calendar-owner:${account}`;
+const ttl=60*60*24*365*2;
 async function handle(req){
  try{
   const url=new URL(req.url);
   if(req.method==='GET'){
+   if(url.searchParams.get('mine')==='1'){
+    const account=await owner(req),id=await get(ownerKey(account));
+    const record=id&&await get(key(id));
+    return record?.owner===account?json({id,entries:record.entries,updatedAt:record.updatedAt}):json({error:'専用カレンダーはまだありません'},404);
+   }
    const id=url.searchParams.get('id')||'';
    if(!/^[a-f0-9]{32}$/.test(id))return json({error:'カレンダーが見つかりません'},404);
    const record=await get(key(id));
@@ -29,9 +36,13 @@ async function handle(req){
   const id=String(body.id||'');
   if(id&&!/^[a-f0-9]{32}$/.test(id))return json({error:'リンクが正しくありません'},400);
   if(id){const existing=await get(key(id));if(!existing||existing.owner!==account)return json({error:'このカレンダーは更新できません'},403);}
-  const calendarId=id||random().slice(0,32);
+  const savedId=await get(ownerKey(account));
+  const savedRecord=savedId&&await get(key(savedId));
+  if(id&&savedRecord?.owner===account&&id!==savedId)return json({error:'別の専用カレンダーが登録されています。ページを再読み込みしてください。'},409);
+  const calendarId=id||(savedRecord?.owner===account?savedId:random().slice(0,32));
   const updatedAt=new Date().toISOString();
-  await set(key(calendarId),{owner:account,entries:clean,updatedAt},60*60*24*365*2);
+  await set(key(calendarId),{owner:account,entries:clean,updatedAt},ttl);
+  await set(ownerKey(account),calendarId,ttl);
   return json({id:calendarId,updatedAt});
  }catch(e){return json({error:e.message||'保存に失敗しました'},e.message?.includes('再接続')?401:500);}
 }
