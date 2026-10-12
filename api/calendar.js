@@ -16,7 +16,7 @@ async function handle(req){
    const id=url.searchParams.get('id')||'';
    if(!/^[a-f0-9]{32}$/.test(id))return json({error:'カレンダーが見つかりません'},404);
    const record=await get(key(id));
-   return record?json({entries:record.entries,updatedAt:record.updatedAt}):json({error:'カレンダーが見つかりません'},404);
+   return record?Response.json({entries:record.entries,updatedAt:record.updatedAt},{headers:{'Cache-Control':'public, s-maxage=15, stale-while-revalidate=5'}}):json({error:'カレンダーが見つかりません'},404);
   }
   if(req.method!=='POST')return json({error:'Method not allowed'},405);
   sameOrigin(req);
