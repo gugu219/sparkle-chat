@@ -47,6 +47,8 @@ test('calendar issues a separate public OBS link and only its owner can update i
  assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{}}))).status,401);
  const created=await calendarApi(request('/api/calendar','POST',{entries:{'2026-10-12':{kind:'game',text:'テスト配信',startHour:'21'}}},true));
  assert.equal(created.status,200);const {id}=await created.json();
+ assert.equal((await calendarApi(request('/api/calendar?mine=1'))).status,401);
+ assert.equal((await (await calendarApi(request('/api/calendar?mine=1','GET',null,true))).json()).id,id);
  const read=await (await calendarApi(request('/api/calendar?id='+id))).json();
  assert.equal(read.entries['2026-10-12'].text,'テスト配信');assert.equal(read.entries['2026-10-12'].startHour,'21');assert.equal(read.owner,undefined);
  await set('owner:owner','other');
@@ -57,6 +59,9 @@ test('calendar issues a separate public OBS link and only its owner can update i
  const edited=await calendarApi(request('/api/calendar','POST',{id,entries:{'2026-10-01':{kind:'chat',text:'配信後に修正',startHour:'',overrideHistory:true}}},true));
  assert.equal(edited.status,200);
  assert.equal((await (await calendarApi(request('/api/calendar?id='+id))).json()).entries['2026-10-01'].overrideHistory,true);
+ const automatic=await calendarApi(request('/api/calendar','POST',{entries:{'2026-10-14':{kind:'game',text:'変更した予定'}}},true));
+ assert.equal((await automatic.json()).id,id);
+ assert.equal((await (await calendarApi(request('/api/calendar?id='+id))).json()).entries['2026-10-14'].text,'変更した予定');
  assert.equal((await calendarApi(request('/api/calendar','POST',{entries:{'2026-10-01':{overrideHistory:'true'}}},true))).status,400);
 });
 test('encrypted secrets round-trip and reject modified ciphertext',async()=>{const encrypted=await seal({token:'private'});assert.equal(JSON.stringify(encrypted).includes('private'),false);assert.deepEqual(await unseal(encrypted),{token:'private'});encrypted.data[0]^=1;await assert.rejects(()=>unseal(encrypted));});
