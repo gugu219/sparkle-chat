@@ -22,7 +22,7 @@ const overlay=document.body.classList.contains('calendar-overlay');
 const params=new URLSearchParams(location.search);
 const now=new Date();let year=Number(params.get('year'))||now.getFullYear(),month=Number(params.get('month'))||now.getMonth()+1;
 if(month<1||month>12){year=now.getFullYear();month=now.getMonth()+1;}
-let entries={},historyEntries={},selected='',calendarId='';
+let entries={},historyEntries={},selected='',calendarId='',revision=0,loading=true,saving=false,canSync=true;
 try{if(!overlay){entries=JSON.parse(localStorage.getItem(localKey)||'{}');calendarId=localStorage.getItem(idKey)||'';}}catch{}
 const grid=document.getElementById('calendar-grid'),title=document.getElementById('month-title');
 const currentEntry=key=>{const manual=entries[key],history=historyEntries[key];const entry=history&&!manual?.overrideHistory?history:manual||history||{};return entry.kind==='drink'?{...entry,kind:'chat'}:entry;};
@@ -58,10 +58,25 @@ function select(key){
  render();
 }
 async function refreshHistory(){try{const response=await fetch('/api/calendar-history',{cache:'no-store'});if(!response.ok)return;const data=await response.json();historyEntries=data.entries||{};render();if(!overlay){document.getElementById('history-status').textContent=data.synced?'配信履歴シートと同期中。未編集の日はシートの記録を表示します。追記は約5分以内に反映されます。':'10月1〜10日の履歴を表示中。シートへの接続を再試行します。';if(selected)select(selected);}}catch{}}
-function draft(){try{localStorage.setItem(localKey,JSON.stringify(entries));}catch{}document.getElementById('save-status').textContent=calendarId?'変更を保存しています…':'この端末に下書き保存しました。';if(calendarId){clearTimeout(draft.timer);draft.timer=setTimeout(()=>save(false),700);}}
+function draft(){revision++;try{localStorage.setItem(localKey,JSON.stringify(entries));}catch{}document.getElementById('save-status').textContent=canSync?'変更を保存しています…':'この端末に下書き保存しました。Twitchを接続するとOBSにも反映できます。';if(canSync&&!loading){clearTimeout(draft.timer);draft.timer=setTimeout(()=>save(false),700);}}
 function showObsLink(){const link=new URL('calendar-view.html',location.href);if(calendarId)link.searchParams.set('id',calendarId);document.getElementById('obs-url').value=link.href;document.getElementById('obs-open').href=link.href;return link.href;}
-async function save(copy){const status=document.getElementById('save-status');try{const response=await fetch('/api/calendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:calendarId||undefined,entries})});const result=await response.json();if(!response.ok)throw Error(result.error||'保存できませんでした');calendarId=result.id;localStorage.setItem(idKey,calendarId);const link=showObsLink();status.textContent='保存済み。OBSには数秒以内に反映されます。';if(copy){try{await navigator.clipboard.writeText(link);status.textContent='専用URLをコピーしました。OBSの別ブラウザソースに貼ってください。';}catch{document.getElementById('obs-url').select();status.textContent='URLを選択しました。コピーしてOBSに貼ってください。';}}}catch(error){status.textContent=error.message+' 入力内容はこの端末に残っています。';}}
-async function load(){showObsLink();if(!calendarId)return;try{const r=await fetch('/api/calendar?id='+encodeURIComponent(calendarId),{cache:'no-store'});if(!r.ok)return;const data=await r.json();entries=data.entries||{};render();}catch{}}
+async function save(copy){
+ if(loading){loading=false;}if(saving){clearTimeout(draft.timer);draft.timer=setTimeout(()=>save(copy),350);return;}
+ saving=true;const status=document.getElementById('save-status'),savedRevision=revision;
+ try{const response=await fetch('/api/calendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:calendarId||undefined,entries})});const result=await response.json();if(!response.ok){if(response.status===401)canSync=false;throw Error(result.error||'保存できませんでした');}calendarId=result.id;localStorage.setItem(idKey,calendarId);const link=showObsLink();status.textContent='保存済み。同じOBS用URLへ数秒以内に反映されます。';if(copy){try{await navigator.clipboard.writeText(link);status.textContent='OBS用URLをコピーしました。次回から貼り直しは不要です。';}catch{document.getElementById('obs-url').select();status.textContent='URLを選択しました。OBSには一度だけ貼ってください。';}}}
+ catch(error){status.textContent=error.message+' 入力内容はこの端末に残っています。';}
+ finally{saving=false;if(canSync&&revision!==savedRevision){clearTimeout(draft.timer);draft.timer=setTimeout(()=>save(false),700);}}
+}
+async function load(){
+ showObsLink();const startedAt=revision;
+ try{const r=await fetch('/api/calendar?mine=1',{cache:'no-store'});
+  if(r.status===401){canSync=false;document.getElementById('save-status').textContent='Twitchを接続すると固定URLへの自動保存が使えます。';return;}
+  if(r.status===404){if(calendarId){const old=await fetch('/api/calendar?id='+encodeURIComponent(calendarId),{cache:'no-store'});if(old.ok&&revision===startedAt){entries=(await old.json()).entries||{};render();}else if(!old.ok){calendarId='';localStorage.removeItem(idKey);showObsLink();}}return;}
+  if(!r.ok)throw Error('カレンダーを読み込めませんでした');
+  const data=await r.json();calendarId=data.id;localStorage.setItem(idKey,calendarId);showObsLink();if(revision===startedAt){entries=data.entries||{};localStorage.setItem(localKey,JSON.stringify(entries));render();}document.getElementById('save-status').textContent='このURLは固定です。編集するとOBSにも自動反映されます。';
+ }catch{document.getElementById('save-status').textContent='読み込みに失敗しました。入力内容はこの端末に残っています。';}
+ finally{loading=false;if(canSync&&(revision!==startedAt||!calendarId))save(false);}
+}
 render();
 if(!overlay){const status=document.createElement('p');status.id='history-status';status.setAttribute('role','status');status.textContent='2026年10月以降の配信履歴を読み込み中…';document.querySelector('.editor-card').prepend(status);const note=document.createElement('p');note.id='recorded-note';note.hidden=true;document.getElementById('day-editor').prepend(note);}
 refreshHistory();setInterval(refreshHistory,5*60*1000);
