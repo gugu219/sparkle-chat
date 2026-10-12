@@ -4,7 +4,7 @@
  if(qs.has('id')&&!qs.has('preview')){
   const current=JSON.stringify(cfg),key=qs.get('id');
   setInterval(async()=>{try{const r=await fetch('/api/config?id='+encodeURIComponent(key),{cache:'no-store'});if(!r.ok)return;
-    if(JSON.stringify(await r.json())!==current)location.reload();}catch{}},4000);
+    if(JSON.stringify(await r.json())!==current)location.reload();}catch{}},20000);
  }
  if(qs.has('preview'))cfg=await new Promise(resolve=>{window.addEventListener('message',function receive(e){if(e.origin!==location.origin||e.source!==parent||e.data?.source!=='prism-editor'||e.data.type!=='all-config')return;window.removeEventListener('message',receive);resolve(e.data.config);});parent.postMessage({source:'sparkle-all-ready'},location.origin);});
  const frames=new Map(),order=['frame','extras','chat','alert'],files={frame:'frame.html',extras:'extras.html',chat:'view.html',alert:'alert.html'};
@@ -22,5 +22,5 @@
  for(const frame of frames.values())frame.addEventListener('load',()=>{frame._ready=true;if(frame.title==='frame')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-settings',settings:cfg.frame},location.origin);if(latest)frame.contentWindow.postMessage({source:'sparkle-relay',payload:{...latest,events:frame._pending}},location.origin);frame._pending=[];});
  window.addEventListener('sparkle-events',e=>relay(e.detail));
  // relay.js is loaded once here, after settings have resolved.
- const script=document.createElement('script');script.src='relay.js';document.body.append(script);
+ const script=document.createElement('script');script.src='relay.js?v=2';document.body.append(script);
 })();
