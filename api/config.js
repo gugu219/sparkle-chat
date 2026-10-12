@@ -37,6 +37,6 @@ export default async function(req){
     if(!key) return json({error:'Missing id'}, 400);
     const data = await redis().get(`cfg:${key}`);
     if(!data) return json({error:'Not found'}, 404);
-    return json(typeof data === 'string' ? JSON.parse(data) : data);
+    return Response.json(typeof data === 'string' ? JSON.parse(data) : data, {headers:{'Cache-Control':'public, s-maxage=15, stale-while-revalidate=5','Referrer-Policy':'no-referrer'}});
   }catch(e){ return json({error: e.message}, e.message?.includes('再接続')?401:500); }
 };
