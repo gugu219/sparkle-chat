@@ -17,13 +17,14 @@ import {validWidget} from '../api/integrations.js';
 import {syncDonations} from '../lib/streamlabs.js';
 import {cleanBotConfig,handleBotChat} from '../lib/bot.js';
 import botApi from '../api/bot.js';
-const originalFetch=globalThis.fetch;const db=new Map(),z=new Map(),hash=new Map();let donations=[],botSends=[];
+const originalFetch=globalThis.fetch;const db=new Map(),z=new Map(),hash=new Map();let donations=[],botSends=[],redisFailures=0;
 Object.assign(process.env,{UPSTASH_REDIS_REST_URL:'https://redis.test',UPSTASH_REDIS_REST_TOKEN:'test',APP_ENCRYPTION_KEY:'test-only-encryption-key-32-characters',TWITCH_WEBHOOK_SECRET:'test-only-webhook-secret-32-characters',TWITCH_CLIENT_ID:'client',TWITCH_CLIENT_SECRET:'test',APP_BASE_URL:'https://sparkle.test'});
 globalThis.fetch=async(url,options={})=>{
  if(String(url)==='https://api.twitch.tv/helix/chat/messages'){botSends.push(JSON.parse(options.body));return Response.json({data:[{message_id:'sent-'+botSends.length,is_sent:true}]});}
  if(String(url).startsWith('https://streamlabs.com/')){const q=new URL(url).searchParams;let rows=donations.filter(d=>(!q.get('after')||d.donation_id>+q.get('after'))&&(!q.get('before')||d.donation_id<+q.get('before')));return Response.json({data:rows.slice(0,100)});}
  if(String(url)!=='https://redis.test')throw Error('Unexpected network access: '+url);
  const [cmd,key,...args]=JSON.parse(options.body);let result=null;
+ if(key==='transient-key'&&redisFailures++===0)return Response.json({error:'rate limit exceeded'},{status:400});
  switch(cmd){
  case 'GET':result=db.get(key)??null;break;
  case 'GETDEL':result=db.get(key)??null;db.delete(key);break;
@@ -40,7 +41,8 @@ globalThis.fetch=async(url,options={})=>{
  default:throw Error('Unknown Redis command '+cmd);
  }return Response.json({result});
 };
-beforeEach(()=>{db.clear();z.clear();hash.clear();donations=[];botSends=[];});after(()=>{globalThis.fetch=originalFetch;});
+beforeEach(()=>{db.clear();z.clear();hash.clear();donations=[];botSends=[];redisFailures=0;});after(()=>{globalThis.fetch=originalFetch;});
+test('Redis retries a temporary limit response',async()=>{assert.equal(await get('transient-key'),null);assert.equal(redisFailures,2);});
 const request=(path,method='GET',value,authenticated=false)=>new Request('https://sparkle.test'+path,{method,headers:{origin:'https://sparkle.test',...(authenticated?{cookie:'sparkle_owner=owner'}:{})},...(!['GET','HEAD'].includes(method)?{body:JSON.stringify(value)}:{})});
 test('calendar issues a separate public OBS link and only its owner can update it',async()=>{
  await set('owner:owner','account');
