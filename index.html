@@ -8,13 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700;900&family=Kosugi+Maru&family=Shippori+Mincho:wght@500;700;800&family=Zen+Old+Mincho:wght@400;700;900&family=DotGothic16&family=Yuji+Syuku&family=Klee+One:wght@400;600&family=Inter:wght@400;500;700;800&family=Poppins:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&family=Playfair+Display:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=2">
-  <link rel="stylesheet" href="cozy.css?v=2">
+  <link rel="stylesheet" href="cozy.css?v=3">
 </head>
 <body class="app-shell theme-selene">
   <header class="app-header">
     <a class="brand" href="./"><span class="brand__mark">✦</span><span>SPARKLE<small>CHAT</small></span></a>
     <a href="bot.html" style="margin-left:auto;margin-right:24px;color:inherit;font-weight:800;text-decoration:none">✦ チャットボット</a><a href="calendar.html" style="margin-right:24px;color:inherit;font-weight:800;text-decoration:none">♡ 配信カレンダー</a>
-    <span class="app-header__status"><i></i> 配信のおへやづくり</span>
+    <button id="apply-all-settings" type="button" class="apply-btn">変更を反映</button><span class="app-header__status"><i></i> 配信のおへやづくり</span>
   </header>
 
   <div class="welcome"><p class="eyebrow">YOUR LITTLE STREAM STUDIO</p><h1>配信ウィジェットを設定する</h1><p>① 接続・通知設定 → ② レイアウトを調整 → ③ まとめURLをOBSへ</p><span class="canvas-tag">✦ FULL HD · 1920 × 1080</span></div><main class="editor-layout">
@@ -521,9 +521,10 @@
 
         <fieldset class="publish-box"><legend>PUBLISH</legend>
           <label class="field-label" for="combined-url">OBSブラウザソース（まとめ・これ1つでOK）</label>
-          <button type="button" id="combined-copy" class="apply-btn">固定OBS URLを発行・コピー</button>
+          <button type="button" id="combined-copy" class="apply-btn">設定を反映して固定URLをコピー</button>
           <div class="url-output"><input id="combined-url" readonly aria-label="まとめ URL"></div>
-          <p id="combined-live-status" class="field-hint" role="status">固定URLを発行すると自動保存が始まります。</p>
+          <p id="combined-live-status" class="field-hint" role="status">変更後は「反映」を押すと固定URLへ保存されます。</p>
+          <div class="backup-url"><label class="field-label" for="combined-backup-url">保存先が使えないときの予備URL</label><p class="field-hint">現在の設定をURLに入れます。保存先への通信は不要です。後で設定を変えたら、URLを作り直してOBSへ貼り直してください。自作画像や通知の取得には保存先が必要です。</p><button type="button" id="combined-backup-copy" class="apply-btn">予備URLを発行・コピー</button><div class="url-output"><input id="combined-backup-url" readonly aria-label="まとめの予備URL"></div><p id="combined-backup-status" class="field-hint" role="status"></p></div>
           <p class="field-hint">このURLを1920×1080のブラウザソース<strong>1つ</strong>に貼ってください。設定変更時にOBSの表示が短く再読み込みされます。</p>
           <p class="field-hint">※ 画像・効果音は先に各タブ（本番サイト上）でアップロードしておくと、まとめURLにも反映されます。</p>
         </fieldset>
@@ -555,6 +556,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=11"></script><script src="studio.js"></script><script src="workspace.js"></script>
+  <script src="script.js?v=12"></script><script src="studio.js?v=2"></script><script src="workspace.js"></script>
 </body>
 </html>

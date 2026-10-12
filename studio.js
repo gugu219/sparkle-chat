@@ -40,5 +40,5 @@
   log.unshift(event);renderLog();notice('#integration-status','サンプルをプレビューに送りました。実通知の受信成功を示すテストではありません。');};
  document.querySelectorAll('[data-integration-test]').forEach(b=>b.onclick=()=>sample(b.dataset.integrationTest));$('#test-streak').onclick=()=>sample('twitch');
  $('#end-stream').onclick=async()=>{try{await api('/api/events',{method:'POST',body:JSON.stringify({action:'end-stream'})});for(const f of stage.querySelectorAll('iframe'))f.contentWindow?.postMessage({source:'sparkle-relay',payload:{events:[],stream:{live:false,streaks:{}}}},location.origin);notice('#integration-status','この配信のバッジを解除しました。累計視聴回数は変更しません。');}catch(e){notice('#integration-status',e.message);}};
- auth();api('/api/integrations').then(j=>{$('#streamlabs-mode').value=j.mode;$('#streamlabs-mode').onchange();notice('#integration-status',`保存済み: Doneru ${j.doneru?'あり':'なし'} / Streamlabs ${j.streamlabs||j.streamlabsApi?'あり':'なし'}。Widget内の通知データはログに取得できません。`);}).catch(()=>{});setInterval(()=>{if(window.sparkleOverlay)loadLog();},15000);
+ auth();api('/api/integrations').then(j=>{$('#streamlabs-mode').value=j.mode;$('#streamlabs-mode').onchange();notice('#integration-status',`保存済み: Doneru ${j.doneru?'あり':'なし'} / Streamlabs ${j.streamlabs||j.streamlabsApi?'あり':'なし'}。Widget内の通知データはログに取得できません。`);}).catch(()=>{});
 })();

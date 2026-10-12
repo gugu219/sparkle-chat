@@ -30,6 +30,7 @@
 .brand,.eyebrow,.intro h1,.back,.calendar-toolbar h2,.month-actions button,.quiet,.sticker-guide span,.weekdays span,.day-number,.edit-card h2,.publish h3,.stickers small,.edit-card label,.publish button,.overlay-heading{font-family:BestTenDOT,'DotGothic16',sans-serif;font-weight:400}
 .overlay-heading{font-weight:400}
 .publish textarea{display:block;width:100%;margin:12px 0;padding:10px;resize:none;border:2px solid #b79b9d;border-radius:2px;background:#fffdf8;color:#463942;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:500;line-height:1.5;overflow-wrap:anywhere;user-select:all}
+.backup-url{margin-top:18px;padding-top:15px;border-top:2px dashed #cdb8bb}.backup-url h3{margin-top:0}.backup-url p{margin:8px 0}.backup-url button{background:#655b72;border-color:#4e475b;box-shadow:4px 4px 0 #b7a7bd}.backup-url button:hover{background:#514960;box-shadow:2px 2px 0 #b7a7bd}
 .obs-open{display:inline-block;margin:2px 0 14px;color:#694c5b;text-decoration:underline;text-underline-offset:4px;font-size:15px}
 
 /* OBS output: only the calendar cells have a translucent dark surface. */
@@ -80,3 +81,4 @@ html.obs-calendar{width:100%;height:100%}
 .calendar-overlay .day-top{gap:8px}
 .calendar-overlay .day-time{padding:6px 8px;background:#1b3849d9;border-color:#8ac5d1;color:#effcff;font-size:17px;box-shadow:0 2px 6px #02060c88}
 @media(max-height:800px){.calendar-overlay .day-top{gap:4px}.calendar-overlay .day-time{padding:3px 4px;font-size:12px}}
+.calendar-editor .top{position:sticky;top:0;z-index:20}.calendar-editor #calendar-apply{margin-left:auto;background:#a56e84;color:#fffaf4;border:2px solid #775669;border-radius:3px;padding:10px 16px;font:14px BestTenDOT,DotGothic16,sans-serif;cursor:pointer;box-shadow:3px 3px 0 #d2aeb9}.calendar-editor #calendar-apply:hover{background:#89576d}

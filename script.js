@@ -358,12 +358,12 @@
     const LIVE_KEY='sparklechat-live-obs-id',liveStatus=document.querySelector('#combined-live-status');
     let fixedId='';try{const saved=localStorage.getItem(LIVE_KEY)||'';if(/^[a-zA-Z0-9]{20}$/.test(saved))fixedId=saved;}catch{}
     const linkFor=id=>`${new URL('all.html',location.href).href}?id=${id}`;
-    if(fixedId){out.value=linkFor(fixedId);liveStatus.textContent='固定URLが設定済みです。変更は自動で保存されます。';}
-    let saveTimer=null,saving=false,dirty=false;
+    if(fixedId){out.value=linkFor(fixedId);liveStatus.textContent='固定URLが設定済みです。変更後は上の「変更を反映」を押してください。';}
+    let saving=false,dirty=false;
     const saveFixed=async()=>{
       if(!fixedId)return false;
       dirty=true;if(saving)return true;
-      saving=true;
+      saving=true;let success=true;
       while(dirty&&fixedId){
         dirty=false;
         const cfg=buildConfig();
@@ -372,16 +372,16 @@
         try{
           const r=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:fixedId,config:cfg})});
           const j=await r.json().catch(()=>({}));
-          if(!r.ok){liveStatus.textContent=j.error||'自動保存できませんでした。';if(r.status===403){fixedId='';out.value='';try{localStorage.removeItem(LIVE_KEY);}catch{}}break;}
-          liveStatus.textContent='保存済み · OBSへ数秒以内に反映されます。';
-        }catch{liveStatus.textContent='通信できません。設定を変えると再試行します。';break;}
+          if(!r.ok){success=false;liveStatus.textContent=j.error||'反映できませんでした。もう一度お試しください。';if(r.status===403){fixedId='';out.value='';try{localStorage.removeItem(LIVE_KEY);}catch{}}break;}
+          liveStatus.textContent='保存済み · OBSへ1分ほどで反映されます。';
+        }catch{success=false;liveStatus.textContent='通信できません。「変更を反映」を押すと再試行します。';break;}
       }
-      saving=false;return !!fixedId;
+      saving=false;return success&&!!fixedId;
     };
-    const scheduleSave=()=>{if(!fixedId)return;liveStatus.textContent='変更を確認中…';clearTimeout(saveTimer);saveTimer=setTimeout(saveFixed,750);};
+    const scheduleSave=()=>{liveStatus.textContent='変更はこの端末の下書きです。上の「変更を反映」を押すとOBS用URLに保存されます。';};
     for(const id of ['widget-form','frame-form','alert-form','extras-form','combined-form']){
       const source=document.getElementById(id);source?.addEventListener('input',scheduleSave);source?.addEventListener('change',scheduleSave);
-      source?.addEventListener('click',e=>{if(e.target.closest('button')?.id!=='combined-copy')scheduleSave();});
+      source?.addEventListener('click',e=>{if(!e.target.closest('button'))scheduleSave();});
     }
     document.querySelector('#combined-copy').onclick=async()=>{
       const cfg=buildConfig();if(cfg.frame?.customImage?.startsWith('data:')){flash('自作枠を保存してからURLを発行してください。');return;}
@@ -391,12 +391,25 @@
           const j=await r.json().catch(()=>({}));if(!r.ok||!j.id){flash(j.error||'固定URLを発行できませんでした');return;}
           fixedId=j.id;try{localStorage.setItem(LIVE_KEY,fixedId);}catch{}
         }catch{flash('通信できません。接続を確認して再試行してください。');return;}
-      }else await saveFixed();
+      }else if(!await saveFixed())return;
       if(!fixedId)return;
-      const link=linkFor(fixedId);out.value=link;liveStatus.textContent='固定URLが設定済みです。変更は自動で保存されます。';
+      const link=linkFor(fixedId);out.value=link;liveStatus.textContent='固定URLに反映しました。OBSには1分ほどで表示されます。';
       try{await navigator.clipboard.writeText(link);flash('固定OBS URLをコピーしました');}
       catch{out.select();document.execCommand('copy');flash('固定OBS URLをコピーしました');}
     };
+    document.querySelector('#apply-all-settings')?.addEventListener('click',async()=>{
+      if(!fixedId){document.querySelector('[data-tab="combined"]')?.click();liveStatus.textContent='初回は「設定を反映して固定URLをコピー」を押してください。';return;}
+      if(await saveFixed())liveStatus.textContent='反映しました。OBSには1分ほどで表示されます。';
+    });
+    document.querySelector('#combined-backup-copy')?.addEventListener('click',async()=>{
+      const backup=document.querySelector('#combined-backup-url'),status=document.querySelector('#combined-backup-status'),cfg=buildConfig();
+      if(cfg.frame?.customImage){status.textContent='自作画像は保存先が必要です。内蔵の枠に切り替えると予備URLを発行できます。';return;}
+      const link=inlineUrl(cfg);
+      if(link.length>16000){status.textContent='設定が多くURLに収まりません。使用しない項目を外してください。';return;}
+      backup.value=link;
+      try{await navigator.clipboard.writeText(link);status.textContent='予備URLをコピーしました。設定を変えたら発行し直してください。';}
+      catch{backup.select();status.textContent='予備URLを選択しました。OBSに貼り付けてください。';}
+    });
 
     const fit=()=>{const st=frame.parentElement;if(!st)return;const r=st.getBoundingClientRect();if(!r.width)return;
       const sc=Math.min(r.width/1920,r.height/1080);
