@@ -15,9 +15,12 @@ import integrations from '../api/integrations.js';
 import overlay from '../api/overlay.js';
 import {validWidget} from '../api/integrations.js';
 import {syncDonations} from '../lib/streamlabs.js';
-const originalFetch=globalThis.fetch;const db=new Map(),z=new Map(),hash=new Map();let donations=[];
+import {cleanBotConfig,handleBotChat} from '../lib/bot.js';
+import botApi from '../api/bot.js';
+const originalFetch=globalThis.fetch;const db=new Map(),z=new Map(),hash=new Map();let donations=[],botSends=[];
 Object.assign(process.env,{UPSTASH_REDIS_REST_URL:'https://redis.test',UPSTASH_REDIS_REST_TOKEN:'test',APP_ENCRYPTION_KEY:'test-only-encryption-key-32-characters',TWITCH_WEBHOOK_SECRET:'test-only-webhook-secret-32-characters',TWITCH_CLIENT_ID:'client',TWITCH_CLIENT_SECRET:'test',APP_BASE_URL:'https://sparkle.test'});
 globalThis.fetch=async(url,options={})=>{
+ if(String(url)==='https://api.twitch.tv/helix/chat/messages'){botSends.push(JSON.parse(options.body));return Response.json({data:[{message_id:'sent-'+botSends.length,is_sent:true}]});}
  if(String(url).startsWith('https://streamlabs.com/')){const q=new URL(url).searchParams;let rows=donations.filter(d=>(!q.get('after')||d.donation_id>+q.get('after'))&&(!q.get('before')||d.donation_id<+q.get('before')));return Response.json({data:rows.slice(0,100)});}
  if(String(url)!=='https://redis.test')throw Error('Unexpected network access: '+url);
  const [cmd,key,...args]=JSON.parse(options.body);let result=null;
@@ -37,7 +40,7 @@ globalThis.fetch=async(url,options={})=>{
  default:throw Error('Unknown Redis command '+cmd);
  }return Response.json({result});
 };
-beforeEach(()=>{db.clear();z.clear();hash.clear();donations=[];});after(()=>{globalThis.fetch=originalFetch;});
+beforeEach(()=>{db.clear();z.clear();hash.clear();donations=[];botSends=[];});after(()=>{globalThis.fetch=originalFetch;});
 const request=(path,method='GET',value,authenticated=false)=>new Request('https://sparkle.test'+path,{method,headers:{origin:'https://sparkle.test',...(authenticated?{cookie:'sparkle_owner=owner'}:{})},...(!['GET','HEAD'].includes(method)?{body:JSON.stringify(value)}:{})});
 test('calendar issues a separate public OBS link and only its owner can update it',async()=>{
  await set('owner:owner','account');
@@ -66,6 +69,31 @@ test('official widget URL allowlist rejects lookalikes and javascript',()=>{asse
 test('normalizer uses stable Twitch IDs and ignores bulk gift children',()=>{const e=normalizeTwitch('channel.chat.notification',{notice_type:'watch_streak',chatter_user_id:'12',chatter_user_name:'Mika',watch_streak:{streak_count:12}},'evt','now');assert.equal(e.userId,'12');assert.equal(e.count,12);assert.equal(normalizeTwitch('channel.chat.notification',{notice_type:'sub_gift',sub_gift:{community_gift_id:'bulk'}},'evt','now'),null);});
 async function signed(payload,id='message',time=new Date().toISOString(),signatureOverride){const text=JSON.stringify(payload);const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(process.env.TWITCH_WEBHOOK_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);const bytes=new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(id+time+text)));return new Request('https://sparkle.test/api/twitch-hook',{method:'POST',headers:{'Twitch-Eventsub-Message-Id':id,'Twitch-Eventsub-Message-Timestamp':time,'Twitch-Eventsub-Message-Signature':signatureOverride||'sha256='+Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join(''),'Twitch-Eventsub-Message-Type':payload.challenge?'webhook_callback_verification':'notification'},body:text});}
 test('webhook validates signature and freshness before accepting challenge',async()=>{assert.equal(await (await hook(await signed({challenge:'verify'}))).text(),'verify');assert.equal((await hook(await signed({challenge:'bad'},'x',new Date().toISOString(),'sha256='+'0'.repeat(64)))).status,403);assert.equal((await hook(await signed({challenge:'old'},'x',new Date(Date.now()-700000).toISOString()))).status,403);});
+test('bot validates simple commands and rejects duplicates',()=>{
+ assert.deepEqual(cleanBotConfig({enabled:true,commands:[{name:'!Discord',response:'Join us'}],promos:['Follow us'],interval:30}).commands,[{name:'discord',response:'Join us'}]);
+ assert.throws(()=>cleanBotConfig({commands:[{name:'!discord',response:'x'},{name:'discord',response:'y'}],promos:[]}));
+});
+test('only the connected broadcaster can save and read bot rules',async()=>{
+ const config={enabled:false,commands:[{name:'!discord',response:'Discord link'}],promos:[],interval:30};
+ assert.equal((await botApi(request('/api/bot'))).status,401);
+ await set('owner:owner','account');
+ assert.equal((await botApi(request('/api/bot','POST',config,true))).status,200);
+ const data=await (await botApi(request('/api/bot','GET',null,true))).json();
+ assert.equal(data.config.commands[0].name,'discord');
+ assert.equal((await botApi(request('/api/bot','POST',{...config,commands:[{name:'!discord',response:''}]},true))).status,400);
+});
+test('bot replies once and posts promotions only after live interval',async()=>{
+ await set('twitch:account',await seal({userId:'123',accessToken:'private',refreshToken:'private',expiresAt:Date.now()+3600000,validatedAt:Date.now()}));
+ await set('bot:account',{enabled:true,commands:[{name:'discord',response:'Discord link'}],promos:['X link'],interval:30});
+ const commandEvent={chatter_user_id:'456',message_id:'msg1',message:{text:'!discord'}};
+ assert.equal(await handleBotChat('account',commandEvent,'event1'),true);
+ assert.equal(await handleBotChat('account',commandEvent,'event1'),false);
+ assert.equal(botSends.length,1);assert.equal(botSends[0].reply_parent_message_id,'msg1');
+ await set('stream:account',{id:'live1',live:true,time:new Date(Date.now()-31*60000).toISOString()});
+ assert.equal(await handleBotChat('account',{chatter_user_id:'456',message:{text:'hello'}},'event2'),true);
+ assert.equal(await handleBotChat('account',{chatter_user_id:'789',message:{text:'hello'}},'event3'),false);
+ assert.equal(botSends.length,2);assert.equal(botSends[1].message,'X link');
+});
 test('Twitch duplicate notifications create exactly one private log entry',async()=>{await set('twitch-user:123','account');const p={subscription:{type:'channel.follow',condition:{broadcaster_user_id:'123'}},event:{user_name:'Mika',user_id:'456'}};await hook(await signed(p));await hook(await signed(p));assert.equal((await recent('account')).length,1);assert.equal((await eventApi(request('/api/events'))).status,401);});
 test('stream offline clears render badges without altering previous stream data',async()=>{await set('twitch-user:123','account');await set('stream:account',{id:'stream1',live:true,time:new Date(Date.now()-1000).toISOString()});const payload={subscription:{type:'stream.offline',condition:{broadcaster_user_id:'123'}},event:{}};await hook(await signed(payload));assert.equal((await get('stream:account')).live,false);});
 test('Streamlabs first sync ignores history then recovers more than one page without duplicates',async()=>{await set('integrations:account',await seal({mode:'api',streamlabsToken:'private'}));donations=[{donation_id:1,name:'Old',amount:'1'}];await syncDonations('account');assert.equal((await recent('account')).length,0);db.delete('sl-poll:account');donations=Array.from({length:151},(_,i)=>({donation_id:151-i,name:'Mika',amount:'10',currency:'JPY'}));await syncDonations('account');assert.equal((await recent('account')).length,150);db.delete('sl-poll:account');await syncDonations('account');assert.equal((await recent('account')).length,150);});
