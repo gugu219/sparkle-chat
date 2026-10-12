@@ -1,6 +1,7 @@
 import {handle,json,owner,sameOrigin,get,set,remove,body} from '../lib/store.js';
 import {botKey,cleanBotConfig} from '../lib/bot.js';
 import {subscribe} from '../lib/twitch.js';
+export const config={runtime:'edge'};
 export default handle(async req=>{
  const account=await owner(req);
  if(req.method==='GET')return json({config:await get(botKey(account))||{enabled:false,commands:[],promos:[],interval:30},lastPromo:await get('bot-last-promo:'+account),error:await get('bot-error:'+account)});
