@@ -92,9 +92,10 @@
   function cameraGeometry() {
     const ratios = {'16:9':16/9,'1:1':1,'4:3':4/3,'9:16':9/16};
     const ratio = ratios[s.cameraRatio] || ratios['16:9'];
-    const width = Math.round(clamp(s.cameraWidth,120,Math.min(1000,Math.floor(1080*ratio))));
+    const width = Math.round(clamp(s.cameraWidth,120,Math.min(1000,Math.floor((qs.has('portrait')?1920:1080)*ratio))));
     const height = Math.round(width / ratio);
-    return {width,height,x:Math.round(clamp(s.cameraX,0,1920-width)),y:Math.round(clamp(s.cameraY,0,1080-height))};
+    const canvasWidth=qs.has('portrait')?1080:1920,canvasHeight=qs.has('portrait')?1920:1080;
+    return {width,height,x:Math.round(clamp(s.cameraX,0,canvasWidth-width)),y:Math.round(clamp(s.cameraY,0,canvasHeight-height))};
   }
   function applyCamera() {
     const {width,height,x,y}=cameraGeometry();
@@ -115,7 +116,7 @@
   function apply() {
     let custom=document.querySelector('#custom-frame');if(!custom){custom=document.createElement('img');custom.id='custom-frame';custom.alt='';document.body.appendChild(custom);}
     const path=String(s.customImage||'');custom.hidden=!path;stage.style.display=path?'none':'';
-    if(path && (/^data:image\/(png|jpeg|webp);base64,/.test(path)||/^\/api\/image\?id=[a-f0-9]+$/.test(path))){custom.src=path;Object.assign(custom.style,{position:'fixed',width:'1920px',height:'1080px',objectFit:'contain',left:clamp(s.customX,-1920,1920)+'px',top:clamp(s.customY,-1080,1080)+'px',opacity:clamp(s.customOpacity,0,100)/100,transform:'scale('+clamp(s.customScale,10,200)/100+')',transformOrigin:'top left'});}else custom.hidden=true;
+    if(path && (/^data:image\/(png|jpeg|webp);base64,/.test(path)||/^\/api\/image\?id=[a-f0-9]+$/.test(path))){custom.src=path;Object.assign(custom.style,{position:'fixed',width:(qs.has('portrait')?1080:1920)+'px',height:(qs.has('portrait')?1920:1080)+'px',objectFit:'contain',left:clamp(s.customX,-1920,1920)+'px',top:clamp(s.customY,-1920,1920)+'px',opacity:clamp(s.customOpacity,0,100)/100,transform:'scale('+clamp(s.customScale,10,200)/100+')',transformOrigin:'top left'});}else custom.hidden=true;
 
     const cs = palette(), blocks = s.mode === 'blocks';
     root.style.setProperty('--stage-w', clamp(s.fpw, 10, 100) + '%');   /* free frame ratio */
@@ -268,8 +269,8 @@
     let drag=null;
     camera.addEventListener('pointerdown',e=>{if(camera.hidden)return;const g=cameraGeometry();drag={id:e.pointerId,startX:e.clientX,startY:e.clientY,originX:g.x,originY:g.y,width:g.width,height:g.height};camera.setPointerCapture(e.pointerId);e.preventDefault();});
     camera.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;
-      s.cameraX=String(Math.round(clamp(drag.originX+(e.clientX-drag.startX),0,1920-drag.width)));
-      s.cameraY=String(Math.round(clamp(drag.originY+(e.clientY-drag.startY),0,1080-drag.height)));
+      s.cameraX=String(Math.round(clamp(drag.originX+(e.clientX-drag.startX),0,(qs.has('portrait')?1080:1920)-drag.width)));
+      s.cameraY=String(Math.round(clamp(drag.originY+(e.clientY-drag.startY),0,(qs.has('portrait')?1920:1080)-drag.height)));
       applyCamera();
       parent.postMessage({source:'sparkle-camera-move',x:s.cameraX,y:s.cameraY},location.origin);
     });
