@@ -147,6 +147,17 @@ test('fixed OBS URL updates in place only for its owner',async()=>{
  assert.equal((await configApi(request('/api/config','POST',{id,config:{frame:{cameraOn:'0'}}},true))).status,403);
  assert.equal((await (await configApi(request('/api/config?id='+id))).json()).frame.cameraOn,'1');
 });
+test('portrait OBS config gets a separate URL and keeps its canvas layout',async()=>{
+ await set('owner:owner','account');await set('profile:account',{overlay:'a'.repeat(64)});
+ const landscape=await configApi(request('/api/config','POST',{config:{layout:'landscape',frame:{cameraOn:'0'}}},true));
+ const portrait=await configApi(request('/api/config','POST',{config:{layout:'portrait',frame:{cameraOn:'1',cameraRatio:'9:16',cameraX:'300',cameraY:'1060'}}},true));
+ assert.equal(landscape.status,200);assert.equal(portrait.status,200);
+ const landId=(await landscape.json()).id,portraitId=(await portrait.json()).id;
+ assert.notEqual(landId,portraitId);
+ const saved=await (await configApi(request('/api/config?id='+portraitId))).json();
+ assert.equal(saved.layout,'portrait');assert.equal(saved.frame.cameraRatio,'9:16');
+ assert.equal((await (await configApi(request('/api/config?id='+landId))).json()).frame.cameraOn,'0');
+});
 test('unreadable old integration settings can be replaced with new URLs',async()=>{
  await set('owner:owner','account');await set('integrations:account',{iv:[],data:[]});
  assert.equal((await integrations(request('/api/integrations','GET',null,true))).status,409);
