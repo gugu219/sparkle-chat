@@ -20,7 +20,7 @@
 
   const DEFAULTS = {
     customImage:'',customX:'0',customY:'0',customScale:'100',customOpacity:'100',customLayer:'back',fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
-    cameraOn:'0',cameraRatio:'16:9',cameraWidth:'480',cameraX:'1360',cameraY:'720',cameraStroke:'12',
+    cameraOn:'0',cameraRatio:'16:9',cameraWidth:'480',cameraX:'1360',cameraY:'720',cameraStroke:'12',dividerOn:'0',dividerY:'960',dividerWidth:'12',
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
@@ -48,6 +48,7 @@
   const sparkles = document.querySelector('#sparkles');
   const particles = document.querySelector('#particles');
   const camera = document.querySelector('#camera-frame');
+  const divider = document.querySelector('#divider-line');
 
   const clamp = (v, lo, hi) => { const n = parseFloat(v); return Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo)); };
   const hex = (v, fb) => { const h = String(v || '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6); return h.length === 6 ? '#' + h : fb; };
@@ -125,6 +126,10 @@
     root.style.setProperty('--fr', clamp(s.fr, 0, 900) + 'px');
     root.style.setProperty('--grad-conic', conicOf(cs, blocks));
     root.style.setProperty('--grad-linear', linearOf(cs, blocks));
+    divider.hidden=!qs.has('portrait')||s.dividerOn!=='1';
+    root.style.setProperty('--divider-y',clamp(s.dividerY,0,1920)+'px');
+    root.style.setProperty('--divider-h',clamp(s.dividerWidth,2,40)+'px');
+    root.style.setProperty('--divider-glow',cs[0]||'#ff91c8');
     root.style.setProperty('--glow', (clamp(s.glow, 0, 100) / 100).toFixed(3));
     root.style.setProperty('--flow', ((110 - clamp(s.flow, 0, 100)) / 2).toFixed(1) + 's');
     root.style.setProperty('--shine', ((110 - clamp(s.shine, 0, 100)) / 8).toFixed(2) + 's');
