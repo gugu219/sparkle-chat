@@ -1,13 +1,14 @@
 const form=document.querySelector('#portrait-form'),preview=document.querySelector('#portrait-preview'),stage=document.querySelector('#preview-stage');
-const status=document.querySelector('#status'),urlField=document.querySelector('#portrait-url'),openOutput=document.querySelector('#open-output');
+const status=document.querySelector('#status'),applyStatus=document.querySelector('#apply-status'),applyButton=document.querySelector('#apply-portrait'),publishButton=document.querySelector('#publish'),urlField=document.querySelector('#portrait-url'),openOutput=document.querySelector('#open-output');
 const draftKey='sparklechat-portrait-settings-v1',idKey='sparklechat-portrait-obs-id-v1';
 const stored=(()=>{try{return JSON.parse(localStorage.getItem(draftKey)||'{}');}catch{return {};}})();
 for(const [key,value] of Object.entries(stored)){const control=form.elements[key];if(!control)continue;if(control.type==='checkbox')control.checked=value===true;else control.value=String(value);}
 let fixedId='';try{const value=localStorage.getItem(idKey)||'';if(/^[a-zA-Z0-9]{20}$/.test(value))fixedId=value;}catch{}
 const outputUrl=id=>new URL(`all.html?id=${encodeURIComponent(id)}`,location.href).href;
-if(fixedId){urlField.value=outputUrl(fixedId);openOutput.href=urlField.value;status.textContent='縦配信用の固定URLがあります。変更後は下のボタンで反映してください。';}
+if(fixedId){urlField.value=outputUrl(fixedId);openOutput.href=urlField.value;status.textContent='縦配信用の固定URLがあります。変更後は上の「変更を反映」を押してください。';}
 const clamp=(value,min,max)=>Math.min(max,Math.max(min,Number(value)||min));
 function values(){const data={};for(const element of form.elements){if(!element.name)continue;data[element.name]=element.type==='checkbox'?element.checked:element.value;}return data;}
+let savedSnapshot=JSON.stringify(values());
 function config(){
  const v=values(),channel=String(v.channel||'').trim();
  const cfg={layout:'portrait',channel};
@@ -34,14 +35,21 @@ function update(){
  if(+form.elements.cameraY.value>+form.elements.cameraY.max)form.elements.cameraY.value=form.elements.cameraY.max;
  try{localStorage.setItem(draftKey,JSON.stringify(values()));}catch{}
  clearTimeout(previewTimer);previewTimer=setTimeout(()=>{const cfg=config();if(cfg.chat)cfg.chat.preview='1';preview.src='all.html?c='+encodeURIComponent(JSON.stringify(cfg));},250);
- if(fixedId)status.textContent='変更はこの端末に保存しました。OBSへの反映は「縦配信用URLを発行・反映してコピー」を押してください。';
+ if(fixedId&&JSON.stringify(values())!==savedSnapshot){status.textContent='変更はこの端末に保存しました。上の「変更を反映」でOBSへ保存してください。';applyStatus.textContent='未反映の変更があります';applyButton.textContent='変更を反映';}
 }
 form.addEventListener('input',update);form.addEventListener('change',update);update();
-document.querySelector('#publish').addEventListener('click',async()=>{
- const button=document.querySelector('#publish');button.disabled=true;status.textContent='縦配信の設定を保存中…';
+async function save(copy){
+ applyButton.disabled=true;publishButton.disabled=true;applyButton.textContent='保存中…';applyStatus.textContent='保存中…';status.textContent='縦配信の設定を保存中…';
+ const snapshot=JSON.stringify(values());
  try{const response=await fetch('/api/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:fixedId||undefined,config:config()})});const data=await response.json();if(!response.ok)throw Error(data.error||'保存できませんでした');
   fixedId=data.id;localStorage.setItem(idKey,fixedId);urlField.value=outputUrl(fixedId);openOutput.href=urlField.value;
-  try{await navigator.clipboard.writeText(urlField.value);status.textContent='縦配信用URLを保存してコピーしました。OBSへ約1分で反映されます。';}
-  catch{urlField.select();status.textContent='縦配信用URLを保存しました。入力欄からコピーしてください。';}
- }catch(error){status.textContent=error.message+'。設定はこの端末に残っています。';}finally{button.disabled=false;}
-});
+  savedSnapshot=snapshot;const changedDuringSave=JSON.stringify(values())!==snapshot;
+  applyStatus.textContent=changedDuringSave?'未反映の変更があります':'保存済み・OBSへ反映中';applyButton.textContent=changedDuringSave?'変更を反映':'反映済み';
+  if(copy){try{await navigator.clipboard.writeText(urlField.value);status.textContent='縦配信用URLを保存してコピーしました。OBSへ約1分で反映されます。';}
+   catch{urlField.select();status.textContent='縦配信用URLを保存しました。入力欄からコピーしてください。';}}
+  else status.textContent='変更を保存しました。同じOBS URLへ約1分で反映されます。';
+ }catch(error){applyStatus.textContent='保存できませんでした';applyButton.textContent='再試行';status.textContent=error.message+'。設定はこの端末に残っています。';}
+ finally{applyButton.disabled=false;publishButton.disabled=false;}
+}
+applyButton.addEventListener('click',()=>save(!fixedId));
+publishButton.addEventListener('click',()=>save(true));
