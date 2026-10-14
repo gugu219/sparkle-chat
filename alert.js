@@ -19,7 +19,7 @@
   };
 
   const DEFAULTS = {
-    pos: 'bc', skin: 'classic', font: 'maru', anim: 'poyon', dur: '5', tail: '0',
+    pos: 'bc', offsetX: '0', offsetY: '0', skin: 'classic', font: 'maru', anim: 'poyon', dur: '5', tail: '0',
     size: '26', radius: '100', pad: '22',
     txt: '#ffffff', acc: '#ff8fc5',
     ico: '#ffffff', icoBg: '#ff8fc5', icoBgA: '100',
@@ -65,6 +65,8 @@
     const pos = POS.includes(s.pos) ? s.pos : 'bc';
     document.body.className = 'font-' + font + (s.skin === 'minecraft' ? ' mode-minecraft' : '');
     stage.className = 'stage pos-' + pos + ' anim-' + anim + (s.tail === '1' ? '' : ' no-tail');
+    root.style.setProperty('--alert-offset-x', clamp(s.offsetX, -1000, 1000) + 'px');
+    root.style.setProperty('--alert-offset-y', clamp(s.offsetY, -1850, 1850) + 'px');
     setIcon(elIcon.dataset.icon || 'crown');
 
     root.style.setProperty('--size', clamp(s.size, 10, 90) + 'px');
