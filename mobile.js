@@ -18,22 +18,24 @@ function config(){
   cfg.frame={channel,fw:v.fw,fr:v.fr,fri:Math.max(0,+v.fr-14).toString(),fpw:'100',fph:'100',mode:'gradient',ccount:'2',c1:v.c1,c2:v.c2,glow:v.glow,flow:'40',shine:'50',sheenOn:'1',spark:'12',dividerOn:v.dividerOn?'1':'0',dividerY:String(Math.round(clamp(v.dividerPos,10,90)*1920/100)),dividerWidth:v.dividerWidth,cameraOn:v.cameraOn?'1':'0',cameraRatio:v.cameraRatio,cameraWidth:String(width),cameraX:String(clamp(v.cameraX,0,1080-width)),cameraY:String(clamp(v.cameraY,0,1920-height)),cameraStroke:'12'};
  }
  if(v.inc_alert)cfg.alert={channel,pos:v.alertPos,offsetX:v.alertX,offsetY:v.alertY,skin:'classic',font:'maru',anim:'poyon',dur:'5',size:v.alertSize,bg:'#0d0e1b',bgA:'70',vol:'70',sub:'1',resub:'1',gift:'1',follow:'1',bits:'1',points:'1',donate:'1',streak:'1',hype:'1'};
- if(v.inc_extras&&v.telop.trim())cfg.extras={tOn:'1',tFont:'maru',tBg:'#181226',tBgA:'72',tAnchor:'top',tSize:'30',tSpeed:'90',sOn:'0',chOn:'0',telops:JSON.stringify([{n:'LIVE',c:'#ff9ecf',t:v.telop.trim(),d:12}])};
+ if(v.inc_extras&&v.telop.trim())cfg.extras={tOn:'1',tFont:'maru',tBg:'#181226',tBgA:'72',tAnchor:'top',tX:v.telopX,tY:v.telopY,tSize:'30',tSpeed:'90',sOn:'0',chOn:'0',telops:JSON.stringify([{n:'LIVE',c:'#ff9ecf',t:v.telop.trim(),d:12}])};
  return cfg;
 }
 function fit(){preview.style.transform=`scale(${stage.clientWidth/1080})`;}
 new ResizeObserver(fit).observe(stage);fit();
 let previewTimer;
-const chatHandle=document.querySelector('#chat-handle'),alertHandle=document.querySelector('#alert-handle');
+const chatHandle=document.querySelector('#chat-handle'),alertHandle=document.querySelector('#alert-handle'),telopHandle=document.querySelector('#telop-handle');
 function alertAnchor(pos){return{x:pos.endsWith('l')?44:pos.endsWith('r')?1036:540,y:pos.startsWith('b')?1876:44};}
 function positionHandles(v){
- chatHandle.hidden=!v.inc_chat;alertHandle.hidden=!v.inc_alert;
+ chatHandle.hidden=!v.inc_chat;alertHandle.hidden=!v.inc_alert;telopHandle.hidden=!v.inc_extras;
  chatHandle.style.left=`${clamp(v.posX,0,1080)/1080*100}%`;
  chatHandle.style.top=`${clamp(v.posY,0,1920)/1920*100}%`;
  const anchor=alertAnchor(v.alertPos);
  alertHandle.dataset.anchor=v.alertPos;
  alertHandle.style.left=`${clamp(anchor.x+Number(v.alertX||0),0,1080)/1080*100}%`;
  alertHandle.style.top=`${clamp(anchor.y+Number(v.alertY||0),0,1920)/1920*100}%`;
+ telopHandle.style.left=`${clamp(540+Number(v.telopX||0),0,1080)/1080*100}%`;
+ telopHandle.style.top=`${clamp(v.telopY,0,1860)/1920*100}%`;
 }
 function update(){
  const v=values();for(const out of document.querySelectorAll('output[data-for]'))out.textContent=out.dataset.for==='dividerPos'?`上 ${v.dividerPos}% / 下 ${100-v.dividerPos}%`:v[out.dataset.for]+(out.dataset.for==='glow'?'%':'px');
@@ -52,8 +54,8 @@ function update(){
 function dragHandle(handle,kind){
  handle.addEventListener('pointerdown',event=>{event.preventDefault();handle.setPointerCapture(event.pointerId);
   const move=pointer=>{const rect=stage.getBoundingClientRect(),x=clamp(Math.round((pointer.clientX-rect.left)/rect.width*1080),0,1080),y=clamp(Math.round((pointer.clientY-rect.top)/rect.height*1920),0,1920);
-   const anchor=kind==='alert'?alertAnchor(form.elements.alertPos.value):{x:0,y:0};
-   const xInput=form.elements[kind==='alert'?'alertX':'posX'],yInput=form.elements[kind==='alert'?'alertY':'posY'];
+   const anchor=kind==='alert'?alertAnchor(form.elements.alertPos.value):kind==='telop'?{x:540,y:0}:{x:0,y:0};
+   const xInput=form.elements[kind==='alert'?'alertX':kind==='telop'?'telopX':'posX'],yInput=form.elements[kind==='alert'?'alertY':kind==='telop'?'telopY':'posY'];
    xInput.value=String(clamp(x-anchor.x,Number(xInput.min),Number(xInput.max)));
    yInput.value=String(clamp(y-anchor.y,Number(yInput.min),Number(yInput.max)));
    update();};
@@ -62,7 +64,7 @@ function dragHandle(handle,kind){
   handle.addEventListener('pointercancel',()=>handle.removeEventListener('pointermove',move),{once:true});
  });
 }
-dragHandle(chatHandle,'chat');dragHandle(alertHandle,'alert');
+dragHandle(chatHandle,'chat');dragHandle(alertHandle,'alert');dragHandle(telopHandle,'telop');
 form.addEventListener('input',update);form.addEventListener('change',update);update();
 async function save(copy){
  applyButton.disabled=true;publishButton.disabled=true;applyButton.textContent='保存中…';applyStatus.textContent='保存中…';status.textContent='縦配信の設定を保存中…';

@@ -46,7 +46,7 @@
     root.style.setProperty('--t-bg', rgba(s.tBg, s.tBgA));
     root.style.setProperty('--t-size', clamp(s.tSize, 12, 60) + 'px');
     root.style.setProperty('--t-x', clamp(s.tX, -960, 960) + 'px');
-    root.style.setProperty('--t-y', clamp(s.tY, 0, 940) + 'px');
+    root.style.setProperty('--t-y', clamp(s.tY, 0, qs.has('portrait') ? 1860 : 940) + 'px');
     ['anchor-top', 'anchor-bot'].forEach(c => telop.classList.remove(c));
     telop.classList.add(s.tAnchor === 'top' ? 'anchor-top' : 'anchor-bot');
 
