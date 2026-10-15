@@ -63,6 +63,7 @@
   function stopTelop() { cancelAnimationFrame(telRAF); clearTimeout(telSwitchT); }
   function marquee() {
     cancelAnimationFrame(telRAF);
+    if (qs.get('noAnim') === '1') { telText.style.transform = 'translateX(0)'; return; }
     const view = telView.clientWidth || 600;
     const speed = clamp(s.tSpeed, 15, 400);
     telX = view;

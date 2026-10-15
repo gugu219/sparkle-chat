@@ -1,0 +1,11 @@
+/* Static mode for Sparkle Chat's built-in OBS layers. Visibility and timed
+   notifications remain intact; only decorative movement is disabled. */
+html.no-motion *,html.no-motion *::before,html.no-motion *::after{
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
+html.no-motion .sheen,html.no-motion .sparkles,html.no-motion .particles,
+html.no-motion .bubble__shine,html.no-motion .bubble__sparks,
+html.no-motion .bubble__progress{display:none!important}
+html.no-motion .telop__text{transform:translateX(0)!important;will-change:auto}

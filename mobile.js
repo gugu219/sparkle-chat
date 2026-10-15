@@ -11,7 +11,7 @@ function values(){const data={};for(const element of form.elements){if(!element.
 let savedSnapshot=JSON.stringify(values());
 function config(){
  const v=values(),channel=String(v.channel||'').trim();
- const cfg={layout:'portrait',channel};
+ const cfg={layout:'portrait',channel,noAnim:v.noAnim?'1':'0'};
  if(v.inc_chat)cfg.chat={channel,theme:'selene',font:'zen',bg:'glass',opacity:'78',textSize:v.textSize,limit:'10',blur:'1',node:'dot',extras:'1',wrap:'18',badgeStyle:'image',align:'left',posX:v.posX,posY:v.posY,hlA:'90'};
  if(v.inc_frame){const ratios={'16:9':16/9,'1:1':1,'4:3':4/3,'9:16':9/16},ratio=ratios[v.cameraRatio]||16/9;
   const width=clamp(v.cameraWidth,120,Math.min(900,Math.floor(1920*ratio))),height=Math.round(width/ratio);

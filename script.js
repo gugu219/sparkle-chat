@@ -330,7 +330,7 @@
     const inc=name=>{const el=form.elements['inc_'+name];return !el||el.checked;};
     const buildConfig=()=>{
       const ch=form.elements.channel.value.trim();
-      const cfg={channel:ch,overlay:window.sparkleOverlay||''};
+      const cfg={channel:ch,overlay:window.sparkleOverlay||'',noAnim:form.elements.noAnim.checked?'1':'0'};
       const isData=v=>/^data:/i.test(String(v||''));
       ['chat','frame','alert','extras'].forEach(name=>{
         if(!inc(name))return;
@@ -352,7 +352,7 @@
 
     const store=persist(form,'sparklechat-combined',()=>({channel:form.elements.channel.value,
       inc_chat:form.elements.inc_chat.checked?'1':'0',inc_frame:form.elements.inc_frame.checked?'1':'0',
-      inc_alert:form.elements.inc_alert.checked?'1':'0',inc_extras:form.elements.inc_extras.checked?'1':'0'}));
+      inc_alert:form.elements.inc_alert.checked?'1':'0',inc_extras:form.elements.inc_extras.checked?'1':'0',noAnim:form.elements.noAnim.checked?'1':'0'}));
     store.restore();
     [...form.elements].forEach(x=>{x.addEventListener('input',()=>{store.save();refreshPreview();});x.addEventListener('change',()=>{store.save();refreshPreview();});});
 
