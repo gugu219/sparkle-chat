@@ -36,7 +36,7 @@ body.camera-preview .camera-frame{pointer-events:auto;cursor:move;touch-action:n
 .divider-line{position:fixed;z-index:2;left:0;top:var(--divider-y,960px);width:100%;height:var(--divider-h,12px);transform:translateY(-50%);pointer-events:none;background:var(--grad-linear);box-shadow:0 0 14px color-mix(in srgb,var(--divider-glow,#ff91c8) 55%,transparent),0 0 30px color-mix(in srgb,var(--divider-glow,#ff91c8) 30%,transparent);border-block:1px solid rgba(255,255,255,.5)}.divider-line[hidden]{display:none}
 
 /* ---- ring geometry (SVG mask: independent outer / inner radius) ---- */
-.ring{position:absolute;inset:0;
+.ring{position:absolute;inset:0;overflow:hidden;
   -webkit-mask:var(--ringmask) center/100% 100% no-repeat;
   mask:var(--ringmask) center/100% 100% no-repeat}
 
@@ -48,12 +48,19 @@ body.camera-preview .camera-frame{pointer-events:auto;cursor:move;touch-action:n
 .aurora{position:absolute;inset:-60%;background:var(--grad-conic);
   animation:aurora-spin var(--flow) linear infinite;will-change:transform}
 @keyframes aurora-spin{to{transform:rotate(1turn)}}
+/* A square just larger than the viewport diagonal covers every rotation.
+   The previous -60% inset rasterized a much larger full-screen layer. */
+.ring--frame .aurora{inset:auto;left:50%;top:50%;width:120vmax;height:120vmax;
+  animation-name:frame-aurora-spin}
+@keyframes frame-aurora-spin{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
 
 /* ---- glass gloss + hologram sheen ---- */
 .gloss{position:absolute;inset:-60%;background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 46%)}
+.ring--frame .gloss{inset:0}
 .sheen{position:absolute;inset:-60%;opacity:.8;
   background:linear-gradient(115deg,transparent 43%,rgba(255,255,255,.92) 50%,transparent 57%);
   animation:sheen-sweep var(--shine) linear infinite;will-change:transform}
+.ring--frame .sheen{inset:-12% -30%}
 @keyframes sheen-sweep{from{transform:translate3d(-55%,0,0)}to{transform:translate3d(55%,0,0)}}
 .no-sheen .sheen{display:none}
 

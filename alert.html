@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@700;900&family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@700;900&family=Poppins:wght@700;800&family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="alert.css?v=4">
+  <link rel="stylesheet" href="alert.css?v=5">
 <meta name="referrer" content="no-referrer"><link rel="stylesheet" href="cozy.css"><script>if(new URLSearchParams(location.search).get('noAnim')==='1')document.documentElement.classList.add('no-motion')</script><link rel="stylesheet" href="motion.css?v=1"></head>
 <body>
   <div class="stage pos-bc" id="stage">
@@ -42,8 +42,11 @@
     <span class="hype__sparks" id="hype-sparks" aria-hidden="true"></span>
   </div>
   <script type="module">
-    try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
-    catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
+    const q=new URLSearchParams(location.search);
+    if(q.get('channel')&&!q.has('overlay')&&!q.has('preview')){
+      try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
+      catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
+    }
     await import('./alert.js?v=11');
   </script>
 <script src="relay.js?v=3"></script></body>

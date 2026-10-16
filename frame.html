@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SPARKLECHAT — Frame Overlay</title>
-  <link rel="stylesheet" href="frame.css?v=4">
+  <link rel="stylesheet" href="frame.css?v=5">
 <meta name="referrer" content="no-referrer"><link rel="stylesheet" href="cozy.css"><script>if(new URLSearchParams(location.search).get('noAnim')==='1')document.documentElement.classList.add('no-motion')</script><link rel="stylesheet" href="motion.css?v=1"></head>
 <body>
   <div class="stage" id="stage">
@@ -23,8 +23,11 @@
     <div class="camera-frame__ring"><div class="aurora"></div><div class="gloss"></div><div class="sheen"></div></div>
   </div>
   <script type="module">
-    try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
-    catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
+    const q=new URLSearchParams(location.search);
+    if(q.get('channel')&&!q.has('overlay')&&!q.has('preview')){
+      try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
+      catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
+    }
     await import('./frame.js?v=5');
   </script>
 <script src="relay.js?v=3"></script></body>
