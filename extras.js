@@ -141,14 +141,18 @@
 
   /* ---- hourly chime: fire once when the clock reaches :00 ---- */
   let lastHour = new Date().getMinutes() === 0 ? new Date().getHours() : -1;
-  setInterval(() => {
-    if (!on(s.chOn)) return;
+  let chimeTimer = null;
+  function checkChime() {
     const now = new Date();
     if (now.getMinutes() === 0 && now.getHours() !== lastHour) { lastHour = now.getHours(); if (s.chSnd) playSound(s.chSnd, s.chVol); }
     else if (now.getMinutes() !== 0 && lastHour !== -1 && now.getHours() !== lastHour) lastHour = -1;
-  }, 1000);
+  }
+  function syncChime() {
+    clearInterval(chimeTimer);
+    chimeTimer = on(s.chOn) ? setInterval(checkChime, 30000) : null;
+  }
 
-  function restart() { apply(); telStart(); slStart(); }
+  function restart() { apply(); telStart(); slStart(); syncChime(); }
   if (window.ResizeObserver) new ResizeObserver(() => {
     if (telop.classList.contains('is-on')) marquee();
   }).observe(telView);

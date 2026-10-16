@@ -15,11 +15,11 @@
  }
  window.addEventListener('message',e=>{if(e.origin===location.origin&&e.data?.source==='sparkle-frame-ready'&&e.source===frames.get('frame')?.contentWindow)e.source.postMessage({source:'prism-editor',type:'frame-settings',settings:cfg.frame},location.origin);});
  let latest=null;
- function relay(p){latest=p;for(const frame of frames.values()){if(!frame._ready){frame._pending.push(...p.events||[]);continue;}frame.contentWindow?.postMessage({source:'sparkle-relay',payload:p},location.origin);}if(p.widgets)for(const [name,url]of Object.entries(p.widgets)){
+ function relay(p){latest=p;for(const frame of frames.values()){if(frame.title==='extras')continue;if(!frame._ready){frame._pending.push(...p.events||[]);continue;}frame.contentWindow?.postMessage({source:'sparkle-relay',payload:p},location.origin);}if(p.widgets)for(const [name,url]of Object.entries(p.widgets)){
   let f=document.querySelector('[data-widget="'+name+'"]');if(!url){f?.remove();continue;}let u;try{u=new URL(url);}catch{continue;}if(u.protocol!=='https:'||!['doneru.jp','www.doneru.jp','streamlabs.com','www.streamlabs.com'].includes(u.hostname))continue;
   if(!f){f=document.createElement('iframe');f.className='ov';f.dataset.widget=name;f.title=name+' alerts';f.style.zIndex='5';f.allow='autoplay';f.referrerPolicy='no-referrer';f.setAttribute('sandbox','allow-scripts allow-same-origin');document.body.append(f);}if(f.src!==url)f.src=url;
  }}
- for(const frame of frames.values())frame.addEventListener('load',()=>{frame._ready=true;if(frame.title==='frame')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-settings',settings:cfg.frame},location.origin);if(latest)frame.contentWindow.postMessage({source:'sparkle-relay',payload:{...latest,events:frame._pending}},location.origin);frame._pending=[];});
+ for(const frame of frames.values())frame.addEventListener('load',()=>{frame._ready=true;if(frame.title==='frame')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-settings',settings:cfg.frame},location.origin);if(latest&&frame.title!=='extras')frame.contentWindow.postMessage({source:'sparkle-relay',payload:{...latest,events:frame._pending}},location.origin);frame._pending=[];});
  window.addEventListener('sparkle-events',e=>relay(e.detail));
  // relay.js is loaded once here, after settings have resolved.
  const script=document.createElement('script');script.src='relay.js?v=3';document.body.append(script);

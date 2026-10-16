@@ -156,11 +156,13 @@
   function buildSparkles() {
     const n = Math.round(clamp(s.spark, 0, 60)), offset = clamp(s.fw, 0, 300) / 2;
     sparkles.textContent = '';
-    for (let i = 0; i < n; i++) sparkles.appendChild(makeSparkle(offset, false));
+    const batch = document.createDocumentFragment();
+    for (let i = 0; i < n; i++) batch.appendChild(makeSparkle(offset, false));
+    sparkles.appendChild(batch);
   }
 
   /* ---- pile: a simple height-map so items stack instead of overlapping ---- */
-  const PILE_MAX = 340;
+  const PILE_MAX = 120;
   let pileCols = null, pileItems = [];
   function pileClear() { pileCols = null; pileItems.forEach(el => el.remove()); pileItems = []; }
   function pileLanding(xPct, size) {
@@ -186,11 +188,13 @@
       custom: s[kind + 'pCMode'] === 'custom',
       cols: [1, 2, 3, 4].map(i => hex(s[kind + 'pC' + i], '#ffd6ec'))
     };
-    if (!cfg.count) return;
+    if (!cfg.count || qs.get('noAnim') === '1') return;
     const cs = palette(), keys = Object.keys(SHAPES);
     const base = 2.8 - cfg.speed / 100 * 1.8;      /* 2.8s .. 1.0s */
     const H = stage.clientHeight || 1080;
-    for (let i = 0; i < Math.min(cfg.count, 200); i++) {
+    const batch = document.createDocumentFragment(), temporary = [];
+    let longest = 0;
+    for (let i = 0; i < Math.min(cfg.count, 96); i++) {
       const el = document.createElement('i');
       const shape = cfg.shape === 'mix' ? pick(keys) : (SHAPES[cfg.shape] ? cfg.shape : 'shine');
       const size = cfg.size * (.65 + Math.random() * .7);
@@ -229,31 +233,38 @@
       }
       el.style.setProperty('--pr', ((Math.random() - .5) * spin).toFixed(0) + 'deg');
       el.style.setProperty('--pd', dur.toFixed(2) + 's');
-      particles.appendChild(el);
+      batch.appendChild(el);
 
       if (cfg.motion === 'pile') {
         pileItems.push(el);
         while (pileItems.length > PILE_MAX) pileItems.shift().remove();
       } else {
-        setTimeout(() => el.remove(), (dur + 1.4) * 1000);
+        temporary.push(el);
+        longest = Math.max(longest, dur);
       }
     }
+    particles.appendChild(batch);
+    if (temporary.length) setTimeout(() => temporary.forEach(el => el.remove()), (longest + .15) * 1000);
   }
 
   /* ---- event reaction ---- */
   let evTimer = null;
   function fire(kind, mult) {
     if (!EVENTS.includes(kind) || s[kind] !== '1') return;      /* per-event ON/OFF */
+    if (qs.get('noAnim') === '1') return;
     const style = STYLES.includes(s[kind + 'A']) ? s[kind + 'A'] : 'burst';
     stage.classList.remove('is-event', ...STYLES.map(x => 'ev-' + x));
     void stage.offsetWidth;                                     /* restart the animation */
     stage.classList.add('is-event', 'ev-' + style);
     const offset = clamp(s.fw, 0, 300) / 2;
+    const burst = document.createDocumentFragment(), sparks = [];
     for (let i = 0; i < 14; i++) {
       const sp = makeSparkle(offset, true);
-      sparkles.appendChild(sp);
-      setTimeout(() => sp.remove(), 1600);
+      burst.appendChild(sp);
+      sparks.push(sp);
     }
+    sparkles.appendChild(burst);
+    setTimeout(() => sparks.forEach(sp => sp.remove()), 1600);
     if (s[kind + 'P'] === '1') spawnParticles(kind, mult);
     clearTimeout(evTimer);
     evTimer = setTimeout(() => stage.classList.remove('is-event', ...STYLES.map(x => 'ev-' + x)), 2200);
