@@ -23,7 +23,6 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
   display:none;align-items:stretch;height:calc(var(--t-size) * 2.2);
   overflow:hidden;
   background:var(--t-bg);
-  -webkit-backdrop-filter:blur(8px) saturate(140%);backdrop-filter:blur(8px) saturate(140%);
   box-shadow:0 10px 30px -16px rgba(6,3,14,.7);
   font-size:var(--t-size)}
 .telop.is-on{display:flex}
@@ -42,6 +41,8 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .telop__text{position:absolute;left:0;white-space:nowrap;will-change:transform;
   color:var(--t-txt);font-weight:700;letter-spacing:.02em;
   padding-left:.6em}
+.telop__text.is-scrolling{animation:telop-scroll var(--t-duration,12s) linear infinite}
+@keyframes telop-scroll{from{transform:translate3d(var(--t-start,600px),0,0)}to{transform:translate3d(var(--t-end,-400px),0,0)}}
 .telop.fade .telop__text,.telop.fade .telop__label{transition:opacity .35s ease}
 .telop.hide-content .telop__text,.telop.hide-content .telop__label{opacity:0}
 
@@ -64,7 +65,7 @@ html,body{margin:0;width:100%;height:100%;background:transparent;overflow:hidden
 .slide.sp-bc{bottom:4%;left:50%;transform:translateX(-50%)}
 .slide.sp-br{bottom:4%;right:4%}
 
-@media(prefers-reduced-motion:reduce){.slide,.telop__text{transition:none}}
+@media(prefers-reduced-motion:reduce){.slide,.telop__text{transition:none}.telop__text.is-scrolling{animation:none}}
 
 /* setup helper (&debug=1) */
 #diag{position:fixed;left:10px;top:10px;z-index:99;padding:7px 11px;border-radius:8px;

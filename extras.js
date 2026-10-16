@@ -59,24 +59,23 @@
   }
 
   /* ---- telop: rotate up to 5 messages, scroll each right-to-left ---- */
-  let telIdx = 0, telRAF = null, telSwitchT = null, telX = 0;
-  function stopTelop() { cancelAnimationFrame(telRAF); clearTimeout(telSwitchT); }
+  let telIdx = 0, telSwitchT = null;
+  function stopTelop() { telText.classList.remove('is-scrolling'); clearTimeout(telSwitchT); }
   function marquee() {
-    cancelAnimationFrame(telRAF);
-    if (qs.get('noAnim') === '1') { telText.style.transform = 'translateX(0)'; return; }
+    telText.classList.remove('is-scrolling');
+    if (qs.get('noAnim') === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      telText.style.transform = 'translateX(0)';
+      return;
+    }
     const view = telView.clientWidth || 600;
+    const width = telText.scrollWidth;
     const speed = clamp(s.tSpeed, 15, 400);
-    telX = view;
-    let last = performance.now();
-    const step = now => {
-      const dt = Math.min(.05, (now - last) / 1000); last = now;
-      telX -= speed * dt;
-      const tw = telText.scrollWidth;
-      if (telX < -tw) telX = view;                 /* loop the same message */
-      telText.style.transform = `translateX(${telX}px)`;
-      telRAF = requestAnimationFrame(step);
-    };
-    telRAF = requestAnimationFrame(step);
+    telText.style.removeProperty('transform');
+    telText.style.setProperty('--t-start', view + 'px');
+    telText.style.setProperty('--t-end', -width + 'px');
+    telText.style.setProperty('--t-duration', ((view + width) / speed).toFixed(2) + 's');
+    void telText.offsetWidth;                     /* restart only when text or size changes */
+    telText.classList.add('is-scrolling');
   }
   function telApplyItem(item) {
     telLabel.textContent = item.n || '';
@@ -150,6 +149,12 @@
   }, 1000);
 
   function restart() { apply(); telStart(); slStart(); }
+  if (window.ResizeObserver) new ResizeObserver(() => {
+    if (telop.classList.contains('is-on')) marquee();
+  }).observe(telView);
+  document.fonts?.ready.then(() => {
+    if (telop.classList.contains('is-on')) marquee();
+  });
 
   /* ---- live settings + test events from the editor ---- */
   window.addEventListener('message', e => {
