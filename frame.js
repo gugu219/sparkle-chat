@@ -194,7 +194,7 @@
     const H = stage.clientHeight || 1080;
     const batch = document.createDocumentFragment(), temporary = [];
     let longest = 0;
-    for (let i = 0; i < Math.min(cfg.count, 96); i++) {
+    for (let i = 0; i < Math.min(cfg.count, 120); i++) {
       const el = document.createElement('i');
       const shape = cfg.shape === 'mix' ? pick(keys) : (SHAPES[cfg.shape] ? cfg.shape : 'shine');
       const size = cfg.size * (.65 + Math.random() * .7);
