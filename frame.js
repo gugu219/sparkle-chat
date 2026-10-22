@@ -21,7 +21,7 @@
   const DEFAULTS = {
     customImage:'',customX:'0',customY:'0',customScale:'100',customOpacity:'100',customLayer:'back',fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
     cameraOn:'0',cameraRatio:'16:9',cameraWidth:'480',cameraX:'1360',cameraY:'720',cameraStroke:'12',dividerOn:'0',dividerY:'960',dividerWidth:'12',
-    clockOn:'1',clockX:'36',clockY:'34',clockSize:'30',
+    clockOn:'1',clockX:'36',clockY:'34',clockSize:'30',clockText:'#f4fffd',clockBg:'#2c4c52',clockBgOpacity:'58',
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
@@ -135,6 +135,13 @@
     root.style.setProperty('--clock-x', clamp(s.clockX, 0, qs.has('portrait') ? 1000 : 1840) + 'px');
     root.style.setProperty('--clock-y', clamp(s.clockY, 0, qs.has('portrait') ? 1840 : 1000) + 'px');
     root.style.setProperty('--clock-size', clamp(s.clockSize, 18, 64) + 'px');
+    root.style.setProperty('--clock-text', hex(s.clockText, DEFAULTS.clockText));
+    const bg = hex(s.clockBg, DEFAULTS.clockBg);
+    const alpha = clamp(s.clockBgOpacity, 0, 100) / 100;
+    const rgb = [1, 3, 5].map(i => parseInt(bg.slice(i, i + 2), 16)).join(',');
+    root.style.setProperty('--clock-bg', `rgba(${rgb},${alpha})`);
+    root.style.setProperty('--clock-border', `rgba(225,255,250,${(alpha * .65).toFixed(3)})`);
+    root.style.setProperty('--clock-shadow', alpha ? '0 3px 12px rgba(0,0,0,.2)' : 'none');
     root.style.setProperty('--fw', clamp(s.fw, 0, 300) + 'px');
     root.style.setProperty('--fr', clamp(s.fr, 0, 900) + 'px');
     root.style.setProperty('--grad-conic', conicOf(cs, blocks));

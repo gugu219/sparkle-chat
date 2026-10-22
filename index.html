@@ -144,6 +144,9 @@
             <div class="range-row"><label class="field-label" for="clockX">時計の横位置（枠の左から） <output id="clockX-value">36px</output></label><input id="clockX" name="clockX" type="range" min="0" max="1800" step="10" value="36"></div>
             <div class="range-row"><label class="field-label" for="clockY">時計の縦位置（枠の上から） <output id="clockY-value">34px</output></label><input id="clockY" name="clockY" type="range" min="0" max="960" step="10" value="34"></div>
             <div class="range-row"><label class="field-label" for="clockSize">時計の文字サイズ <output id="clockSize-value">30px</output></label><input id="clockSize" name="clockSize" type="range" min="18" max="64" value="30"></div>
+            <div class="field"><label class="field-label" for="clockText">時計の文字色</label><input id="clockText" name="clockText" type="color" value="#f4fffd"></div>
+            <div class="field"><label class="field-label" for="clockBg">時計の背景色</label><input id="clockBg" name="clockBg" type="color" value="#2c4c52"></div>
+            <div class="range-row"><label class="field-label" for="clockBgOpacity">背景の濃さ（0%で背景なし） <output id="clockBgOpacity-value">58%</output></label><input id="clockBgOpacity" name="clockBgOpacity" type="range" min="0" max="100" value="58"></div>
           </div>
           <div class="field camera-frame-settings">
             <label class="toggle"><input type="checkbox" name="cameraOn"><span class="toggle__track"></span><span>カメラ用の枠を追加</span></label>
@@ -564,6 +567,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=14"></script><script src="studio.js?v=2"></script><script src="workspace.js"></script>
+  <script src="script.js?v=15"></script><script src="studio.js?v=2"></script><script src="workspace.js"></script>
 </body>
 </html>
