@@ -138,6 +138,13 @@
           <div class="range-row"><label class="field-label" for="fpw">枠の幅（比率・画面に対する％） <output id="fpw-value">100%</output></label><input id="fpw" name="fpw" type="range" min="20" max="100" value="100"></div>
           <div class="range-row"><label class="field-label" for="fph">枠の高さ（比率・画面に対する％） <output id="fph-value">100%</output></label><input id="fph" name="fph" type="range" min="20" max="100" value="100"></div>
           <p class="field-hint">幅と高さを別々に調整して、16:9以外の自由な比率（正方形・縦長など）にできます。枠は画面中央に配置されます。</p>
+          <div class="field clock-settings">
+            <label class="toggle"><input type="checkbox" name="clockOn" checked><span class="toggle__track"></span><span>枠の内側に時計を表示</span></label>
+            <p class="field-hint">日本時間をドット文字で表示します。プレビューとOBSの両方に反映されます。</p>
+            <div class="range-row"><label class="field-label" for="clockX">時計の横位置（枠の左から） <output id="clockX-value">36px</output></label><input id="clockX" name="clockX" type="range" min="0" max="1800" step="10" value="36"></div>
+            <div class="range-row"><label class="field-label" for="clockY">時計の縦位置（枠の上から） <output id="clockY-value">34px</output></label><input id="clockY" name="clockY" type="range" min="0" max="960" step="10" value="34"></div>
+            <div class="range-row"><label class="field-label" for="clockSize">時計の文字サイズ <output id="clockSize-value">30px</output></label><input id="clockSize" name="clockSize" type="range" min="18" max="64" value="30"></div>
+          </div>
           <div class="field camera-frame-settings">
             <label class="toggle"><input type="checkbox" name="cameraOn"><span class="toggle__track"></span><span>カメラ用の枠を追加</span></label>
             <p class="field-hint">外側の枠とは独立した透明な枠です。OBSでカメラ映像を枠の内側に重ねてください。色と発光は下のFRAME設定を共有します。</p>
@@ -557,6 +564,6 @@
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=13"></script><script src="studio.js?v=2"></script><script src="workspace.js"></script>
+  <script src="script.js?v=14"></script><script src="studio.js?v=2"></script><script src="workspace.js"></script>
 </body>
 </html>

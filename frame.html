@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SPARKLECHAT — Frame Overlay</title>
-  <link rel="stylesheet" href="frame.css?v=5">
+  <link rel="stylesheet" href="frame.css?v=6">
 <meta name="referrer" content="no-referrer"><link rel="stylesheet" href="cozy.css"><script>if(new URLSearchParams(location.search).get('noAnim')==='1')document.documentElement.classList.add('no-motion')</script><link rel="stylesheet" href="motion.css?v=1"></head>
 <body>
   <div class="stage" id="stage">
@@ -17,6 +17,7 @@
     <div class="sparkles" id="sparkles"></div>
     <div class="particles" id="particles"></div>
   </div>
+  <time class="frame-clock" id="frame-clock" aria-label="現在時刻"></time>
   <div class="divider-line" id="divider-line" hidden aria-label="上下を分けるライン"></div>
   <div class="camera-frame" id="camera-frame" hidden aria-label="カメラ用の枠">
     <div class="camera-frame__halo"></div>
@@ -28,7 +29,7 @@
       try{const m=await import('./vendor/tmi.bundle.mjs');window.tmi={Client:m.Client,client:m.client};}
       catch(e){console.warn('[sparklechat] tmi bundle not loaded',e);}
     }
-    await import('./frame.js?v=7');
+    await import('./frame.js?v=8');
   </script>
 <script src="relay.js?v=3"></script></body>
 </html>

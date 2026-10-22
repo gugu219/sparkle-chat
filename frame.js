@@ -21,6 +21,7 @@
   const DEFAULTS = {
     customImage:'',customX:'0',customY:'0',customScale:'100',customOpacity:'100',customLayer:'back',fw: '14', fr: '28', fri: '14', fpw: '100', fph: '100',
     cameraOn:'0',cameraRatio:'16:9',cameraWidth:'480',cameraX:'1360',cameraY:'720',cameraStroke:'12',dividerOn:'0',dividerY:'960',dividerWidth:'12',
+    clockOn:'1',clockX:'36',clockY:'34',clockSize:'30',
     mode: 'gradient', ccount: '4',
     c1: '#ffd6ec', c2: '#cde7ff', c3: '#e6d9ff', c4: '#d9fff0',
     c5: '#fff3c4', c6: '#ffd9d9', c7: '#d9f2ff', c8: '#f0d9ff',
@@ -49,6 +50,14 @@
   const particles = document.querySelector('#particles');
   const camera = document.querySelector('#camera-frame');
   const divider = document.querySelector('#divider-line');
+  const clock = document.querySelector('#frame-clock');
+  const timeFormat = new Intl.DateTimeFormat('ja-JP', {timeZone:'Asia/Tokyo',hour:'numeric',minute:'2-digit',hourCycle:'h23'});
+  function updateClock() {
+    const parts = Object.fromEntries(timeFormat.formatToParts(new Date()).map(part => [part.type,part.value]));
+    clock.textContent = `${Number(parts.hour)}:${parts.minute}`;
+    setTimeout(updateClock, 60000 - Date.now() % 60000 + 50);
+  }
+  updateClock();
 
   const clamp = (v, lo, hi) => { const n = parseFloat(v); return Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo)); };
   const hex = (v, fb) => { const h = String(v || '').replace(/[^0-9a-fA-F]/g, '').slice(0, 6); return h.length === 6 ? '#' + h : fb; };
@@ -122,6 +131,10 @@
     const cs = palette(), blocks = s.mode === 'blocks';
     root.style.setProperty('--stage-w', clamp(s.fpw, 10, 100) + '%');   /* free frame ratio */
     root.style.setProperty('--stage-h', clamp(s.fph, 10, 100) + '%');
+    clock.hidden = s.clockOn !== '1';
+    root.style.setProperty('--clock-x', clamp(s.clockX, 0, qs.has('portrait') ? 1000 : 1840) + 'px');
+    root.style.setProperty('--clock-y', clamp(s.clockY, 0, qs.has('portrait') ? 1840 : 1000) + 'px');
+    root.style.setProperty('--clock-size', clamp(s.clockSize, 18, 64) + 'px');
     root.style.setProperty('--fw', clamp(s.fw, 0, 300) + 'px');
     root.style.setProperty('--fr', clamp(s.fr, 0, 900) + 'px');
     root.style.setProperty('--grad-conic', conicOf(cs, blocks));
