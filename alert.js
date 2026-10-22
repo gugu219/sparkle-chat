@@ -34,7 +34,7 @@
   /* each event has a volume and display time; its sound is generated from the event */
   EVENTS.forEach(e => { DEFAULTS[e + 'Vol'] = '80'; DEFAULTS[e + 'Dur'] = '5'; });
 
-  const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins'];
+  const FONTS = ['maru', 'rounded', 'kaku', 'noto', 'poppins', 'dot'];
   const ANIMS = ['poyon', 'slide', 'drop', 'zoom'];
   const POS = ['tl', 'tc', 'tr', 'ml', 'mc', 'mr', 'bl', 'bc', 'br'];
 
