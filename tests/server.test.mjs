@@ -11,6 +11,7 @@ import configApi from '../api/config.js';
 import {GET as calendarGet,POST as calendarPost} from '../api/calendar.js';
 const calendarApi=req=>req.method==='GET'?calendarGet(req):calendarPost(req);
 import eventApi from '../api/events.js';
+import alertTestApi from '../api/alert-test.js';
 import integrations from '../api/integrations.js';
 import overlay from '../api/overlay.js';
 import {validWidget} from '../api/integrations.js';
@@ -44,6 +45,20 @@ globalThis.fetch=async(url,options={})=>{
 };
 beforeEach(()=>{db.clear();newDb.clear();z.clear();hash.clear();donations=[];botSends=[];redisFailures=0;delete process.env.SPARKLE_NEW_KV_REST_API_URL;delete process.env.SPARKLE_NEW_KV_REST_API_TOKEN;});after(()=>{globalThis.fetch=originalFetch;});
 test('Redis retries a temporary limit response',async()=>{assert.equal(await get('transient-key'),null);assert.equal(redisFailures,2);});
+test('OBS alert tests require the owner, reach only that overlay, and never enter the event log',async()=>{
+ const overlayId='a'.repeat(64),otherId='b'.repeat(64);
+ await set('owner:owner','account');await set('profile:account',{overlay:overlayId});
+ assert.equal((await alertTestApi(request('/api/alert-test','POST',{event:'gift',num:10}))).status,401);
+ assert.equal((await alertTestApi(request('/api/alert-test','POST',{event:'unknown'},true))).status,400);
+ const sent=await alertTestApi(request('/api/alert-test','POST',{event:'gift',num:10,detail:'×10'},true));
+ assert.equal(sent.status,200);
+ const packet=(await (await alertTestApi(request('/api/alert-test?overlay='+overlayId))).json()).event;
+ assert.equal(packet.event,'gift');assert.equal(packet.num,10);assert.equal(packet.detail,'×10');
+ assert.equal((await (await alertTestApi(request('/api/alert-test?overlay='+otherId))).json()).event,null);
+ assert.deepEqual(await recent('account'),[]);
+ await alertTestApi(request('/api/alert-test','POST',{event:'hype'},true));
+ assert.equal((await (await alertTestApi(request('/api/alert-test?overlay='+overlayId))).json()).event.event,'hype');
+});
 test('old calendar and frame records move to the new store without changing their keys',async()=>{
  await set('calendar:old-id',{entries:{'2026-10-12':{text:'配信'}}});await set('img:old-image','data:image/png;base64,AAAA');
  process.env.SPARKLE_NEW_KV_REST_API_URL='https://new-redis.test';process.env.SPARKLE_NEW_KV_REST_API_TOKEN='new-test-token';
@@ -150,12 +165,14 @@ test('fixed OBS URL updates in place only for its owner',async()=>{
 test('portrait OBS config gets a separate URL and keeps its canvas layout',async()=>{
  await set('owner:owner','account');await set('profile:account',{overlay:'a'.repeat(64)});
  const landscape=await configApi(request('/api/config','POST',{config:{layout:'landscape',frame:{cameraOn:'0'}}},true));
- const portrait=await configApi(request('/api/config','POST',{config:{layout:'portrait',frame:{cameraOn:'1',cameraRatio:'9:16',cameraX:'300',cameraY:'1060'}}},true));
+ const portrait=await configApi(request('/api/config','POST',{config:{layout:'portrait',frame:{cameraOn:'1',cameraRatio:'9:16',cameraX:'300',cameraY:'1060'},chat:{posX:'220',posY:'1280'},alert:{pos:'tc',offsetX:'120',offsetY:'460'}}},true));
  assert.equal(landscape.status,200);assert.equal(portrait.status,200);
  const landId=(await landscape.json()).id,portraitId=(await portrait.json()).id;
  assert.notEqual(landId,portraitId);
  const saved=await (await configApi(request('/api/config?id='+portraitId))).json();
  assert.equal(saved.layout,'portrait');assert.equal(saved.frame.cameraRatio,'9:16');
+ assert.equal(saved.chat.posX,'220');assert.equal(saved.chat.posY,'1280');
+ assert.equal(saved.alert.offsetX,'120');assert.equal(saved.alert.offsetY,'460');
  assert.equal((await (await configApi(request('/api/config?id='+landId))).json()).frame.cameraOn,'0');
 });
 test('unreadable old integration settings can be replaced with new URLs',async()=>{
