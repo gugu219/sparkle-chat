@@ -12,6 +12,7 @@ import {GET as calendarGet,POST as calendarPost} from '../api/calendar.js';
 const calendarApi=req=>req.method==='GET'?calendarGet(req):calendarPost(req);
 import eventApi from '../api/events.js';
 import alertTestApi from '../api/alert-test.js';
+import overlayLive from '../api/overlay-live.js';
 import integrations from '../api/integrations.js';
 import overlay from '../api/overlay.js';
 import {validWidget} from '../api/integrations.js';
@@ -58,6 +59,20 @@ test('OBS alert tests require the owner, reach only that overlay, and never ente
  assert.deepEqual(await recent('account'),[]);
  await alertTestApi(request('/api/alert-test','POST',{event:'hype'},true));
  assert.equal((await (await alertTestApi(request('/api/alert-test?overlay='+overlayId))).json()).event.event,'hype');
+});
+test('uncached OBS notification path delivers new events and tests without exposing another overlay',async()=>{
+ const overlayId='c'.repeat(64);
+ assert.equal((await overlayLive(request('/api/overlay-live?overlay=bad'))).status,400);
+ assert.equal((await overlayLive(request('/api/overlay-live?overlay='+overlayId))).status,404);
+ await set('overlay:'+overlayId,'account');
+ await append('account',{id:'live-event',type:'gift',name:'Mika'});
+ await set('obs-test:'+overlayId,{id:'test-event',event:'bits',sentAt:Date.now()});
+ const response=await overlayLive(request('/api/overlay-live?overlay='+overlayId+'&after='+(Date.now()-1000)));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.deepEqual(data.events.map(event=>event.id),['live-event']);
+ assert.equal(data.test.event,'bits');
+ assert.equal(typeof data.now,'number');
 });
 test('old calendar and frame records move to the new store without changing their keys',async()=>{
  await set('calendar:old-id',{entries:{'2026-10-12':{text:'配信'}}});await set('img:old-image','data:image/png;base64,AAAA');
