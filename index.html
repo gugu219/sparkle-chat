@@ -560,10 +560,10 @@
       <section class="studio-card"><div class="card-heading"><span>♡</span><div><h2>つながる・ありがとうを届ける</h2><p>通知サービスをひとつのOBS出力へ。</p></div></div>
 <div id="connection-summary" role="status">Twitch接続を確認中…</div>
 <div class="integration-grid"><label>Doneru Alert Box URL<input id="doneru-url" type="password" autocomplete="off" placeholder="公式のウィジェットURL"></label><label>Streamlabs Widget URL<input id="streamlabs-url" type="password" autocomplete="off" placeholder="公式のウィジェットURL"></label></div>
-<label>Streamlabsの受信方法<select id="streamlabs-mode"><option value="widget">公式Widgetを表示</option><option value="api">寄付API → 共通アラート＋ログ</option></select></label>
+<label>Streamlabsの受信方法<select id="streamlabs-mode"><option value="widget">公式Widgetを表示</option><option value="api">寄付API → 共通アラート</option></select></label>
 <label id="sl-token-row" hidden>Streamlabsアクセストークン (donations.read)<input id="streamlabs-token" type="password" autocomplete="off" placeholder="サーバーで暗号化して保存"></label>
 <div class="action-row"><button type="button" id="save-integrations" class="apply-btn">連携設定を保存</button><button type="button" data-integration-test="doneru">Doneruサンプル</button><button type="button" data-integration-test="streamlabs">Streamlabsサンプル</button><button type="button" id="test-streak">連続視聴サンプル</button></div>
-<p id="integration-status" role="status" class="field-hint">Widgetの通知内容はログに取得できません。サンプルは画面確認用です。実通知テストは各サービスの管理画面から行ってください。</p>
+<p id="integration-status" role="status" class="field-hint">サンプルは画面確認用です。実通知テストは各サービスの管理画面から行ってください。記録には連続視聴だけ残ります。</p>
 </section>
 <section class="studio-card"><div class="card-heading"><span>✉</span><div><h2>連続視聴の記録</h2><p>配信者専用 · 連続視聴だけ30日間保存 · 新しい順</p></div></div><div class="action-row"><button type="button" id="refresh-log">更新</button><button type="button" id="export-log">JSON保存</button><button type="button" id="end-stream">配信終了・バッジ解除</button></div><div id="event-log" aria-live="polite"><p class="empty-state">連続視聴の記録はまだありません。</p></div></section>
     </section>
