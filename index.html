@@ -565,10 +565,10 @@
 <div class="action-row"><button type="button" id="save-integrations" class="apply-btn">連携設定を保存</button><button type="button" data-integration-test="doneru">Doneruサンプル</button><button type="button" data-integration-test="streamlabs">Streamlabsサンプル</button><button type="button" id="test-streak">連続視聴サンプル</button></div>
 <p id="integration-status" role="status" class="field-hint">Widgetの通知内容はログに取得できません。サンプルは画面確認用です。実通知テストは各サービスの管理画面から行ってください。</p>
 </section>
-<section class="studio-card"><div class="card-heading"><span>✉</span><div><h2>配信のできごと</h2><p>配信者専用 · 30日間保存 · 新しい順</p></div></div><div class="action-row"><label>絞り込み<select id="log-filter"><option value="all">すべて</option><option value="follow">フォロー</option><option value="sub">サブスク</option><option value="donation">寄付</option><option value="streak">連続視聴</option></select></label><button type="button" id="refresh-log">更新</button><button type="button" id="export-log">JSON保存</button><button type="button" id="end-stream">配信終了・バッジ解除</button></div><div id="event-log" aria-live="polite"><p class="empty-state">まだできごとはありません。連携するとここに届きます。</p></div></section>
+<section class="studio-card"><div class="card-heading"><span>✉</span><div><h2>連続視聴の記録</h2><p>配信者専用 · 連続視聴だけ30日間保存 · 新しい順</p></div></div><div class="action-row"><button type="button" id="refresh-log">更新</button><button type="button" id="export-log">JSON保存</button><button type="button" id="end-stream">配信終了・バッジ解除</button></div><div id="event-log" aria-live="polite"><p class="empty-state">連続視聴の記録はまだありません。</p></div></section>
     </section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script src="script.js?v=16"></script><script src="studio.js?v=2"></script><script src="workspace.js"></script>
+  <script src="script.js?v=16"></script><script src="studio.js?v=3"></script><script src="workspace.js"></script>
 </body>
 </html>
