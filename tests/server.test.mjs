@@ -141,9 +141,17 @@ test('bot replies once and posts promotions only after live interval',async()=>{
  assert.equal(await handleBotChat('account',{chatter_user_id:'789',message:{text:'another hello'}},'event4'),true);
  assert.equal(botSends[2].message,'Discord promo');
 });
-test('Twitch duplicate notifications create exactly one private log entry',async()=>{await set('twitch-user:123','account');const p={subscription:{type:'channel.follow',condition:{broadcaster_user_id:'123'}},event:{user_name:'Mika',user_id:'456'}};await hook(await signed(p));await hook(await signed(p));assert.equal((await recent('account')).length,1);assert.equal((await eventApi(request('/api/events'))).status,401);});
+test('Twitch follow notifications display once without entering the private record',async()=>{await set('twitch-user:123','account');const p={subscription:{type:'channel.follow',condition:{broadcaster_user_id:'123'}},event:{user_name:'Mika',user_id:'456'}};await hook(await signed(p));await hook(await signed(p));assert.equal((await events('account')).length,1);assert.deepEqual(await recent('account'),[]);assert.equal((await eventApi(request('/api/events'))).status,401);});
+test('only real watch streaks enter the 30-day record',async()=>{
+ await set('owner:owner','account');
+ await append('account',{id:'gift-1',source:'twitch',type:'gift',name:'Mika'});
+ await append('account',{id:'streak-1',source:'twitch',type:'streak',name:'Mika',count:12});
+ assert.deepEqual((await events('account')).map(e=>e.type),['gift','streak']);
+ assert.deepEqual((await recent('account')).map(e=>e.type),['streak']);
+ assert.equal((await (await eventApi(request('/api/events','GET',null,true))).json()).events.length,1);
+});
 test('stream offline clears render badges without altering previous stream data',async()=>{await set('twitch-user:123','account');await set('stream:account',{id:'stream1',live:true,time:new Date(Date.now()-1000).toISOString()});const payload={subscription:{type:'stream.offline',condition:{broadcaster_user_id:'123'}},event:{}};await hook(await signed(payload));assert.equal((await get('stream:account')).live,false);});
-test('Streamlabs first sync ignores history then recovers more than one page without duplicates',async()=>{await set('integrations:account',await seal({mode:'api',streamlabsToken:'private'}));donations=[{donation_id:1,name:'Old',amount:'1'}];await syncDonations('account');assert.equal((await recent('account')).length,0);db.delete('sl-poll:account');donations=Array.from({length:151},(_,i)=>({donation_id:151-i,name:'Mika',amount:'10',currency:'JPY'}));await syncDonations('account');assert.equal((await recent('account')).length,150);db.delete('sl-poll:account');await syncDonations('account');assert.equal((await recent('account')).length,150);});
+test('Streamlabs first sync ignores history then displays donations without recording them',async()=>{await set('integrations:account',await seal({mode:'api',streamlabsToken:'private'}));donations=[{donation_id:1,name:'Old',amount:'1'}];await syncDonations('account');assert.equal((await events('account')).length,0);db.delete('sl-poll:account');donations=Array.from({length:151},(_,i)=>({donation_id:151-i,name:'Mika',amount:'10',currency:'JPY'}));await syncDonations('account');assert.equal((await events('account')).length,150);assert.deepEqual(await recent('account'),[]);db.delete('sl-poll:account');await syncDonations('account');assert.equal((await events('account')).length,150);});
 
 test('saved OBS config binds to owner even if browser sends no or another overlay',async()=>{
  await set('owner:owner','account');await set('profile:account',{overlay:'a'.repeat(64)});
