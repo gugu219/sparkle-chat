@@ -152,6 +152,16 @@
     window.addEventListener('resize',fit);
     window.addEventListener('panelchange',e=>{if(e.detail==='alert')fit();});
 
+    const obsToggle=document.querySelector('#obs-test-toggle'),obsStatus=document.querySelector('#obs-test-status');
+    let sendToObs=false;
+    obsToggle?.addEventListener('click',()=>{sendToObs=!sendToObs;obsToggle.setAttribute('aria-pressed',String(sendToObs));obsToggle.textContent='OBSにも送る：'+(sendToObs?'ON':'OFF');obsStatus.textContent=sendToObs?'下のテストボタンを押すと、OBSにも数秒で表示します。':'サイト内プレビューだけに表示します。';});
+    const sendObs=async payload=>{if(!sendToObs)return;
+      obsStatus.textContent='OBSへテスト通知を送信中…';
+      try{const r=await fetch('/api/alert-test',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+        const j=await r.json();if(!r.ok)throw Error(j.error||'送信できませんでした');
+        obsStatus.textContent='OBSへ送信しました。数秒以内に表示されます。';
+      }catch(error){obsStatus.textContent='OBSへの送信に失敗：'+error.message;}
+    };
     document.querySelector('[data-panel=alert].test-controls')?.addEventListener('click',e=>{
       const ev=e.target.dataset.alertEvent;if(!ev)return;
       const[sampleDetail,num,numLabel,numPrefix]=SAMPLE[ev]||['',0,''];
@@ -163,7 +173,9 @@
         &&!!frame.contentWindow?.sparkleAlertPreviewSound?.(ev,soundMag,tier);
       frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-event',event:ev,soundPlayed,
         name:NAMES[Math.floor(Math.random()*NAMES.length)],detail,
-        num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'},target);});
+        num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'},target);
+      sendObs({event:ev,detail,num:+(e.target.dataset.alertNum||num),numLabel,numPrefix:numPrefix!=null?numPrefix:'×'});
+    });
 
     document.querySelector('#alert-copy').onclick=async()=>{update();
       try{await navigator.clipboard.writeText(out.value);flash('アラートのURLをコピーしました');}
@@ -173,6 +185,7 @@
     document.querySelector('#test-hype')?.addEventListener('click',()=>{
       if(!frame.contentWindow?.sparkleAlertPreviewHype?.())
         frame.contentWindow?.postMessage({source:'prism-editor',type:'alert-hype-test'},target);
+      sendObs({event:'hype'});
     });
     window.addEventListener('sparkle-auth',update);
     update();fit();

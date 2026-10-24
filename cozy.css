@@ -49,3 +49,7 @@ html[data-page="view"] .chat-message__bubble{border-radius:7px 18px 18px 18px;bo
 .alert-style-options input:focus-visible+span{outline:3px solid #285f91;outline-offset:3px}
 @media(max-width:480px){.alert-style-options{grid-template-columns:1fr}}
 .backup-url{margin-top:18px;padding-top:16px;border-top:1px dashed #a6b8a6}.backup-url .url-output{margin-top:8px}.backup-url .field-hint{margin:8px 0}
+.obs-test-mode{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px;padding:10px 12px;border:1px solid #b9c9b8;border-radius:9px;background:#edf4ea;color:#354a37;font-size:12px;font-weight:700}
+.obs-test-mode[hidden]{display:none}
+.obs-test-mode button{border:1px solid #91a594;border-radius:7px;background:#fffdf8;color:#344637;padding:8px 12px;font:inherit;cursor:pointer}
+.obs-test-mode button[aria-pressed="true"]{background:#477452;color:#fff;border-color:#477452}

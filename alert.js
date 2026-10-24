@@ -645,9 +645,16 @@
     }
     if (e.data.type === 'alert-event') {
       const p = e.data;
-      if (qs.has('preview')) showPreview(p.event, p.name, p.detail, p.num, p.numLabel, p.numPrefix, !!p.soundPlayed);
+      if (qs.has('preview') || p.obsTest) showPreview(p.event, p.name, p.detail, p.num, p.numLabel, p.numPrefix, !!p.soundPlayed);
       else show(p.event, p.name, p.detail, p.num, p.numLabel, p.numPrefix, undefined, !!p.soundPlayed);
     }
+  });
+
+  window.addEventListener('sparkle-obs-test', e => {
+    const p=e.detail;
+    if(p.event==='hype'){hypeTestRun();return;}
+    queue.length=0;
+    showPreview(p.event,p.name,p.detail,p.num,p.numLabel,p.numPrefix);
   });
 
   apply();

@@ -21,8 +21,10 @@
   let f=document.querySelector('[data-widget="'+name+'"]');if(!url){f?.remove();continue;}let u;try{u=new URL(url);}catch{continue;}if(u.protocol!=='https:'||!['doneru.jp','www.doneru.jp','streamlabs.com','www.streamlabs.com'].includes(u.hostname))continue;
   if(!f){f=document.createElement('iframe');f.className='ov';f.dataset.widget=name;f.title=name+' alerts';f.style.zIndex='5';f.allow='autoplay';f.referrerPolicy='no-referrer';f.setAttribute('sandbox','allow-scripts allow-same-origin');document.body.append(f);}if(f.src!==url)f.src=url;
  }}
- for(const frame of frames.values())frame.addEventListener('load',()=>{frame._ready=true;if(frame.title==='frame')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-settings',settings:cfg.frame},location.origin);if(latest&&frame.title!=='extras')frame.contentWindow.postMessage({source:'sparkle-relay',payload:{...latest,events:frame._pending}},location.origin);frame._pending=[];});
+ function sendTest(frame,test){if(!frame._ready){frame._pendingTest=test;return;}if(frame.title==='alert')frame.contentWindow.postMessage({source:'prism-editor',type:test.event==='hype'?'alert-hype-test':'alert-event',...test,obsTest:true},location.origin);if(frame.title==='frame'&&test.event!=='hype')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-event',event:test.event==='resub'?'sub':test.event,mult:Math.max(1,Math.min(20,+test.num||1))},location.origin);}
+ for(const frame of frames.values())frame.addEventListener('load',()=>{frame._ready=true;if(frame.title==='frame')frame.contentWindow.postMessage({source:'prism-editor',type:'frame-settings',settings:cfg.frame},location.origin);if(latest&&frame.title!=='extras')frame.contentWindow.postMessage({source:'sparkle-relay',payload:{...latest,events:frame._pending}},location.origin);frame._pending=[];if(frame._pendingTest){sendTest(frame,frame._pendingTest);frame._pendingTest=null;}});
  window.addEventListener('sparkle-events',e=>relay(e.detail));
+ window.addEventListener('sparkle-obs-test',e=>{for(const name of ['frame','alert']){const frame=frames.get(name);if(frame)sendTest(frame,e.detail);}});
  // relay.js is loaded once here, after settings have resolved.
- const script=document.createElement('script');script.src='relay.js?v=3';document.body.append(script);
+ const script=document.createElement('script');script.src='relay.js?v=4';document.body.append(script);
 })();

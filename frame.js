@@ -348,4 +348,5 @@
     c.connect().catch(err => console.warn('[sparklechat] frame connect failed', err));
   }
 window.addEventListener('sparkle-events',e=>{for(const v of e.detail.events||[]){const k=v.type==='donation'?'donate':v.type==='resub'?'sub':v.type;if(EVENTS.includes(k))fire(k);}});
+window.addEventListener('sparkle-obs-test',e=>{const p=e.detail,k=p.event==='resub'?'sub':p.event;if(EVENTS.includes(k))fire(k,Math.max(1,Math.min(20,+p.num||1)));});
 })();
