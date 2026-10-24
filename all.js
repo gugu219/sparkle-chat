@@ -26,5 +26,5 @@
  window.addEventListener('sparkle-events',e=>relay(e.detail));
  window.addEventListener('sparkle-obs-test',e=>{for(const name of ['frame','alert']){const frame=frames.get(name);if(frame)sendTest(frame,e.detail);}});
  // relay.js is loaded once here, after settings have resolved.
- const script=document.createElement('script');script.src='relay.js?v=4';document.body.append(script);
+ const script=document.createElement('script');script.src='relay.js?v=5';document.body.append(script);
 })();
