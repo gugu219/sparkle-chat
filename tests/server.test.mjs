@@ -149,6 +149,10 @@ test('only real watch streaks enter the 30-day record',async()=>{
  assert.deepEqual((await events('account')).map(e=>e.type),['gift','streak']);
  assert.deepEqual((await recent('account')).map(e=>e.type),['streak']);
  assert.equal((await (await eventApi(request('/api/events','GET',null,true))).json()).events.length,1);
+ await append('account',{id:'streak-sample',source:'twitch',type:'streak',test:true,name:'Preview',count:12});
+ assert.equal((await recent('account')).length,1);
+ await eventApi(request('/api/events','POST',{action:'test',source:'twitch'},true));
+ assert.equal((await recent('account')).length,1);
 });
 test('stream offline clears render badges without altering previous stream data',async()=>{await set('twitch-user:123','account');await set('stream:account',{id:'stream1',live:true,time:new Date(Date.now()-1000).toISOString()});const payload={subscription:{type:'stream.offline',condition:{broadcaster_user_id:'123'}},event:{}};await hook(await signed(payload));assert.equal((await get('stream:account')).live,false);});
 test('Streamlabs first sync ignores history then displays donations without recording them',async()=>{await set('integrations:account',await seal({mode:'api',streamlabsToken:'private'}));donations=[{donation_id:1,name:'Old',amount:'1'}];await syncDonations('account');assert.equal((await events('account')).length,0);db.delete('sl-poll:account');donations=Array.from({length:151},(_,i)=>({donation_id:151-i,name:'Mika',amount:'10',currency:'JPY'}));await syncDonations('account');assert.equal((await events('account')).length,150);assert.deepEqual(await recent('account'),[]);db.delete('sl-poll:account');await syncDonations('account');assert.equal((await events('account')).length,150);});
