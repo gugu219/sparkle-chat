@@ -20,7 +20,7 @@ export default handle(async req=>{
  const integrations=await syncDonations(account),stream=await get('stream:'+account);
  let streaks={};if(stream?.live){const flat=await command('HGETALL','streaks:'+account+':'+stream.id);for(let i=0;i<flat.length;i+=2)streaks[flat[i]]=JSON.parse(flat[i+1]);}
  const cursorAt=Date.now(),batch=await events(account,cursorAt-120000);
- const payload={events:batch,stream:{...stream,streaks},hype:await get('hype:'+account),widgets:widgets?{doneru:integrations?.doneru||'',streamlabs:integrations?.mode==='api'?'':integrations?.streamlabs||''}:undefined,twitchStatus,streamlabsStatus:await get('sl-status:'+account)};
+ const payload={events:batch,stream:{...stream,streaks},hype:await get('hype:'+account),widgets:widgets?{doneru:integrations?.doneru||'',streamlabs:integrations?.mode==='api'?'':integrations?.streamlabs||''}:undefined,streamlabsApi:integrations?.mode==='api'&&!!integrations?.streamlabsToken,twitchStatus,streamlabsStatus:await get('sl-status:'+account)};
  if(renderCache.size>=100)renderCache.delete(renderCache.keys().next().value);
  cached={at:Date.now(),cursorAt,payload};renderCache.set(cacheKey,cached);
  return output(payload,after,cursorAt);
