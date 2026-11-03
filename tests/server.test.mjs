@@ -19,12 +19,13 @@ import {validWidget} from '../api/integrations.js';
 import {syncDonations} from '../lib/streamlabs.js';
 import {cleanBotConfig,handleBotChat} from '../lib/bot.js';
 import botApi from '../api/bot.js';
-const originalFetch=globalThis.fetch;const db=new Map(),newDb=new Map(),z=new Map(),hash=new Map();let donations=[],botSends=[],redisFailures=0;
+const originalFetch=globalThis.fetch;const db=new Map(),newDb=new Map(),z=new Map(),hash=new Map(),lists=new Map();let donations=[],botSends=[],redisFailures=0,redisCalls=0;
 Object.assign(process.env,{UPSTASH_REDIS_REST_URL:'https://redis.test',UPSTASH_REDIS_REST_TOKEN:'test',APP_ENCRYPTION_KEY:'test-only-encryption-key-32-characters',TWITCH_WEBHOOK_SECRET:'test-only-webhook-secret-32-characters',TWITCH_CLIENT_ID:'client',TWITCH_CLIENT_SECRET:'test',APP_BASE_URL:'https://sparkle.test'});
 globalThis.fetch=async(url,options={})=>{
  if(String(url)==='https://api.twitch.tv/helix/chat/messages'){botSends.push(JSON.parse(options.body));return Response.json({data:[{message_id:'sent-'+botSends.length,is_sent:true}]});}
  if(String(url).startsWith('https://streamlabs.com/')){const q=new URL(url).searchParams;let rows=donations.filter(d=>(!q.get('after')||d.donation_id>+q.get('after'))&&(!q.get('before')||d.donation_id<+q.get('before')));return Response.json({data:rows.slice(0,100)});}
  if(!['https://redis.test','https://new-redis.test'].includes(String(url)))throw Error('Unexpected network access: '+url);
+ redisCalls++;
  const activeDb=String(url)==='https://new-redis.test'?newDb:db;
  const [cmd,key,...args]=JSON.parse(options.body);let result=null;
  if(key==='transient-key'&&redisFailures++===0)return Response.json({error:'rate limit exceeded'},{status:400});
@@ -41,10 +42,13 @@ globalThis.fetch=async(url,options={})=>{
  case 'MGET':result=[key,...args].map(k=>activeDb.get(k)??null);break;
  case 'HSET':if(!hash.has(key))hash.set(key,new Map());hash.get(key).set(args[0],args[1]);result=1;break;
  case 'HGETALL':result=[...(hash.get(key)||[])].flat();break;
+ case 'LPUSH':lists.set(key,[args[0],...(lists.get(key)||[])]);result=lists.get(key).length;break;
+ case 'LTRIM':lists.set(key,(lists.get(key)||[]).slice(+args[0],+args[1]+1));result='OK';break;
+ case 'LRANGE':result=(lists.get(key)||[]).slice(+args[0],+args[1]+1);break;
  default:throw Error('Unknown Redis command '+cmd);
  }return Response.json({result});
 };
-beforeEach(()=>{db.clear();newDb.clear();z.clear();hash.clear();donations=[];botSends=[];redisFailures=0;delete process.env.SPARKLE_NEW_KV_REST_API_URL;delete process.env.SPARKLE_NEW_KV_REST_API_TOKEN;});after(()=>{globalThis.fetch=originalFetch;});
+beforeEach(()=>{db.clear();newDb.clear();z.clear();hash.clear();lists.clear();donations=[];botSends=[];redisFailures=0;redisCalls=0;delete process.env.SPARKLE_NEW_KV_REST_API_URL;delete process.env.SPARKLE_NEW_KV_REST_API_TOKEN;});after(()=>{globalThis.fetch=originalFetch;});
 test('Redis retries a temporary limit response',async()=>{assert.equal(await get('transient-key'),null);assert.equal(redisFailures,2);});
 test('OBS alert tests require the owner, reach only that overlay, and never enter the event log',async()=>{
  const overlayId='a'.repeat(64),otherId='b'.repeat(64);
@@ -60,19 +64,22 @@ test('OBS alert tests require the owner, reach only that overlay, and never ente
  await alertTestApi(request('/api/alert-test','POST',{event:'hype'},true));
  assert.equal((await (await alertTestApi(request('/api/alert-test?overlay='+overlayId))).json()).event.event,'hype');
 });
-test('uncached OBS notification path delivers new events and tests without exposing another overlay',async()=>{
+test('one-command OBS feed delivers new events and tests without exposing another overlay',async()=>{
  const overlayId='c'.repeat(64);
  assert.equal((await overlayLive(request('/api/overlay-live?overlay=bad'))).status,400);
- assert.equal((await overlayLive(request('/api/overlay-live?overlay='+overlayId))).status,404);
- await set('overlay:'+overlayId,'account');
+ assert.deepEqual((await (await overlayLive(request('/api/overlay-live?overlay='+overlayId+'&v=2'))).json()).events,[]);
+ await set('owner:owner','account');await set('profile:account',{overlay:overlayId});
  await append('account',{id:'live-event',type:'gift',name:'Mika'});
- await set('obs-test:'+overlayId,{id:'test-event',event:'bits',sentAt:Date.now()});
- const response=await overlayLive(request('/api/overlay-live?overlay='+overlayId+'&after='+(Date.now()-1000)));
+ await alertTestApi(request('/api/alert-test','POST',{event:'bits',num:100},true));
+ const before=redisCalls;
+ const response=await overlayLive(request('/api/overlay-live?overlay='+overlayId+'&after='+(Date.now()-1000)+'&v=2'));
  assert.equal(response.status,200);
+ assert.equal(redisCalls-before,1);
  const data=await response.json();
  assert.deepEqual(data.events.map(event=>event.id),['live-event']);
  assert.equal(data.test.event,'bits');
  assert.equal(typeof data.now,'number');
+ assert.deepEqual((await (await overlayLive(request('/api/overlay-live?overlay='+'d'.repeat(64)+'&v=2'))).json()).events,[]);
 });
 test('old calendar and frame records move to the new store without changing their keys',async()=>{
  await set('calendar:old-id',{entries:{'2026-10-12':{text:'配信'}}});await set('img:old-image','data:image/png;base64,AAAA');
