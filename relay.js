@@ -7,7 +7,8 @@
  // the overlay response, while child frames marked managed still skip polling.
  if(!id||qs.has('managed'))return;
  const health=(ok,message,widgets)=>{window.dispatchEvent(new CustomEvent('sparkle-status',{detail:message}));if(qs.has('preview'))parent.postMessage({source:'sparkle-health',ok,message,widgets},location.origin);};
- let cursor=Date.now(),delay=30000,streamLive=false,fastTimer,pollLive;const seen=new Set();
+ let cursor=Date.now(),delay=30000,streamLive=false,fastTimer,slowTimer,pollLive;const seen=new Set();
+ const bootFastUntil=Date.now()+120000;
  const fresh=batch=>(batch||[]).filter(e=>{if(seen.has(e.id))return false;seen.add(e.id);return true;});
  if(!qs.has('preview')&&['all','alert','frame'].includes(document.documentElement.dataset.page)){
   const startedAt=Date.now();let lastTest='',liveCursor=startedAt;
@@ -16,20 +17,24 @@
     if(r.ok){const p=await r.json();liveCursor=p.now;
      const batch=fresh(p.events);
      if(batch.length)window.SparkleRelay.dispatch({events:batch});
+     if(batch.some(event=>event.type==='stream.online'||event.type==='stream.offline')){
+      streamLive=batch.some(event=>event.type==='stream.online');
+      if(slowTimer){clearTimeout(slowTimer);slowTimer=setTimeout(poll,1000);}
+     }
      const test=p.test;
      if(test?.id&&test.id!==lastTest&&test.sentAt>=startedAt){lastTest=test.id;window.dispatchEvent(new CustomEvent('sparkle-obs-test',{detail:test}));}
     }
-   }catch{}finally{fastTimer=setTimeout(pollLive,streamLive?6000:45000);}
+   }catch{}finally{fastTimer=setTimeout(pollLive,streamLive||Date.now()<bootFastUntil?6000:45000);}
   };
   pollLive();
  }
  async function poll(){try{
   const r=await fetch('/api/overlay?id='+encodeURIComponent(id)+'&after='+cursor+(document.documentElement.dataset.page==='all'?'&widgets=1':''));const p=await r.json();if(!r.ok)throw Error(p.error||'接続エラー');
   p.events=fresh(p.events);if(seen.size>4000){const keep=[...seen].slice(-2000);seen.clear();keep.forEach(x=>seen.add(x));}
-  cursor=p.now;delay=p.stream?.live?30000:120000;
+  cursor=p.now;delay=document.documentElement.dataset.page==='all'?(p.stream?.live?180000:600000):600000;
   const becameLive=!streamLive&&!!p.stream?.live;streamLive=!!p.stream?.live;
   if(becameLive&&fastTimer&&pollLive){clearTimeout(fastTimer);fastTimer=setTimeout(pollLive,1000);}
   window.SparkleRelay.dispatch(p);health(true,p.twitchStatus?.ok===false?'通知出力は接続中・Twitchは再認証が必要です':'通知出力に接続中',p.widgets?Object.fromEntries(Object.entries(p.widgets).map(([k,v])=>[k,!!v])):undefined);
- }catch(e){delay=Math.min(delay*2,120000);health(false,e.message+'（自動再試行します）');}setTimeout(poll,delay);}
+ }catch(e){delay=Math.min(delay*2,600000);health(false,e.message+'（自動再試行します）');}slowTimer=setTimeout(poll,delay);}
  poll();
 })();
