@@ -13,9 +13,9 @@
  if(!qs.has('preview')&&['all','alert','frame'].includes(document.documentElement.dataset.page)){
   const startedAt=Date.now();let lastTest='',liveCursor=startedAt;
   pollLive=async()=>{
-   try{const r=await fetch('/api/overlay-live?overlay='+encodeURIComponent(id)+'&after='+liveCursor+'&v=2',{cache:'no-store'});
-    if(r.ok){const p=await r.json();liveCursor=p.now;
-     const batch=fresh(p.events);
+   try{const r=await fetch('/api/overlay-live?overlay='+encodeURIComponent(id)+'&v=3');
+    if(r.ok){const p=await r.json();
+     const batch=fresh((p.events||[]).filter(event=>event.receivedAt>=liveCursor-5000));liveCursor=Math.max(liveCursor,p.now);
      if(batch.length)window.SparkleRelay.dispatch({events:batch});
      if(batch.some(event=>event.type==='stream.online'||event.type==='stream.offline')){
       streamLive=batch.some(event=>event.type==='stream.online');
@@ -24,7 +24,7 @@
      const test=p.test;
      if(test?.id&&test.id!==lastTest&&test.sentAt>=startedAt){lastTest=test.id;window.dispatchEvent(new CustomEvent('sparkle-obs-test',{detail:test}));}
     }
-   }catch{}finally{fastTimer=setTimeout(pollLive,streamLive||Date.now()<bootFastUntil?6000:45000);}
+   }catch{}finally{fastTimer=setTimeout(pollLive,streamLive||Date.now()<bootFastUntil?6000:120000);}
   };
   pollLive();
  }
