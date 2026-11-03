@@ -31,7 +31,7 @@
  async function poll(){try{
   const r=await fetch('/api/overlay?id='+encodeURIComponent(id)+'&after='+cursor+(document.documentElement.dataset.page==='all'?'&widgets=1':''));const p=await r.json();if(!r.ok)throw Error(p.error||'接続エラー');
   p.events=fresh(p.events);if(seen.size>4000){const keep=[...seen].slice(-2000);seen.clear();keep.forEach(x=>seen.add(x));}
-  cursor=p.now;delay=document.documentElement.dataset.page==='all'?(p.stream?.live?180000:600000):600000;
+  cursor=p.now;delay=document.documentElement.dataset.page==='all'?(p.streamlabsApi?(p.stream?.live?30000:120000):(p.stream?.live?180000:600000)):600000;
   const becameLive=!streamLive&&!!p.stream?.live;streamLive=!!p.stream?.live;
   if(becameLive&&fastTimer&&pollLive){clearTimeout(fastTimer);fastTimer=setTimeout(pollLive,1000);}
   window.SparkleRelay.dispatch(p);health(true,p.twitchStatus?.ok===false?'通知出力は接続中・Twitchは再認証が必要です':'通知出力に接続中',p.widgets?Object.fromEntries(Object.entries(p.widgets).map(([k,v])=>[k,!!v])):undefined);
