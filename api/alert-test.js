@@ -1,4 +1,4 @@
-import {handle,json,owner,sameOrigin,body,get,set,random} from '../lib/store.js';
+import {handle,json,owner,sameOrigin,body,get,set,random,command} from '../lib/store.js';
 
 export const config={runtime:'edge'};
 const kinds=new Set(['sub','resub','gift','follow','bits','points','donate','streak','hype']);
@@ -22,6 +22,10 @@ export default handle(async req=>{
    detail:clean(input.detail,80),num:Math.min(50000,Math.max(0,Number(input.num)||0)),
    numLabel:clean(input.numLabel,20),numPrefix:clean(input.numPrefix,3)};
   await set('obs-test:'+profile.overlay,packet,45);
+  const feed='live-feed:'+profile.overlay;
+  await command('LPUSH',feed,JSON.stringify({kind:'test',data:packet}));
+  await command('LTRIM',feed,0,99);
+  await command('EXPIRE',feed,300);
   return json({ok:true,id:packet.id});
  }
  return json({error:'Method not allowed'},405);
