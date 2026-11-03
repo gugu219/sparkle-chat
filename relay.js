@@ -24,7 +24,7 @@
      const test=p.test;
      if(test?.id&&test.id!==lastTest&&test.sentAt>=startedAt){lastTest=test.id;window.dispatchEvent(new CustomEvent('sparkle-obs-test',{detail:test}));}
     }
-   }catch{}finally{fastTimer=setTimeout(pollLive,streamLive||Date.now()<bootFastUntil?6000:120000);}
+   }catch{}finally{fastTimer=setTimeout(pollLive,streamLive?10000:Date.now()<bootFastUntil?6000:120000);}
   };
   pollLive();
  }
