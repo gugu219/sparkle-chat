@@ -79,6 +79,9 @@ test('one-command OBS feed delivers new events and tests without exposing anothe
  assert.deepEqual(data.events.map(event=>event.id),['live-event']);
  assert.equal(data.test.event,'bits');
  assert.equal(typeof data.now,'number');
+ const shared=await overlayLive(request('/api/overlay-live?overlay='+overlayId+'&v=3'));
+ assert.match(shared.headers.get('Vercel-CDN-Cache-Control'),/s-maxage=12/);
+ assert.deepEqual((await shared.json()).events.map(event=>event.id),['live-event']);
  assert.deepEqual((await (await overlayLive(request('/api/overlay-live?overlay='+'d'.repeat(64)+'&v=2'))).json()).events,[]);
 });
 test('old calendar and frame records move to the new store without changing their keys',async()=>{
@@ -120,6 +123,12 @@ test('official widget URL allowlist rejects lookalikes and javascript',()=>{asse
 test('normalizer uses stable Twitch IDs and ignores bulk gift children',()=>{const e=normalizeTwitch('channel.chat.notification',{notice_type:'watch_streak',chatter_user_id:'12',chatter_user_name:'Mika',watch_streak:{streak_count:12}},'evt','now');assert.equal(e.userId,'12');assert.equal(e.count,12);assert.equal(normalizeTwitch('channel.chat.notification',{notice_type:'sub_gift',sub_gift:{community_gift_id:'bulk'}},'evt','now'),null);});
 async function signed(payload,id='message',time=new Date().toISOString(),signatureOverride){const text=JSON.stringify(payload);const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(process.env.TWITCH_WEBHOOK_SECRET),{name:'HMAC',hash:'SHA-256'},false,['sign']);const bytes=new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(id+time+text)));return new Request('https://sparkle.test/api/twitch-hook',{method:'POST',headers:{'Twitch-Eventsub-Message-Id':id,'Twitch-Eventsub-Message-Timestamp':time,'Twitch-Eventsub-Message-Signature':signatureOverride||'sha256='+Array.from(bytes,x=>x.toString(16).padStart(2,'0')).join(''),'Twitch-Eventsub-Message-Type':payload.challenge?'webhook_callback_verification':'notification'},body:text});}
 test('webhook validates signature and freshness before accepting challenge',async()=>{assert.equal(await (await hook(await signed({challenge:'verify'}))).text(),'verify');assert.equal((await hook(await signed({challenge:'bad'},'x',new Date().toISOString(),'sha256='+'0'.repeat(64)))).status,403);assert.equal((await hook(await signed({challenge:'old'},'x',new Date(Date.now()-700000).toISOString()))).status,403);});
+test('unused Twitch chat messages cost no Redis commands',async()=>{
+ const before=redisCalls;
+ const payload={subscription:{type:'channel.chat.message',condition:{broadcaster_user_id:'123'}},event:{chatter_user_id:'456',message:{text:'hello'}}};
+ assert.equal((await hook(await signed(payload,'chat-no-db'))).status,204);
+ assert.equal(redisCalls,before);
+});
 test('bot validates simple commands and rejects duplicates',()=>{
  assert.deepEqual(cleanBotConfig({enabled:true,commands:[{name:'!Discord',response:'Join us'}],promos:['Follow us'],interval:30}).commands,[{name:'discord',response:'Join us'}]);
  assert.throws(()=>cleanBotConfig({commands:[{name:'!discord',response:'x'},{name:'discord',response:'y'}],promos:[]}));
